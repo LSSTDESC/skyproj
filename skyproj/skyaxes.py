@@ -73,7 +73,7 @@ class SkyAxes(matplotlib.axes.Axes):
                 if lat0 < 0.0 and lat1 > 0.0:
                     # Make sure we have the equator included
                     lat_steps.append(0.0)
-                lon, lat = np.meshgrid(np.arange(360.0), lat_steps)
+                lon, lat = np.meshgrid(np.linspace(0, 360.0, 360), lat_steps)
                 xy = self.projection.transform_points(self.plate_carree, lon.ravel(), lat.ravel())
                 # Need to offset this by some small amount to ensure we don't get
                 # out-of-bounds transformations.
