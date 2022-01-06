@@ -4,7 +4,7 @@ from mpl_toolkits.axisartist.grid_finder import ExtremeFinderSimple
 import mpl_toolkits.axisartist.angle_helper as angle_helper
 from mpl_toolkits.axisartist.grid_helper_curvelinear import GridHelperCurveLinear
 
-__all__ = ['WrappedFormatterDMS', 'ExtremeFinderWrapped', 'GridHelperSkymap']
+__all__ = ['WrappedFormatterDMS', 'ExtremeFinderWrapped', 'GridHelperSkyproj']
 
 
 class WrappedFormatterDMS(angle_helper.FormatterDMS):
@@ -91,7 +91,7 @@ class ExtremeFinderWrapped(ExtremeFinderSimple):
         return lon_min, lon_max, lat_min, lat_max
 
 
-class GridHelperSkymap(GridHelperCurveLinear):
+class GridHelperSkyproj(GridHelperCurveLinear):
     """GridHelperCurveLinear with tick overlap protection.
     """
     def get_tick_iterator(self, nth_coord, axis_side, minor=False):

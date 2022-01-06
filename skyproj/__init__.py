@@ -9,7 +9,7 @@ except PackageNotFoundError:
     # package is not installed
     pass
 
-from .skymap import *
+from .skyproj import *
 from .projections import *
 from .transforms import *
 from .skyaxes import *

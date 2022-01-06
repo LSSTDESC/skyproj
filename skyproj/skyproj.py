@@ -11,19 +11,19 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 from .projections import get_projection, PlateCarree, RADIUS
 from .hpx_utils import healpix_pixels_range, hspmap_to_xy, hpxmap_to_xy, healpix_to_xy, healpix_bin
-from .mpl_utils import ExtremeFinderWrapped, WrappedFormatterDMS, GridHelperSkymap
+from .mpl_utils import ExtremeFinderWrapped, WrappedFormatterDMS, GridHelperSkyproj
 
-__all__ = ['Skymap', 'McBrydeSkymap', 'LaeaSkymap', 'MollweideSkymap',
-           'HammerSkymap', 'EqualEarthSkymap']
+__all__ = ['Skyproj', 'McBrydeSkyproj', 'LaeaSkyproj', 'MollweideSkyproj',
+           'HammerSkyproj', 'EqualEarthSkyproj']
 
 
-class Skymap():
-    """Base class for creating Skymap objects.
+class Skyproj():
+    """Base class for creating Skyproj objects.
 
     Parameters
     ----------
     ax : `matplotlib.axes.Axes`, optional
-        Axis object to replace with a skymap axes
+        Axis object to replace with a skyproj axis
     projection_name : `str`, optional
         Valid proj4/cartosky projection name.
     lon_0 : `float`, optional
@@ -186,7 +186,7 @@ class Skymap():
     def set_extent(self, extent):
         """Set the extent.
 
-        Axes will be properly inverted if Skymap was initialized with
+        Axes will be properly inverted if Skyproj was initialized with
         ``celestial=True``.
 
         Parameters
@@ -247,7 +247,7 @@ class Skymap():
         tick_formatter1 = WrappedFormatterDMS(180.0, self._longitude_ticks)
         tick_formatter2 = angle_helper.FormatterDMS()
 
-        grid_helper = GridHelperSkymap(
+        grid_helper = GridHelperSkyproj(
             (self.proj, self.proj_inverse),
             extreme_finder=extreme_finder,
             grid_locator1=grid_locator1,
@@ -1059,34 +1059,34 @@ class Skymap():
                                       nsamp=5, linestyle='--', **kwargs)
 
 
-# The following skymaps include the equal-area projections that are tested
+# The following skyprojs include the equal-area projections that are tested
 # and known to work.
 
-class McBrydeSkymap(Skymap):
+class McBrydeSkyproj(Skyproj):
     # McBryde-Thomas Flat Polar Quartic
     def __init__(self, **kwargs):
         super().__init__(projection_name='mbtfpq', **kwargs)
 
 
-class LaeaSkymap(Skymap):
+class LaeaSkyproj(Skyproj):
     # Lambert Azimuthal Equal Area
     def __init__(self, **kwargs):
         super().__init__(projection_name='laea', **kwargs)
 
 
-class MollweideSkymap(Skymap):
+class MollweideSkyproj(Skyproj):
     # Mollweide
     def __init__(self, **kwargs):
         super().__init__(projection_name='moll', **kwargs)
 
 
-class HammerSkymap(Skymap):
+class HammerSkyproj(Skyproj):
     # Hammer-Aitoff
     def __init__(self, **kwargs):
         super().__init__(projection_name='hammer', **kwargs)
 
 
-class EqualEarthSkymap(Skymap):
+class EqualEarthSkyproj(Skyproj):
     # Equal Earth
     def __init__(self, **kwargs):
         super().__init__(projection_name='eqearth', **kwargs)
