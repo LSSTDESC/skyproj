@@ -39,11 +39,13 @@ class Skyproj():
     longitude_ticks : `str`, optional
         Label longitude ticks from 0 to 360 degrees (``positive``) or
         from -180 to 180 degrees (``symmetric``).
+    autorescale : `bool`, optional
+        Automatically rescale map visualizations on zoom?
     **kwargs : `dict`, optional
         Additional arguments to send to cartosky/proj4 projection initialization.
     """
     def __init__(self, ax=None, projection_name='cyl', lon_0=0, gridlines=True, celestial=True,
-                 extent=None, longitude_ticks='positive', **kwargs):
+                 extent=None, longitude_ticks='positive', autorescale=True, **kwargs):
         self._redraw_dict = {'hpxmap': None,
                              'hspmap': None,
                              'im': None,
@@ -84,6 +86,7 @@ class Skyproj():
 
         self.do_celestial = celestial
         self.do_gridlines = gridlines
+        self._autorescale = autorescale
 
         self._wrap = (lon_0 + 180.) % 360.
         self._lon_0 = self.projection.proj4_params['lon_0']
@@ -206,6 +209,16 @@ class Skyproj():
             Extent as [lon_min, lon_max, lat_min, lat_max].
         """
         return self._extent
+
+    def set_autorescale(self, autorescale):
+        """Set automatic rescaling after zoom.
+
+        Parameters
+        ----------
+        autorescale : `bool`
+            Automatically rescale after zoom?
+        """
+        self._autorescale = autorescale
 
     def _set_axes_limits(self, extent, invert=True):
         """Set axis limits from an extent.
@@ -368,9 +381,17 @@ class Skyproj():
             self._redraw_dict['im'].remove()
             self._redraw_dict['im'] = None
 
+        if self._autorescale:
+            # Recompute scaling
+            vmin, vmax = np.percentile(values_raster.compressed(), (2.5, 97.5))
+            self._redraw_dict['vmin'] = vmin
+            self._redraw_dict['vmax'] = vmax
+        else:
+            vmin = self._redraw_dict['vmin']
+            vmax = self._redraw_dict['vmax']
+
         im = self.pcolormesh(lon_raster, lat_raster, values_raster,
-                             vmin=self._redraw_dict['vmin'],
-                             vmax=self._redraw_dict['vmax'],
+                             vmin=vmin, vmax=vmax,
                              **self._redraw_dict['kwargs_pcolormesh'])
         self._redraw_dict['im'] = im
 
@@ -686,6 +707,9 @@ class Skyproj():
         nside = hp.npix2nside(hpxmap.size)
         pixels, = np.where(hpxmap != hp.UNSEEN)
 
+        if lon_range is None and lat_range is None:
+            scale_from_all_pixels = True
+
         if lon_range is None or lat_range is None:
             _lon_range, _lat_range = healpix_pixels_range(nside,
                                                           pixels,
@@ -704,7 +728,10 @@ class Skyproj():
                                                              xsize=xsize)
 
         if vmin is None or vmax is None:
-            _vmin, _vmax = np.percentile(hpxmap[pixels], (2.5, 97.5))
+            if scale_from_all_pixels:
+                _vmin, _vmax = np.percentile(hpxmap[pixels], (2.5, 97.5))
+            else:
+                _vmin, _vmax = np.percentile(values_raster.compressed(), (2.5, 97.5))
             if vmin is None:
                 vmin = _vmin
             if vmax is None:
@@ -773,6 +800,9 @@ class Skyproj():
         values_raster : `np.ma.MaskedArray`
             Masked array of rasterized values.
         """
+        if lon_range is None and lat_range is None:
+            scale_from_all_pixels = True
+
         if lon_range is None or lat_range is None:
             _lon_range, _lat_range = healpix_pixels_range(nside,
                                                           pixels,
@@ -795,7 +825,10 @@ class Skyproj():
         )
 
         if vmin is None or vmax is None:
-            _vmin, _vmax = np.percentile(values, (2.5, 97.5))
+            if scale_from_all_pixels:
+                _vmin, _vmax = np.percentile(values, (2.5, 97.5))
+            else:
+                _vmin, _vmax = np.percentile(values_raster.compressed(), (2.5, 97.5))
             if vmin is None:
                 vmin = _vmin
             if vmax is None:
@@ -851,6 +884,9 @@ class Skyproj():
 
         valid_pixels = hspmap.valid_pixels
 
+        if lon_range is None and lat_range is None:
+            scale_from_all_pixels = True
+
         if lon_range is None or lat_range is None:
             _lon_range, _lat_range = healpix_pixels_range(hspmap.nside_sparse,
                                                           valid_pixels,
@@ -868,7 +904,10 @@ class Skyproj():
                                                              xsize=xsize)
 
         if vmin is None or vmax is None:
-            _vmin, _vmax = np.percentile(hspmap[valid_pixels], (2.5, 97.5))
+            if scale_from_all_pixels:
+                _vmin, _vmax = np.percentile(hspmap[valid_pixels], (2.5, 97.5))
+            else:
+                _vmin, _vmax = np.percentile(values_raster.compressed(), (2.5, 97.5))
             if vmin is None:
                 vmin = _vmin
             if vmax is None:
