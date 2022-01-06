@@ -38,7 +38,7 @@ def healpix_pixels_range(nside, pixels, wrap, nest=False):
     lon_0 = (wrap + 180.0) % 360.0
 
     lon_range = (np.clip(np.min(lon_wrap) - eps, lon_0 - 180.0, None),
-                 np.clip(np.max(lon_wrap) + eps, None, lon_0 + 180.0))
+                 np.clip(np.max(lon_wrap) + eps, None, lon_0 + 180.0 - 1e-5))
 
     return lon_range, lat_range
 
