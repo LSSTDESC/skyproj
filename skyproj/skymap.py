@@ -46,6 +46,7 @@ class Skymap():
                  extent=None, longitude_ticks='positive', **kwargs):
         self._redraw_dict = {'hpxmap': None,
                              'hspmap': None,
+                             'im': None,
                              'vmin': None,
                              'vmax': None,
                              'xsize': None,
@@ -291,8 +292,12 @@ class Skymap():
             Formatted string.
         """
         lon, lat = self.proj_inverse(x, y)
-        # FIXME: check for out-of-bounds here?
-        if self._longitude_ticks == 'positive':
+        # Check out-of-bounds with reversibility (unless already out-of-bounds)
+        if np.isfinite(lon) and np.isfinite(lat):
+            xx, yy = self.proj(lon, lat)
+            if not np.isclose(x, xx) or not np.isclose(y, yy):
+                lon, lat = np.nan, np.nan
+        if self._longitude_ticks == 'positive' and np.isfinite(lon):
             lon %= 360.0
         coord_string = 'lon=%.6f, lat=%.6f' % (lon, lat)
         if np.isnan(lon) or np.isnan(lat):
@@ -359,10 +364,16 @@ class Skymap():
             # Nothing to do
             return
 
+        if self._redraw_dict['im'] is not None:
+            self._redraw_dict['im'].remove()
+            self._redraw_dict['im'] = None
+
         im = self.pcolormesh(lon_raster, lat_raster, values_raster,
                              vmin=self._redraw_dict['vmin'],
                              vmax=self._redraw_dict['vmax'],
                              **self._redraw_dict['kwargs_pcolormesh'])
+        self._redraw_dict['im'] = im
+
         self._ax._sci(im)
 
     def set_xlabel(self, text, side='bottom', **kwargs):
@@ -875,6 +886,7 @@ class Skymap():
         # Link up callbacks
         self._redraw_dict['hspmap'] = hspmap
         self._redraw_dict['hpxmap'] = None
+        self._redraw_dict['im'] = im
         self._redraw_dict['vmin'] = vmin
         self._redraw_dict['vmax'] = vmax
         self._redraw_dict['xsize'] = xsize
