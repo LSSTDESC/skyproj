@@ -13,3 +13,4 @@ from .skymap import *
 from .projections import *
 from .transforms import *
 from .skyaxes import *
+from .survey import *

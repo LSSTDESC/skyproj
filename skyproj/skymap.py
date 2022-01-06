@@ -9,7 +9,7 @@ import mpl_toolkits.axisartist as axisartist
 import mpl_toolkits.axisartist.angle_helper as angle_helper
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
-from .projections import get_projection, PlateCarree
+from .projections import get_projection, PlateCarree, RADIUS
 from .hpx_utils import healpix_pixels_range, hspmap_to_xy, hpxmap_to_xy, healpix_to_xy, healpix_bin
 from .mpl_utils import ExtremeFinderWrapped, WrappedFormatterDMS, GridHelperSkymap
 
