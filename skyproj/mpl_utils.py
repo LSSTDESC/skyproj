@@ -65,6 +65,7 @@ class ExtremeFinderWrapped(ExtremeFinderSimple):
         """
         self.nx, self.ny = nx, ny
         self._wrap = wrap_angle
+        self._eps = 1e-5
 
     def __call__(self, transform_xy, x1, y1, x2, y2):
         # docstring inherited
@@ -81,11 +82,11 @@ class ExtremeFinderWrapped(ExtremeFinderSimple):
         lon_min, lon_max, lat_min, lat_max = \
             self._add_pad(lon_min, lon_max, lat_min, lat_max)
 
-        lat_min = np.clip(lat_min, -90.0, 90.0)
-        lat_max = np.clip(lat_max, -90.0, 90.0)
+        lat_min = np.clip(lat_min, -90.0 + self._eps, 90.0 - self._eps)
+        lat_max = np.clip(lat_max, -90.0 + self._eps, 90.0 - self._eps)
 
-        lon_min = np.clip(lon_min, -self._wrap, -self._wrap + 360.)
-        lon_max = np.clip(lon_max, -self._wrap, -self._wrap + 360.)
+        lon_min = np.clip(lon_min, -self._wrap + self._eps, -self._wrap + 360. - self._eps)
+        lon_max = np.clip(lon_max, -self._wrap + self._eps, -self._wrap + 360. - self._eps)
 
         return lon_min, lon_max, lat_min, lat_max
 

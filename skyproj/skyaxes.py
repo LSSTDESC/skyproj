@@ -77,10 +77,11 @@ class SkyAxes(matplotlib.axes.Axes):
                 xy = self.projection.transform_points(self.plate_carree, lon.ravel(), lat.ravel())
                 # Need to offset this by some small amount to ensure we don't get
                 # out-of-bounds transformations.
-                x0 = (1 - 1e-10)*np.min(xy[:, 0])
-                x1 = (1 - 1e-10)*np.max(xy[:, 0])
-                y0 = (1 - 1e-10)*np.min(xy[:, 1])
-                y1 = (1 - 1e-10)*np.max(xy[:, 1])
+                eps = 1e-5
+                x0 = (1 - eps)*np.min(xy[:, 0])
+                x1 = (1 - eps)*np.max(xy[:, 0])
+                y0 = (1 - eps)*np.min(xy[:, 1])
+                y1 = (1 - eps)*np.max(xy[:, 1])
             else:
                 # Make a ring of points and check their extent.
                 npt = 100
