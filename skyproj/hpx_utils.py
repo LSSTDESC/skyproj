@@ -1,6 +1,8 @@
 import numpy as np
 import healpy as hp
 
+from .utils import remap_pm180_values
+
 __all__ = ['healpix_pixels_range', 'hspmap_to_xy', 'hpxmap_to_xy', 'healpix_to_xy',
            'healpix_bin']
 
@@ -30,15 +32,24 @@ def healpix_pixels_range(nside, pixels, wrap, nest=False):
 
     eps = hp.max_pixrad(nside, degrees=True)
 
-    lat_range = (np.clip(np.min(lat) - eps, -90.0, None),
-                 np.clip(np.max(lat) + eps, None, 90.0))
+    lat_range = (np.clip(np.min(lat) - eps, -90.0 + 1e-5, None),
+                 np.clip(np.max(lat) + eps, None, 90.0 - 1e-5))
 
-    lon_wrap = (lon + wrap) % 360 - wrap
+    lon_wrap = (lon + wrap) % 360. - wrap
+    lon_range = (np.min(lon_wrap) - eps, np.max(lon_wrap) + eps)
 
-    lon_0 = (wrap + 180.0) % 360.0
+    # Check if we have overrun and need to do the full range
+    full_range = False
+    if (lon_range[0] < (wrap - 360.0)) and (lon_range[1] > (wrap - 360.0)):
+        full_range = True
+    elif (lon_range[0] < (wrap + 360.0)) and (lon_range[1] > (wrap + 360.0)):
+        full_range = True
+    elif (lon_range[1] - lon_range[0]) >= 359.0:
+        full_range = True
 
-    lon_range = (np.clip(np.min(lon_wrap) - eps, lon_0 - 180.0, None),
-                 np.clip(np.max(lon_wrap) + eps, None, lon_0 + 180.0 - 1e-5))
+    if full_range:
+        lon_0 = remap_pm180_values((wrap + 180.0) % 360.0)
+        lon_range = (lon_0 - 180., lon_0 + 180.0 - 1e-5)
 
     return lon_range, lat_range
 

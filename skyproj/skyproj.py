@@ -458,7 +458,7 @@ class Skyproj():
         extent : `list`
             Plotting extent [lon_max, lon_min, lat_min, lat_max]
         """
-        lon_wrap = (lon + self._wrap) % 360 - self._wrap
+        lon_wrap = remap_pm180_values(lon)
 
         # Compute lat range with cushion
         lat_min0 = np.min(lat)
@@ -897,8 +897,7 @@ class Skyproj():
                 # Using the coverage map is much faster even if approximate.
                 _lon_range, _lat_range = healpix_pixels_range(hspmap.nside_coverage,
                                                               np.where(hspmap.coverage_mask)[0],
-                                                              # self._wrap,
-                                                              180.0,
+                                                              self._wrap,
                                                               nest=True)
             else:
                 extent = self.get_extent()
