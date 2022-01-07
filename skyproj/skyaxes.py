@@ -8,14 +8,6 @@ from .projections import PlateCarree
 __all__ = ["SkyAxes"]
 
 
-# def _add_transform(func):
-#     """Decorator to add a transform."""
-#     @functools.wraps(func)
-#     def wrapper(self, *args, **kwargs):
-#         transform = kwargs.get('transform', self.projection)
-#         kwargs['transform'] = transform
-#         return func(self, *args, **kwargs)
-#     return wrapper
 def _add_lonlat(func):
     """Decorator to add lonlat option."""
     @functools.wraps(func)
