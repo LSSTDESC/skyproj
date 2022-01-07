@@ -383,9 +383,14 @@ class Skyproj():
 
         if self._autorescale:
             # Recompute scaling
-            vmin, vmax = np.percentile(values_raster.compressed(), (2.5, 97.5))
-            self._redraw_dict['vmin'] = vmin
-            self._redraw_dict['vmax'] = vmax
+            try:
+                vmin, vmax = np.percentile(values_raster.compressed(), (2.5, 97.5))
+                self._redraw_dict['vmin'] = vmin
+                self._redraw_dict['vmax'] = vmax
+            except IndexError:
+                # We have zoomed to a blank spot, don't rescale
+                vmin = self._redraw_dict['vmin']
+                vmax = self._redraw_dict['vmax']
         else:
             vmin = self._redraw_dict['vmin']
             vmax = self._redraw_dict['vmax']
@@ -707,6 +712,7 @@ class Skyproj():
         nside = hp.npix2nside(hpxmap.size)
         pixels, = np.where(hpxmap != hp.UNSEEN)
 
+        scale_from_all_pixels = False
         if lon_range is None and lat_range is None:
             scale_from_all_pixels = True
 
@@ -800,6 +806,7 @@ class Skyproj():
         values_raster : `np.ma.MaskedArray`
             Masked array of rasterized values.
         """
+        scale_from_all_pixels = True
         if lon_range is None and lat_range is None:
             scale_from_all_pixels = True
 
@@ -841,6 +848,7 @@ class Skyproj():
 
         im = self.pcolormesh(lon_raster, lat_raster, values_raster, vmin=vmin, vmax=vmax, **kwargs)
         self._ax._sci(im)
+
         return im, lon_raster, lat_raster, values_raster
 
     def draw_hspmap(self, hspmap, zoom=True, xsize=1000, vmin=None, vmax=None,
@@ -884,6 +892,7 @@ class Skyproj():
 
         valid_pixels = hspmap.valid_pixels
 
+        scale_from_all_pixels = False
         if lon_range is None and lat_range is None:
             scale_from_all_pixels = True
 
