@@ -90,7 +90,7 @@ class Skyproj():
         self.do_gridlines = gridlines
         self._autorescale = autorescale
 
-        self._wrap = remap_pm180_values((lon_0 + 180.) % 360.)
+        self._wrap = (lon_0 + 180.) % 360.
         self._lon_0 = self.projection.proj4_params['lon_0']
 
         if extent is None:
@@ -714,10 +714,6 @@ class Skyproj():
         nside = hp.npix2nside(hpxmap.size)
         pixels, = np.where(hpxmap != hp.UNSEEN)
 
-        scale_from_all_pixels = False
-        if lon_range is None and lat_range is None:
-            scale_from_all_pixels = True
-
         if lon_range is None or lat_range is None:
             if zoom:
                 _lon_range, _lat_range = healpix_pixels_range(nside,
@@ -742,10 +738,8 @@ class Skyproj():
                                                              xsize=xsize)
 
         if vmin is None or vmax is None:
-            if scale_from_all_pixels:
-                _vmin, _vmax = np.percentile(hpxmap[pixels], (2.5, 97.5))
-            else:
-                _vmin, _vmax = np.percentile(values_raster.compressed(), (2.5, 97.5))
+            # Auto-scale from visible values
+            _vmin, _vmax = np.percentile(values_raster.compressed(), (2.5, 97.5))
             if vmin is None:
                 vmin = _vmin
             if vmax is None:
@@ -814,10 +808,6 @@ class Skyproj():
         values_raster : `np.ma.MaskedArray`
             Masked array of rasterized values.
         """
-        scale_from_all_pixels = True
-        if lon_range is None and lat_range is None:
-            scale_from_all_pixels = True
-
         if lon_range is None or lat_range is None:
             if zoom:
                 _lon_range, _lat_range = healpix_pixels_range(nside,
@@ -846,10 +836,8 @@ class Skyproj():
         )
 
         if vmin is None or vmax is None:
-            if scale_from_all_pixels:
-                _vmin, _vmax = np.percentile(values, (2.5, 97.5))
-            else:
-                _vmin, _vmax = np.percentile(values_raster.compressed(), (2.5, 97.5))
+            # Auto-scale from visible values
+            _vmin, _vmax = np.percentile(values_raster.compressed(), (2.5, 97.5))
             if vmin is None:
                 vmin = _vmin
             if vmax is None:
@@ -904,17 +892,13 @@ class Skyproj():
         self._hspmap = hspmap
         self._hpxmap = None
 
-        valid_pixels = hspmap.valid_pixels
-
-        scale_from_all_pixels = False
-        if lon_range is None and lat_range is None:
-            scale_from_all_pixels = True
-
         if lon_range is None or lat_range is None:
             if zoom:
-                _lon_range, _lat_range = healpix_pixels_range(hspmap.nside_sparse,
-                                                              valid_pixels,
-                                                              self._wrap,
+                # Using the coverage map is much faster even if approximate.
+                _lon_range, _lat_range = healpix_pixels_range(hspmap.nside_coverage,
+                                                              np.where(hspmap.coverage_mask)[0],
+                                                              # self._wrap,
+                                                              180.0,
                                                               nest=True)
             else:
                 extent = self.get_extent()
@@ -933,10 +917,8 @@ class Skyproj():
                                                              xsize=xsize)
 
         if vmin is None or vmax is None:
-            if scale_from_all_pixels:
-                _vmin, _vmax = np.percentile(hspmap[valid_pixels], (2.5, 97.5))
-            else:
-                _vmin, _vmax = np.percentile(values_raster.compressed(), (2.5, 97.5))
+            # Auto-scale from visible values
+            _vmin, _vmax = np.percentile(values_raster.compressed(), (2.5, 97.5))
             if vmin is None:
                 vmin = _vmin
             if vmax is None:
@@ -949,6 +931,7 @@ class Skyproj():
             self.set_extent(extent)
 
         im = self.pcolormesh(lon_raster, lat_raster, values_raster, vmin=vmin, vmax=vmax, **kwargs)
+
         self._ax._sci(im)
 
         # Link up callbacks
