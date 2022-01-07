@@ -717,10 +717,16 @@ class Skyproj():
             scale_from_all_pixels = True
 
         if lon_range is None or lat_range is None:
-            _lon_range, _lat_range = healpix_pixels_range(nside,
-                                                          pixels,
-                                                          self._wrap,
-                                                          nest=nest)
+            if zoom:
+                _lon_range, _lat_range = healpix_pixels_range(nside,
+                                                              pixels,
+                                                              self._wrap,
+                                                              nest=nest)
+            else:
+                extent = self.get_extent()
+                lon_range = [min(extent[0], extent[1]), max(extent[0], extent[1])]
+                lat_range = [extent[2], extent[3]]
+
             if lon_range is None:
                 lon_range = _lon_range
             if lat_range is None:
@@ -811,10 +817,16 @@ class Skyproj():
             scale_from_all_pixels = True
 
         if lon_range is None or lat_range is None:
-            _lon_range, _lat_range = healpix_pixels_range(nside,
-                                                          pixels,
-                                                          self._wrap,
-                                                          nest=nest)
+            if zoom:
+                _lon_range, _lat_range = healpix_pixels_range(nside,
+                                                              pixels,
+                                                              self._wrap,
+                                                              nest=nest)
+            else:
+                extent = self.get_extent()
+                lon_range = [min(extent[0], extent[1]), max(extent[0], extent[1])]
+                lat_range = [extent[2], extent[3]]
+
             if lon_range is None:
                 lon_range = _lon_range
             if lat_range is None:
@@ -897,10 +909,16 @@ class Skyproj():
             scale_from_all_pixels = True
 
         if lon_range is None or lat_range is None:
-            _lon_range, _lat_range = healpix_pixels_range(hspmap.nside_sparse,
-                                                          valid_pixels,
-                                                          self._wrap,
-                                                          nest=True)
+            if zoom:
+                _lon_range, _lat_range = healpix_pixels_range(hspmap.nside_sparse,
+                                                              valid_pixels,
+                                                              self._wrap,
+                                                              nest=True)
+            else:
+                extent = self.get_extent()
+                lon_range = [min(extent[0], extent[1]), max(extent[0], extent[1])]
+                lat_range = [extent[2], extent[3]]
+
             if lon_range is None:
                 lon_range = _lon_range
             if lat_range is None:
