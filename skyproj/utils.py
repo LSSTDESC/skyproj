@@ -30,4 +30,4 @@ def wrap_values(values, wrap=180.0):
     -------
     wrapped_array
     """
-    return (values + wrap) % 360. - wrap
+    return (values - wrap) % 360. + (wrap - 360.)

@@ -45,10 +45,6 @@ class SkyTransform(matplotlib.transforms.Transform):
         return res
 
     def transform_path_non_affine(self, path):
-        # For each point in the path, we take 10 geodesic sub-samples
-        # Only support MOVETO, LINETO
-        # codes is None it's MOVETO then LINETO ...
-
         if self._inverse:
             # Just send this upstream if we're not computing geodesics.
             return super().transform_path_non_affine(path)

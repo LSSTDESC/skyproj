@@ -4,6 +4,8 @@ from mpl_toolkits.axisartist.grid_finder import ExtremeFinderSimple
 import mpl_toolkits.axisartist.angle_helper as angle_helper
 from mpl_toolkits.axisartist.grid_helper_curvelinear import GridHelperCurveLinear
 
+from .utils import wrap_values
+
 __all__ = ['WrappedFormatterDMS', 'ExtremeFinderWrapped', 'GridHelperSkyproj']
 
 
@@ -34,7 +36,8 @@ class WrappedFormatterDMS(angle_helper.FormatterDMS):
             Array of wrapped values, scaled by factor.
         """
         _values = np.atleast_1d(values)/factor
-        _values = (_values + self._wrap) % 360 - self._wrap
+        # _values = (_values + self._wrap) % 360 - self._wrap
+        _values = wrap_values(_values, wrap=self._wrap)
         if self._longitude_ticks == 1:
             # Values should all be positive, 0 to 360
             _values %= 360.0
@@ -74,7 +77,8 @@ class ExtremeFinderWrapped(ExtremeFinderSimple):
         lon, lat = transform_xy(np.ravel(x), np.ravel(y))
 
         with np.errstate(invalid='ignore'):
-            lon = (lon + self._wrap) % 360. - self._wrap
+            # lon = (lon + self._wrap) % 360. - self._wrap
+            lon = wrap_values(lon, wrap=self._wrap)
 
         lon_min, lon_max = np.nanmin(lon), np.nanmax(lon)
         lat_min, lat_max = np.nanmin(lat), np.nanmax(lat)
