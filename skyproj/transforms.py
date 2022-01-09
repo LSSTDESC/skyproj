@@ -57,14 +57,14 @@ class SkyTransform(matplotlib.transforms.Transform):
         codes = []
 
         last_vertex = None
-        first_vertex = None
+        # first_vertex = None
         is_polygon = False
         for vertex, code in path.iter_segments():
             if last_vertex is None or code == Path.MOVETO:
                 lonlats.extend([(vertex[0], vertex[1])])
                 codes.append(Path.MOVETO)
                 last_vertex = vertex
-                first_vertex = vertex
+                # first_vertex = vertex
             elif code in (Path.LINETO, Path.CLOSEPOLY, None):
                 # Connect the last vertex
                 lonlats_step = self._geod.npts(last_vertex[0], last_vertex[1],

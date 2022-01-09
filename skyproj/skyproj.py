@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-import warnings
 import numpy as np
 import healpy as hp
 

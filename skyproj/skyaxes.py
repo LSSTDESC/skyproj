@@ -168,9 +168,9 @@ class SkyAxes(matplotlib.axes.Axes):
                 result1 = super().pcolormesh(X[:, 0: c],
                                              Y[:, 0: c],
                                              C[:, 0: c - 1], **kwargs)
-                result2 = super().pcolormesh(X[:, c: ],
-                                             Y[:, c: ],
-                                             C[:, c: ], **kwargs)
+                _ = super().pcolormesh(X[:, c:],
+                                       Y[:, c:],
+                                       C[:, c:], **kwargs)
                 # We can only return one result, so just return the first.
                 return result1
 

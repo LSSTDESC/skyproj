@@ -40,10 +40,10 @@ class SkyProjection(CRS):
             except ProjError as err:
                 msg = str(err).lower()
                 if (
-                    "latitude" in msg or
-                    "longitude" in msg or
-                    "outside of projection domain" in msg or
-                    "tolerance condition error" in msg
+                    "latitude" in msg
+                    or "longitude" in msg
+                    or "outside of projection domain" in msg
+                    or "tolerance condition error" in msg
                 ):
                     result[:] = np.nan
                 else:
