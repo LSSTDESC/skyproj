@@ -4,7 +4,7 @@ Random utilities
 import os
 import os.path
 
-__all__ = ["get_datadir", "get_datafile", "remap_pm180_values"]
+__all__ = ["get_datadir", "get_datafile", "wrap_values"]
 
 
 def get_datadir():
@@ -16,16 +16,18 @@ def get_datafile(filename):
     return os.path.join(get_datadir(), filename)
 
 
-def remap_pm180_values(values):
-    """Remap value(s) to [180, 180).
+def wrap_values(values, wrap=180.0):
+    """Wrap values according to the wrap angle.
 
     Parameters
     ----------
     values : `float` or `np.ndarray`
         Values to remap.
+    wrap : `float`, optional
+        Wrap angle to apply.
 
     Returns
     -------
-    remapped_array
+    wrapped_array
     """
-    return (values + 180.) % 360. - 180.
+    return (values + wrap) % 360. - wrap

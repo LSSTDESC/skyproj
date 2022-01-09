@@ -1,7 +1,7 @@
 import numpy as np
 import healpy as hp
 
-from .utils import remap_pm180_values
+from .utils import wrap_values
 
 __all__ = ['healpix_pixels_range', 'hspmap_to_xy', 'hpxmap_to_xy', 'healpix_to_xy',
            'healpix_bin']
@@ -48,7 +48,7 @@ def healpix_pixels_range(nside, pixels, wrap, nest=False):
         full_range = True
 
     if full_range:
-        lon_0 = remap_pm180_values((wrap + 180.0) % 360.0)
+        lon_0 = wrap_values((wrap + 180.0) % 360.0)
         lon_range = (lon_0 - 180., lon_0 + 180.0 - 1e-5)
 
     return lon_range, lat_range

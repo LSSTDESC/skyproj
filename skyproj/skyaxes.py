@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.axes
 
 from .projections import PlateCarree
-from .utils import remap_pm180_values
+from .utils import wrap_values
 
 __all__ = ["SkyAxes"]
 
@@ -157,7 +157,7 @@ class SkyAxes(matplotlib.axes.Axes):
             # with flat shading.
             # TODO: check for settings and fall back to regular version otherwise.
             lon_0 = self.projection.proj4_params['lon_0']
-            wrap = remap_pm180_values((lon_0 + 180.) % 360.)
+            wrap = wrap_values((lon_0 + 180.) % 360.)
 
             cut, = np.where((X[0, :-1] < wrap) & (X[0, 1:] > wrap))
 

@@ -12,7 +12,7 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from .projections import get_projection, PlateCarree, RADIUS
 from .hpx_utils import healpix_pixels_range, hspmap_to_xy, hpxmap_to_xy, healpix_to_xy, healpix_bin
 from .mpl_utils import ExtremeFinderWrapped, WrappedFormatterDMS, GridHelperSkyproj
-from .utils import remap_pm180_values
+from .utils import wrap_values
 
 __all__ = ['Skyproj', 'McBrydeSkyproj', 'LaeaSkyproj', 'MollweideSkyproj',
            'HammerSkyproj', 'EqualEarthSkyproj']
@@ -72,7 +72,7 @@ class Skyproj():
         fig.delaxes(ax)
 
         # Map lon_0 to be between -180.0 and 180.0
-        lon_0 = remap_pm180_values(lon_0)
+        lon_0 = wrap_values(lon_0)
 
         if abs(lon_0) == 180.0:
             # We must move this by epsilon or the code gets confused with 0 == 360
@@ -458,7 +458,7 @@ class Skyproj():
         extent : `list`
             Plotting extent [lon_max, lon_min, lat_min, lat_max]
         """
-        lon_wrap = remap_pm180_values(lon)
+        lon_wrap = wrap_values(lon)
 
         # Compute lat range with cushion
         lat_min0 = np.min(lat)
@@ -647,7 +647,7 @@ class Skyproj():
 
         lonlats = np.array(lonlats)
         # Ensure that the longitude range is from [-180., 180)
-        lonlats[:, 0] = remap_pm180_values(lonlats[:, 0])
+        lonlats[:, 0] = wrap_values(lonlats[:, 0])
 
         # Cut into segments that wrap around ...
         delta = lonlats[: -1, 0] - lonlats[1:, 0]
