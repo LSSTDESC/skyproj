@@ -1040,8 +1040,7 @@ class Skyproj():
         ra = radec.ra.degree
         dec = radec.dec.degree
 
-        self.draw_line_lonlat(ra, dec, linewidth=linewidth, color=color, linestyle=linestyle,
-                              nsamp=5, **kwargs)
+        self.plot(ra, dec, linewidth=linewidth, color=color, linestyle=linestyle, **kwargs)
         # pop any labels
         kwargs.pop('label', None)
         if width > 0:
@@ -1050,8 +1049,8 @@ class Skyproj():
                 radec = gc.fk5
                 ra = radec.ra.degree
                 dec = radec.dec.degree
-                self.draw_line_lonlat(ra, dec, linewidth=1.0, color=color,
-                                      nsamp=5, linestyle='--', **kwargs)
+                self.plot(ra, dec, linewidth=1.0, color=color,
+                          linestyle='--', **kwargs)
 
 
 # The following skyprojs include the equal-area projections that are tested
