@@ -10,7 +10,7 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 from .projections import get_projection, PlateCarree, RADIUS
 from .hpx_utils import healpix_pixels_range, hspmap_to_xy, hpxmap_to_xy, healpix_to_xy, healpix_bin
-from .mpl_utils import ExtremeFinderWrapped, WrappedFormatterDMS, GridHelperSkyproj, LocatorDWrap
+from .mpl_utils import ExtremeFinderWrapped, WrappedFormatterDMS, GridHelperSkyproj
 from .utils import wrap_values
 
 __all__ = ['Skyproj', 'McBrydeSkyproj', 'LaeaSkyproj', 'MollweideSkyproj',
@@ -254,7 +254,7 @@ class Skyproj():
         extent : `list`
             Axis extent [lon_min, lon_max, lat_min, lat_max] (degrees).
         """
-        extreme_finder = ExtremeFinderWrapped(20, 20, 180.0)
+        extreme_finder = ExtremeFinderWrapped(20, 20, self._wrap)
         if self._wrap == 180.0:
             include_last_lon = True
         else:

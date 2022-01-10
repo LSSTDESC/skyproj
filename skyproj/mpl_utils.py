@@ -77,7 +77,6 @@ class ExtremeFinderWrapped(ExtremeFinderSimple):
         lon, lat = transform_xy(np.ravel(x), np.ravel(y))
 
         with np.errstate(invalid='ignore'):
-            # lon = (lon + self._wrap) % 360. - self._wrap
             lon = wrap_values(lon, wrap=self._wrap)
 
         lon_min, lon_max = np.nanmin(lon), np.nanmax(lon)
@@ -89,8 +88,8 @@ class ExtremeFinderWrapped(ExtremeFinderSimple):
         lat_min = np.clip(lat_min, -90.0 + self._eps, 90.0 - self._eps)
         lat_max = np.clip(lat_max, -90.0 + self._eps, 90.0 - self._eps)
 
-        lon_min = np.clip(lon_min, -self._wrap + self._eps, -self._wrap + 360. - self._eps)
-        lon_max = np.clip(lon_max, -self._wrap + self._eps, -self._wrap + 360. - self._eps)
+        lon_min = np.clip(lon_min, self._wrap - 360. + self._eps, self._wrap - self._eps)
+        lon_max = np.clip(lon_max, self._wrap - 360. + self._eps, self._wrap - self._eps)
 
         return lon_min, lon_max, lat_min, lat_max
 
