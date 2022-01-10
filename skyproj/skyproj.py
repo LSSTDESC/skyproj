@@ -10,7 +10,7 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 from .projections import get_projection, PlateCarree, RADIUS
 from .hpx_utils import healpix_pixels_range, hspmap_to_xy, hpxmap_to_xy, healpix_to_xy, healpix_bin
-from .mpl_utils import ExtremeFinderWrapped, WrappedFormatterDMS, GridHelperSkyproj
+from .mpl_utils import ExtremeFinderWrapped, WrappedFormatterDMS, GridHelperSkyproj, LocatorDWrap
 from .utils import wrap_values
 
 __all__ = ['Skyproj', 'McBrydeSkyproj', 'LaeaSkyproj', 'MollweideSkyproj',
@@ -49,6 +49,8 @@ class Skyproj():
         self._redraw_dict = {'hpxmap': None,
                              'hspmap': None,
                              'im': None,
+                             'inset_colorbar': None,
+                             'inset_colorbar_kwargs': {},
                              'vmin': None,
                              'vmax': None,
                              'xsize': None,
@@ -145,8 +147,8 @@ class Skyproj():
         """
         x = np.atleast_1d(x)
         y = np.atleast_1d(y)
-        proj_xy = PlateCarree().transform_points(self.projection, x, y)
-        return proj_xy[..., 0], proj_xy[..., 1]
+        proj_lonlat = PlateCarree().transform_points(self.projection, x, y)
+        return proj_lonlat[..., 0], proj_lonlat[..., 1]
 
     def _initialize_axes(self, extent):
         """Initialize the axes with a given extent.
@@ -253,15 +255,26 @@ class Skyproj():
             Axis extent [lon_min, lon_max, lat_min, lat_max] (degrees).
         """
         extreme_finder = ExtremeFinderWrapped(20, 20, 180.0)
-        grid_locator1 = angle_helper.LocatorD(10, include_last=True)
+        if self._wrap == 180.0:
+            include_last_lon = True
+        else:
+            include_last_lon = False
+        grid_locator1 = angle_helper.LocatorD(10, include_last=include_last_lon)
         grid_locator2 = angle_helper.LocatorD(6, include_last=True)
 
         # We always want the formatting to be wrapped at 180 (-180 to 180)
         tick_formatter1 = WrappedFormatterDMS(180.0, self._longitude_ticks)
         tick_formatter2 = angle_helper.FormatterDMS()
 
+        def proj_wrap(lon, lat):
+            lon = np.atleast_1d(lon)
+            lat = np.atleast_1d(lat)
+            lon[np.isclose(lon, self._wrap)] = self._wrap - 1e-10
+            proj_xy = self.projection.transform_points(PlateCarree(), lon, lat)
+            return proj_xy[..., 0], proj_xy[..., 1]
+
         grid_helper = GridHelperSkyproj(
-            (self.proj, self.proj_inverse),
+            (proj_wrap, self.proj_inverse),
             extreme_finder=extreme_finder,
             grid_locator1=grid_locator1,
             grid_locator2=grid_locator2,
@@ -381,12 +394,18 @@ class Skyproj():
             self._redraw_dict['im'].remove()
             self._redraw_dict['im'] = None
 
+        redraw_colorbar = False
         if self._autorescale:
             # Recompute scaling
             try:
                 vmin, vmax = np.percentile(values_raster.compressed(), (2.5, 97.5))
                 self._redraw_dict['vmin'] = vmin
                 self._redraw_dict['vmax'] = vmax
+
+                if self._redraw_dict['inset_colorbar']:
+                    redraw_colorbar = True
+                    # self._redraw_dict['inset_colorbar'].remove()
+
             except IndexError:
                 # We have zoomed to a blank spot, don't rescale
                 vmin = self._redraw_dict['vmin']
@@ -399,8 +418,12 @@ class Skyproj():
                              vmin=vmin, vmax=vmax,
                              **self._redraw_dict['kwargs_pcolormesh'])
         self._redraw_dict['im'] = im
-
         self._ax._sci(im)
+
+        if redraw_colorbar:
+            # self._redraw_dict['inset_colorbar'].remove()
+            # self.draw_inset_colorbar(**self._redraw_dict['inset_colorbar_kwargs'])
+            pass
 
     def set_xlabel(self, text, side='bottom', **kwargs):
         """Set the label on the x axis.
@@ -1063,6 +1086,20 @@ class Skyproj():
             cax.xaxis.set_label_position('top')
 
         plt.sca(ax)
+
+        # Save reference to colorbar for zooming
+        cbar_kwargs = kwargs
+        cbar_kwargs['format'] = format
+        cbar_kwargs['label'] = label
+        cbar_kwargs['ticks'] = ticks
+        cbar_kwargs['fontsize'] = fontsize
+        cbar_kwargs['width'] = width
+        cbar_kwargs['height'] = height
+        cbar_kwargs['loc'] = loc
+        cbar_kwargs['bbox_to_anchor'] = bbox_to_anchor
+        cbar_kwargs['orientation'] = orientation
+        self._redraw_dict['inset_colorbar'] = cbar
+        self._redraw_dict['inset_colorbar_kwargs'] = cbar_kwargs
 
         return cbar, cax
 
