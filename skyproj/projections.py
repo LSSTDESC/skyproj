@@ -5,6 +5,8 @@ from pyproj import CRS
 from pyproj import Transformer
 from pyproj.exceptions import ProjError
 
+from .utils import wrap_values
+
 __all__ = ["SkyProjection", "PlateCarree", "McBrydeThomasFlatPolarQuartic", "Mollweide",
            "Hammer", "EqualEarth", "LambertAzimuthalEqualArea",
            "get_projection", "get_available_projections"]
@@ -32,8 +34,7 @@ class SkyProjection(CRS):
         if npts:
             if isinstance(src_crs, PlateCarree):
                 # We need to wrap to [-180, 180)
-                x = (x + 180) % 360. - 180.
-
+                x = wrap_values(x)
             try:
                 transformer = Transformer.from_crs(src_crs, self, always_xy=True)
                 result[:, 0], result[:, 1] = transformer.transform(x, y, None, errcheck=False)

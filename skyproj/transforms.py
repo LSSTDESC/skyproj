@@ -28,6 +28,9 @@ class SkyTransform(matplotlib.transforms.Transform):
         self._nsamp = 10
         self._geod = Geod(a=RADIUS)
 
+        self._lon_0 = self.target_proj.proj4_params['lon_0']
+        self._wrap = (self._lon_0 + 180.) % 360.
+
         super().__init__()
 
     def inverted(self):
@@ -53,14 +56,12 @@ class SkyTransform(matplotlib.transforms.Transform):
         codes = []
 
         last_vertex = None
-        # first_vertex = None
         is_polygon = False
         for vertex, code in path.iter_segments():
             if last_vertex is None or code == Path.MOVETO:
                 lonlats.extend([(vertex[0], vertex[1])])
                 codes.append(Path.MOVETO)
                 last_vertex = vertex
-                # first_vertex = vertex
             elif code in (Path.LINETO, Path.CLOSEPOLY, None):
                 # Connect the last vertex
                 lonlats_step = self._geod.npts(last_vertex[0], last_vertex[1],
@@ -78,87 +79,138 @@ class SkyTransform(matplotlib.transforms.Transform):
         codes = np.array(codes)
 
         # Normalize range
-        lonlats[:, 0] = wrap_values(lonlats[:, 0])
+        lonlats[:, 0] = wrap_values(lonlats[:, 0], wrap=self._wrap)
 
         # Cut into segments that wrap around
-        delta = lonlats[: -1, 0] - lonlats[1:, 0]
-        cut, = np.where(np.abs(delta) > 180.)
+        cuts = self._compute_cuts(lonlats[:, 0])
 
-        if cut.size > 0:
+        if cuts.size > 0:
             # Modify path to hit the edge and jump to the other side.
-            insertions = []
-            insertions_locs = []
-            insertions_codes = []
-            for c in cut:
-                if lonlats[c, 0] > 0:
-                    insertions.extend([(180. - 1e-5, lonlats[c, 1])])
-                    insertions.extend([(-180., lonlats[c + 1, 1])])
-                else:
-                    insertions.extend([(-180., lonlats[c, 1])])
-                    insertions.extend([(180. - 1e-5, lonlats[c + 1, 1])])
-                insertions_locs.extend([c + 1, c + 1])
-                insertions_codes.extend([Path.LINETO, Path.MOVETO])
-
-            insertions = np.array(insertions)
-            insertions[:, 0] = wrap_values(insertions[:, 0])
-
-            lonlats = np.insert(lonlats, insertions_locs, insertions, axis=0)
-            codes = np.insert(codes, insertions_locs, insertions_codes)
-
-            # Roll to the first cut at edge.  Add 2 because of the point insertion.
-            lonlats = np.roll(lonlats, -(cut[0] + 2), axis=0)
-            codes = np.roll(codes, -(cut[0] + 2))
-
-            # recompute cut locs after insertions
-            delta = lonlats[: -1, 0] - lonlats[1:, 0]
-            cut, = np.where(np.abs(delta) > 180.)
+            lonlats, codes = self._insert_jumps(lonlats, codes, cuts)
 
             if is_polygon:
-                # At each cut, we need to follow along the edge to close the polygon
-                poly_vertex_start = lonlats[0, :]
-                insertions = []
-                insertions_locs = []
-                insertions_codes = []
-                for c in cut:
-                    lonlats_step = self._geod.npts(lonlats[c - 1, 0], lonlats[c - 1, 1],
-                                                   poly_vertex_start[0], poly_vertex_start[1],
-                                                   self._nsamp + 1,
-                                                   initial_idx=1, terminus_idx=0)
-                    insertions.extend(lonlats_step)
-                    insertions_locs.extend([c + 1]*len(lonlats_step))
-                    insertions_codes.extend([Path.LINETO]*len(lonlats_step))
-                    # Mark the next point as the start of the next polygon
-                    poly_vertex_start = lonlats[c + 1, :]
+                # If this is a polygon we need to add extra edges.
+                lonlats, codes = self._complete_cut_polygons(lonlats, codes)
 
-                insertions = np.array(insertions)
-                insertions[:, 0] = wrap_values(insertions[:, 0])
+        vertices_xform = self.target_proj.transform_points(self.source_proj,
+                                                           lonlats[:, 0], lonlats[:, 1])
 
-                lonlats = np.insert(lonlats, insertions_locs, insertions, axis=0)
-                codes = np.insert(codes, insertions_locs, insertions_codes)
+        new_path = Path(vertices_xform, codes)
 
-                # And the final line
-                lonlats_step = self._geod.npts(lonlats[-1, 0], lonlats[-1, 1],
+        return new_path
+
+    def _compute_cuts(self, lons):
+        """Compute cut locations from a list of longitudes.
+
+        Parameters
+        ----------
+        lons : `np.ndarray`
+            Array of longitude values.
+
+        Returns
+        -------
+        cuts : `np.ndarray`
+            Array of jump/cut locations.
+        """
+        cuts, = np.where(np.abs(lons[: -1] - lons[1: ]) > 180.0)
+        return cuts
+
+    def _insert_jumps(self, lonlats, codes, cuts):
+        """Insert jump points at edges.
+
+        Parameters
+        ----------
+        lonlats : `np.ndarray`
+            [N, 2] array of longitude/latitudes
+        codes : `np.ndarray`
+            Array of path codes.
+        cuts : `np.ndarray`
+            Array of cut locations
+
+        Returns
+        -------
+        lonlats : `np.ndarray`
+            New [M, 2] array of longitude/latitudes
+        codes : `np.ndarray`
+            New array of path codes.
+        """
+        lonlats_insert = []
+        locs_insert = []
+        codes_insert = []
+        for c in cuts:
+            jump_vals = [self._wrap - 1e-10, self._wrap - 360. + 1e-10]
+            if lonlats[c, 0] < self._lon_0:
+                # Switch the order if it's at the low end.
+                jump_vals = jump_vals[::-1]
+
+            lonlats_insert.extend([(jump_vals[0], lonlats[c, 1])])
+            lonlats_insert.extend([(jump_vals[1], lonlats[c + 1, 1])])
+            locs_insert.extend([c + 1]*2)
+            codes_insert.extend([Path.LINETO, Path.MOVETO])
+
+        lonlats = np.insert(lonlats, locs_insert, lonlats_insert, axis=0)
+        codes = np.insert(codes, locs_insert, codes_insert)
+
+        return lonlats, codes
+
+    def _complete_cut_polygons(self, lonlats, codes):
+        """Complete cut polygon shapes.
+
+        Parameters
+        ----------
+        lonlats : `np.ndarray`
+            [N, 2] array of lonlats.
+        codes : `np.ndarray`
+            Array of path codes.
+
+        Returns
+        -------
+        lonlats : `np.ndarray`
+            New [M, 2] array of longitude/latitudes
+        codes : `np.ndarray`
+            New array of path codes.
+        """
+        # First, we need to roll to the first cut at the edge.
+        cuts = self._compute_cuts(lonlats[:, 0])
+        lonlats = np.roll(lonlats, -(cuts[0] + 1), axis=0)
+        codes = np.roll(codes, -(cuts[0] + 1))
+
+        # Recompute cuts after roll
+        cuts = self._compute_cuts(lonlats[:, 0])
+
+        # We need to handle inserting and appending separately, apparently.
+        poly_vertex_start = lonlats[0, :]
+
+        if cuts.size > 0:
+            lonlats_insert = []
+            locs_insert = []
+            codes_insert = []
+            for c in cuts:
+                lonlats_step = self._geod.npts(lonlats[c - 1, 0], lonlats[c - 1, 1],
                                                poly_vertex_start[0], poly_vertex_start[1],
                                                self._nsamp + 1,
                                                initial_idx=1, terminus_idx=0)
-                appendages = np.array(lonlats_step)
-                appendages[:, 0] = wrap_values(appendages[:, 0])
-                appendages_codes = [Path.LINETO]*len(lonlats_step)
-                lonlats = np.append(lonlats, appendages, axis=0)
-                codes = np.append(codes, appendages_codes)
+                lonlats_insert.extend(lonlats_step)
+                locs_insert.extend([c + 1]*len(lonlats_step))
+                codes_insert.extend([Path.LINETO]*len(lonlats_step))
+                poly_vertex_start = lonlats[c + 1, :]
 
-                # And another recompute!
-                delta = lonlats[: -1, 0] - lonlats[1:, 0]
-                cut, = np.where(np.abs(delta) > 180.)
+            lonlats_insert = np.array(lonlats_insert)
+            lonlats_insert[:, 0] = wrap_values(lonlats_insert[:, 0], wrap=self._wrap)
 
-        new_vertices = self.target_proj.transform_points(self.source_proj,
-                                                         lonlats[:, 0], lonlats[:, 1])
+            lonlats = np.insert(lonlats, locs_insert, lonlats_insert, axis=0)
+            codes = np.insert(codes, locs_insert, codes_insert)
 
-        # Need to clean up code into functions.
-        # And need to test with other wraps, and somehow get that information in here...
-        # but lon_0 is available, isn't it!  In the target_proj.
-        # And then we're in business with wrapping filled polygons!
+        # And the final connection
+        lonlats_step = self._geod.npts(lonlats[-1, 0], lonlats[-1, 1],
+                                       poly_vertex_start[0], poly_vertex_start[1],
+                                       self._nsamp + 1,
+                                       initial_idx=1, terminus_idx=0)
+        lonlats_append = np.array(lonlats_step)
+        lonlats_append[:, 0] = wrap_values(lonlats_append[:, 0], wrap=self._wrap)
+        codes_append = [Path.LINETO]*len(lonlats_append)
 
-        new_path = Path(new_vertices, codes)
+        lonlats = np.append(lonlats, lonlats_append, axis=0)
+        codes = np.append(codes, codes_append)
 
-        return new_path
+        return lonlats, codes
