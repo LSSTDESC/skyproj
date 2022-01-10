@@ -57,7 +57,9 @@ class SkyTransform(matplotlib.transforms.Transform):
 
         last_vertex = None
         is_polygon = False
-        for vertex, code in path.iter_segments():
+        # Make sure we don't simplify the path segments, which gets coordinate
+        # systems all messed up.
+        for vertex, code in path.iter_segments(simplify=False):
             if last_vertex is None or code == Path.MOVETO:
                 lonlats.extend([(vertex[0], vertex[1])])
                 codes.append(Path.MOVETO)

@@ -595,11 +595,11 @@ class Skyproj():
             poly = data[data['poly'] == p]
             lon = poly['lon'][::-1] if reverse else poly['lon']
             lat = poly['lat'][::-1] if reverse else poly['lat']
-            self.draw_polygon_lonlat(lon,
-                                     lat,
-                                     edgecolor=edgecolor,
-                                     linestyle=linestyle,
-                                     **kwargs)
+            self.draw_polygon(lon,
+                              lat,
+                              edgecolor=edgecolor,
+                              linestyle=linestyle,
+                              **kwargs)
             # Only add the label to the first polygon plotting.
             kwargs.pop('label', None)
 

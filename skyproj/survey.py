@@ -115,6 +115,6 @@ class MaglitesSkyproj(SurveySkyproj):
 
 class DecalsSkyproj(SurveySkyproj):
     def __init__(self, ax=None, projection_name='mbtfpq', lon_0=105.0, gridlines=True,
-                 celestial=True, extent=[170, -170, -30, 40], **kwargs):
+                 celestial=True, extent=[180, -180, -30, 40], **kwargs):
         super().__init__(ax=ax, projection_name=projection_name, lon_0=lon_0, gridlines=gridlines,
                          celestial=celestial, extent=extent, **kwargs)
