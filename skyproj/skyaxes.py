@@ -114,10 +114,25 @@ class SkyAxes(matplotlib.axes.Axes):
             y = np.concatenate((np.repeat(y0, npt), np.repeat(y1, npt), y_pts, y_pts))
             lonlat = self.plate_carree.transform_points(self.projection, x, y)
 
-            # Check for out-of-bounds by reverse-projecting
-            xy = self.projection.transform_points(self.plate_carree, lonlat[:, 0], lonlat[:, 1])
-            bad = ((~np.isclose(xy[:, 0], x)) | (~np.isclose(xy[:, 1], y)))
-            lonlat[bad, :] = np.nan
+            # We may have nans from out-of-bounds for certain projections (e.g. Mollweide):
+            if np.any(np.isnan(lonlat)):
+                if np.any(np.isnan(lonlat[0: npt, 0])):
+                    # Bottom is at the limit
+                    lonlat[0: npt, 1] = -90.0 + 1e-5
+                if np.any(np.isnan(lonlat[npt: 2*npt, 0])):
+                    # Top is at the limit
+                    lonlat[npt: 2*npt, 1] = 90.0 - 1e-5
+                if np.any(np.isnan(lonlat[2*npt: 3*npt, 1])):
+                    # Right is at the limit
+                    lonlat[2*npt: 3*npt, 0] = 180.0 - 1e-5
+                if np.any(np.isnan(lonlat[3*npt: 4*npt, 1])):
+                    # Left is at the limit
+                    lonlat[3*npt: 4*npt, 0] = -180.0 + 1e-5
+            else:
+                # Check for out-of-bounds by reverse-projecting
+                xy = self.projection.transform_points(self.plate_carree, lonlat[:, 0], lonlat[:, 1])
+                bad = ((~np.isclose(xy[:, 0], x)) | (~np.isclose(xy[:, 1], y)))
+                lonlat[bad, :] = np.nan
 
             # FIXME CHECK FOR WRAPPING!!!
 

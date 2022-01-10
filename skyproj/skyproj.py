@@ -44,6 +44,8 @@ class Skyproj():
     **kwargs : `dict`, optional
         Additional arguments to send to cartosky/proj4 projection initialization.
     """
+    pole_clip = 0.0
+
     def __init__(self, ax=None, projection_name='cyl', lon_0=0, gridlines=True, celestial=True,
                  extent=None, longitude_ticks='positive', autorescale=True, **kwargs):
         self._redraw_dict = {'hpxmap': None,
@@ -94,7 +96,7 @@ class Skyproj():
         self._lon_0 = self.projection.proj4_params['lon_0']
 
         if extent is None:
-            extent = [lon_0 - 180.0, lon_0 + 180.0, -90.0, 90.0]
+            extent = [lon_0 - 180.0, lon_0 + 180.0, -90.0 + self.pole_clip, 90.0 - self.pole_clip]
 
         self._initialize_axes(extent)
 
@@ -1161,6 +1163,8 @@ class LaeaSkyproj(Skyproj):
 
 class MollweideSkyproj(Skyproj):
     # Mollweide
+    pole_clip = 1.0
+
     def __init__(self, **kwargs):
         super().__init__(projection_name='moll', **kwargs)
 
