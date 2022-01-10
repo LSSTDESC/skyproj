@@ -42,6 +42,6 @@ def test_lines_polygons(tmp_path, lon_0):
     m.legend()
     fname = f'lines_and_polygons_{lon_0}.png'
     fig.savefig(tmp_path / fname)
-    # err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 10.0)
-    # if err:
-    #     raise ImageComparisonFailure(err)
+    err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 10.0)
+    if err:
+        raise ImageComparisonFailure(err)
