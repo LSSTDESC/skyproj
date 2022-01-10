@@ -75,7 +75,6 @@ class Skyproj():
 
         if abs(lon_0) == 180.0:
             # We must move this by epsilon or the code gets confused with 0 == 360
-            # FIXME CHECK THIS
             lon_0 = 179.9999
 
         kwargs['lon_0'] = lon_0
@@ -253,7 +252,7 @@ class Skyproj():
         extent : `list`
             Axis extent [lon_min, lon_max, lat_min, lat_max] (degrees).
         """
-        extreme_finder = ExtremeFinderWrapped(20, 20, self._wrap)
+        extreme_finder = ExtremeFinderWrapped(20, 20, 180.0)
         grid_locator1 = angle_helper.LocatorD(10, include_last=True)
         grid_locator2 = angle_helper.LocatorD(6, include_last=True)
 
