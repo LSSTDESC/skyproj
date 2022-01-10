@@ -71,7 +71,6 @@ def test_healsparse(tmp_path):
         raise ImageComparisonFailure(err)
 
 
-
 def test_healpix(tmp_path):
     """Test plotting a healpix map."""
     hspmap = _get_hspmap()

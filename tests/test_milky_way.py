@@ -1,5 +1,4 @@
 import os
-import pytest
 
 import matplotlib
 matplotlib.use("Agg")
@@ -26,5 +25,3 @@ def test_draw_milky_way(tmp_path):
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 10.0)
     if err:
         raise ImageComparisonFailure(err)
-
-

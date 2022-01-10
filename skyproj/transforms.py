@@ -114,7 +114,7 @@ class SkyTransform(matplotlib.transforms.Transform):
         cuts : `np.ndarray`
             Array of jump/cut locations.
         """
-        cuts, = np.where(np.abs(lons[: -1] - lons[1: ]) > 180.0)
+        cuts, = np.where(np.abs(lons[: -1] - lons[1:]) > 180.0)
         return cuts
 
     def _insert_jumps(self, lonlats, codes, cuts):
