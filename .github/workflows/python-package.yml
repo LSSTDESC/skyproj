@@ -28,7 +28,7 @@ jobs:
         export PATH="$CONDA/bin:$PATH"
         conda config --set always_yes yes --set changeps1 no
         conda update -q conda
-        conda install -q -n base mamba
+        conda install -q -n base mamba -c conda-forge
         conda info -a
         conda init bash
     - name: Install dependencies
