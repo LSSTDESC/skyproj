@@ -23,12 +23,21 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
+    - name: Prepare conda
+      run: |
+        export PATH="$CONDA/bin:$PATH"
+        conda config --set always_yes yes --set changeps1 no
+        conda update -q conda
+        conda info -a
+        conda init bash
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pytest flake8 pytest-flake8 jupyter nbconvert
-        pip install .[full]
+        export PATH="$CONDA/bin:$PATH"
+        conda create -q -n testenv python=${{ matrix.python-version }} numpy "astropy>=4.0" "matplotlib>=3.1" healpy setuptools_scm setuptools_scm_git_archive healsparse "pyproj>=3.1" flake8 pytest pytest-flake8 jupyter nbconvert -c conda-forge
+        conda activate testenv
+        pip install --no-deps .
     - name: Test with pytest
       run: |
+        export PATH="$CONDA/bin:$PATH"
+        conda activate testenv
         pytest
