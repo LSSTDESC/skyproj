@@ -1,8 +1,8 @@
 numpy
-astropy
+astropy>=4.0
 matplotlib>=3.1
 healpy
 setuptools_scm
 setuptools_scm_git_archive
 healsparse
-pyproj>=3.1.0
+pyproj>=3.1

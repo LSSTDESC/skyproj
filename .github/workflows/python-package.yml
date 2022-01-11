@@ -1,0 +1,44 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: Build and Test
+
+on:
+  push:
+    branches: [ '**' ]
+  pull_request:
+    branches: [ '**' ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.7', '3.8', '3.9', '3.10']
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Prepare conda
+      run: |
+        export PATH="$CONDA/bin:$PATH"
+        conda config --set always_yes yes --set changeps1 no
+        conda update -q conda
+        conda install -q -n base mamba -c conda-forge
+        conda info -a
+        conda init bash
+    - name: Install dependencies
+      run: |
+        export PATH="$CONDA/bin:$PATH"
+        mamba create -q -n testenv python=${{ matrix.python-version }} numpy "astropy>=4.0" "matplotlib>=3.1" healpy setuptools_scm setuptools_scm_git_archive healsparse "pyproj>=3.1" flake8 pytest pytest-flake8 jupyter nbconvert -c conda-forge
+        source activate testenv
+        pip install --no-deps .
+    - name: Test with pytest
+      run: |
+        export PATH="$CONDA/bin:$PATH"
+        source activate testenv
+        pytest
