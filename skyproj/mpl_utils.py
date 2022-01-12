@@ -1,10 +1,17 @@
 import numpy as np
+from packaging import version
 
 from mpl_toolkits.axisartist.grid_finder import ExtremeFinderSimple
 import mpl_toolkits.axisartist.angle_helper as angle_helper
 from mpl_toolkits.axisartist.grid_helper_curvelinear import GridHelperCurveLinear
 
 from .utils import wrap_values
+
+import matplotlib
+if version.parse(matplotlib.__version__) >= version.parse('3.5'):
+    _celestial_angle_360 = True
+else:
+    _celestial_angle_360 = False
 
 __all__ = ['WrappedFormatterDMS', 'ExtremeFinderWrapped', 'GridHelperSkyproj']
 
@@ -97,6 +104,10 @@ class ExtremeFinderWrapped(ExtremeFinderSimple):
 class GridHelperSkyproj(GridHelperCurveLinear):
     """GridHelperCurveLinear with tick overlap protection.
     """
+    def __init__(self, *args, celestial=True, **kwargs):
+        self._celestial = celestial
+        super().__init__(*args, **kwargs)
+
     def get_tick_iterator(self, nth_coord, axis_side, minor=False):
 
         try:
@@ -119,7 +130,10 @@ class GridHelperSkyproj(GridHelperCurveLinear):
             for ctr, ((xy, a), l) in enumerate(zip(
                     _grid_info[lon_or_lat]["tick_locs"][axis_side],
                     _grid_info[lon_or_lat]["tick_labels"][axis_side])):
-                angle_normal = a
+                if self._celestial and _celestial_angle_360:
+                    angle_normal = 360.0 - a
+                else:
+                    angle_normal = a
 
                 if ctr > 0 and lon_or_lat == 'lon':
                     # Check if this is too close to the last label.
@@ -131,5 +145,8 @@ class GridHelperSkyproj(GridHelperCurveLinear):
             for (xy, a), l in zip(
                     _grid_info[lon_or_lat]["tick_locs"][axis_side],
                     _grid_info[lon_or_lat]["tick_labels"][axis_side]):
-                angle_normal = a
+                if self._celestial and _celestial_angle_360:
+                    angle_normal = 360.0 - a
+                else:
+                    angle_normal = a
                 yield xy, angle_normal, angle_tangent, ""

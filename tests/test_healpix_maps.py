@@ -47,11 +47,12 @@ def test_healsparse(tmp_path):
     if err:
         raise ImageComparisonFailure(err)
 
+    # Try a different colormap on the zoom.
     fig = plt.figure(1, figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     m = skyproj.McBrydeSkyproj(ax=ax)
-    m.draw_hspmap(hspmap, lon_range=[4.9, 5.3], lat_range=[4.9, 5.3])
+    m.draw_hspmap(hspmap, lon_range=[4.9, 5.3], lat_range=[4.9, 5.3], cmap=plt.colormaps['rainbow'])
     fname = 'healsparse_two.png'
     fig.savefig(tmp_path / fname)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
@@ -93,7 +94,8 @@ def test_healpix(tmp_path):
     fig.clf()
     ax = fig.add_subplot(111)
     m = skyproj.McBrydeSkyproj(ax=ax)
-    m.draw_hpxmap(hpxmap, nest=True, lon_range=[4.9, 5.3], lat_range=[4.9, 5.3])
+    m.draw_hpxmap(hpxmap, nest=True, lon_range=[4.9, 5.3], lat_range=[4.9, 5.3],
+                  cmap=plt.colormaps['rainbow'])
     fname = 'healsparse_two.png'
     fig.savefig(tmp_path / fname)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
@@ -127,7 +129,8 @@ def test_hpxpix(tmp_path):
     ax = fig.add_subplot(111)
     m = skyproj.McBrydeSkyproj(ax=ax)
     m.draw_hpxpix(hspmap.nside_sparse, pixels, values, nest=True,
-                  lon_range=[4.9, 5.3], lat_range=[4.9, 5.3])
+                  lon_range=[4.9, 5.3], lat_range=[4.9, 5.3],
+                  cmap=plt.colormaps['rainbow'])
     fname = 'healsparse_two.png'
     fig.savefig(tmp_path / fname)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)

@@ -69,6 +69,8 @@ class Skyproj():
             ax = plt.gca()
 
         fig = ax.figure
+        # This code does not work with the constrained_layout option
+        fig.set_constrained_layout(False)
         subspec = ax.get_subplotspec()
         fig.delaxes(ax)
 
@@ -279,7 +281,8 @@ class Skyproj():
             grid_locator1=grid_locator1,
             grid_locator2=grid_locator2,
             tick_formatter1=tick_formatter1,
-            tick_formatter2=tick_formatter2
+            tick_formatter2=tick_formatter2,
+            celestial=self.do_celestial
         )
 
         self._grid_helper = grid_helper
@@ -351,7 +354,7 @@ class Skyproj():
 
         Parameters
         ----------
-        ax : `cartopy.mpl.geoaxes.GeoAxesSubplot`
+        ax : `skyproj.SkyAxesSubplot`
         """
         extent = ax.get_extent(lonlat=True)
         if not np.isclose(extent[0], self._extent[0]) or not np.isclose(extent[1], self._extent[1]):
@@ -631,7 +634,7 @@ class Skyproj():
 
         Returns
         -------
-        im : `cartopy.mpl.geocollection.GeoQuadMesh`
+        im : `matplotlib.collections.QuadMesh`
             Image that was displayed
         lon_raster : `np.ndarray`
             2D array of rasterized longitude values.
@@ -728,7 +731,7 @@ class Skyproj():
 
         Returns
         -------
-        im : `cartopy.mpl.geocollection.GeoQuadMesh`
+        im : `matplotlib.collections.QuadMesh`
             Image that was displayed
         lon_raster : `np.ndarray`
             2D array of rasterized longitude values.
@@ -809,7 +812,7 @@ class Skyproj():
 
         Returns
         -------
-        im : `cartopy.mpl.geocollection.GeoQuadMesh`
+        im : `matplotlib.collections.QuadMesh`
             Image that was displayed
         lon_raster : `np.ndarray`
             2D array of rasterized longitude values.
@@ -915,7 +918,7 @@ class Skyproj():
         -------
         hpxmap : `np.ndarray`
             Computed healpix map.
-        im : `cartopy.mpl.geocollection.GeoQuadMesh`
+        im : `matplotlib.collections.QuadMesh`
             Image that was displayed.
         lon_raster : `np.ndarray`
             2D array of rasterized longitude values.
