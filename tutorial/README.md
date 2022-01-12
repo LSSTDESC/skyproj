@@ -6,4 +6,4 @@ This is a brief tutorial consisting of ipython notebooks that should get you up 
 
 * [Base Skyproj Class](tutorial_baseclass.ipynb)
 * [Surveys](tutorial_surveys.ipynb)
-* [HealSparse and Healpix Maps](tutorials_healsparse.ipynb)
+* [HealSparse and Healpix Maps](tutorial_healsparse.ipynb)
