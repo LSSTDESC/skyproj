@@ -354,7 +354,7 @@ class Skyproj():
 
         Parameters
         ----------
-        ax : `cartopy.mpl.geoaxes.GeoAxesSubplot`
+        ax : `skyproj.SkyAxesSubplot`
         """
         extent = ax.get_extent(lonlat=True)
         if not np.isclose(extent[0], self._extent[0]) or not np.isclose(extent[1], self._extent[1]):
@@ -634,7 +634,7 @@ class Skyproj():
 
         Returns
         -------
-        im : `cartopy.mpl.geocollection.GeoQuadMesh`
+        im : `matplotlib.collections.QuadMesh`
             Image that was displayed
         lon_raster : `np.ndarray`
             2D array of rasterized longitude values.
@@ -731,7 +731,7 @@ class Skyproj():
 
         Returns
         -------
-        im : `cartopy.mpl.geocollection.GeoQuadMesh`
+        im : `matplotlib.collections.QuadMesh`
             Image that was displayed
         lon_raster : `np.ndarray`
             2D array of rasterized longitude values.
@@ -812,7 +812,7 @@ class Skyproj():
 
         Returns
         -------
-        im : `cartopy.mpl.geocollection.GeoQuadMesh`
+        im : `matplotlib.collections.QuadMesh`
             Image that was displayed
         lon_raster : `np.ndarray`
             2D array of rasterized longitude values.
@@ -918,7 +918,7 @@ class Skyproj():
         -------
         hpxmap : `np.ndarray`
             Computed healpix map.
-        im : `cartopy.mpl.geocollection.GeoQuadMesh`
+        im : `matplotlib.collections.QuadMesh`
             Image that was displayed.
         lon_raster : `np.ndarray`
             2D array of rasterized longitude values.
