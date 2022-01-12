@@ -1,6 +1,6 @@
 # skyproj: Sky Projections with matplotlib and proj
 
-The `skyproj` package provides a astronomically oriented interface to ploting sky maps based on [`matplotlib`](https://matplotlib.org/) and [PROJ](https://proj.org/).
+The `skyproj` package provides an astronomically oriented interface to ploting sky maps based on [`matplotlib`](https://matplotlib.org/) and [PROJ](https://proj.org/).
 This package addresses several issues present in the [`healpy`](https://healpy.readthedocs.io/en/latest/) plotting routines:
 1. `healpy` supports a limited set of sky projections (`cartview`, `mollview`, and `gnomview`)
 2. `healpy` converts sparse healpix maps to full maps to plot; this is memory intensive for large `nside`
