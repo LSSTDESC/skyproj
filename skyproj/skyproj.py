@@ -69,6 +69,8 @@ class Skyproj():
             ax = plt.gca()
 
         fig = ax.figure
+        # This code does not work with the constrained_layout option
+        fig.set_constrained_layout(False)
         subspec = ax.get_subplotspec()
         fig.delaxes(ax)
 
