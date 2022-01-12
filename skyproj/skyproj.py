@@ -281,7 +281,8 @@ class Skyproj():
             grid_locator1=grid_locator1,
             grid_locator2=grid_locator2,
             tick_formatter1=tick_formatter1,
-            tick_formatter2=tick_formatter2
+            tick_formatter2=tick_formatter2,
+            celestial=self.do_celestial
         )
 
         self._grid_helper = grid_helper
