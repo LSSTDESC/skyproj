@@ -5,6 +5,8 @@ import healpy as hp
 import mpl_toolkits.axisartist as axisartist
 import mpl_toolkits.axisartist.angle_helper as angle_helper
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+from matplotlib.cm import ScalarMappable
+from matplotlib.colors import Normalize
 
 from .projections import get_projection, PlateCarree
 from .hpx_utils import healpix_pixels_range, hspmap_to_xy, hpxmap_to_xy, healpix_to_xy, healpix_bin
@@ -112,6 +114,7 @@ class Skyproj():
         self._frc = self.ax.figure.canvas.mpl_connect('resize_event', self._change_size)
         self._dc = self.ax.figure.canvas.mpl_connect('draw_event', self._draw_callback)
         self._initial_extent_xy = self._ax.get_extent(lonlat=False)
+        self._has_zoomed = False
 
     def proj(self, lon, lat):
         """Apply forward projection to a set of lon/lat positions.
@@ -410,11 +413,8 @@ class Skyproj():
             # Nothing to do
             return
 
-        if self._redraw_dict['im'] is not None:
-            self._redraw_dict['im'].remove()
-            self._redraw_dict['im'] = None
-
         redraw_colorbar = False
+        redraw_inset_colorbar = False
         if self._autorescale:
             # Recompute scaling
             try:
@@ -422,10 +422,10 @@ class Skyproj():
                 self._redraw_dict['vmin'] = vmin
                 self._redraw_dict['vmax'] = vmax
 
-                if self._redraw_dict['inset_colorbar'] or self._redraw_dict['colorbar']:
+                if self._redraw_dict['colorbar']:
                     redraw_colorbar = True
-                    # self._redraw_dict['inset_colorbar'].remove()
-
+                if self._redraw_dict['inset_colorbar']:
+                    redraw_inset_colorbar = True
             except IndexError:
                 # We have zoomed to a blank spot, don't rescale
                 vmin = self._redraw_dict['vmin']
@@ -434,6 +434,10 @@ class Skyproj():
             vmin = self._redraw_dict['vmin']
             vmax = self._redraw_dict['vmax']
 
+        if self._redraw_dict['im'] is not None:
+            self._redraw_dict['im'].remove()
+            self._redraw_dict['im'] = None
+
         im = self.pcolormesh(lon_raster, lat_raster, values_raster,
                              vmin=vmin, vmax=vmax,
                              **self._redraw_dict['kwargs_pcolormesh'])
@@ -441,9 +445,13 @@ class Skyproj():
         self._ax._sci(im)
 
         if redraw_colorbar:
-            # self._redraw_dict['inset_colorbar'].remove()
-            # self.draw_inset_colorbar(**self._redraw_dict['inset_colorbar_kwargs'])
-            pass
+            mappable = ScalarMappable(Normalize(vmin=vmin, vmax=vmax),
+                                      cmap=self._redraw_dict['colorbar'].cmap)
+            self._redraw_dict['colorbar'].update_normal(mappable)
+        if redraw_inset_colorbar:
+            mappable = ScalarMappable(Normalize(vmin=vmin, vmax=vmax),
+                                      cmap=self._redraw_dict['inset_colorbar'].cmap)
+            self._redraw_dict['inset_colorbar'].update_normal(mappable)
 
     def _change_size(self, event):
         """Callback for figure resize.
@@ -1002,6 +1010,8 @@ class Skyproj():
         ax : `SkyAxesSubplot`, optional
             Axis associated with inset colorbar.  If None, use
             skyaxes associated with map.
+        **kwargs : `dict`, optional
+            Additional kwargs to pass to inset_axes or colorbar.
 
         Returns
         -------
@@ -1077,14 +1087,71 @@ class Skyproj():
 
         return cbar, cax
 
-    def draw_colorbar(self, format=None, label=None, ticks=None, fontsize=11,
+    def draw_colorbar(self, label=None, ticks=None, fontsize=11,
+                      fraction=0.15, location='right', pad=0.0,
                       ax=None, **kwargs):
         """Draw a colorbar.
 
         Parameters
         ----------
+        label : `str`, optional
+            Label to attach to colorbar.
+        ticks : `list`, optional
+            List of tick values.
+        fontsize : `int`, optional
+            Font size to use for ticks.
+        fraction : `float`, optional
+            Fraction of original axes to use for colorbar.
+        location : `str`, optional
+            Colorbar location (``right``, ``bottom``, ``left``, ``top``).
+        pad : `float`, optional
+            Fraction of original axes between colorbar and original axes.
+        ax : `SkyAxesSubplot`, optional
+            Axis associated with inset colorbar.  If None, use
+            skyaxes associated with map.
+        **kwargs : `dict`, optional
+            Additional kwargs to send to colorbar().
+
+        Returns
+        -------
+        colorbar : `matplotlib.colorbar.Colorbar`
         """
-        pass
+        if ax is None:
+            ax = self._ax
+
+        cbar = plt.colorbar(ax=ax, location=location, ticks=ticks,
+                            fraction=fraction, pad=pad, **kwargs)
+
+        if location == 'right' or location == 'left':
+            cbar_axis = 'y'
+        else:
+            cbar_axis = 'x'
+
+        cbar.ax.tick_params(axis=cbar_axis, labelsize=fontsize)
+
+        if label is not None:
+            cbar.set_label(label, size=fontsize)
+
+        if self._aa is not None:
+            self._aa.set_position(self._ax.get_position(), which='original')
+
+        # Reset the "home" position because axis has been shifted.
+        self._initial_extent_xy = self._ax.get_extent(lonlat=False)
+
+        plt.sca(ax)
+
+        # Save reference to colorbar for zooming
+        cbar_kwargs = kwargs
+        cbar_kwargs['label'] = label
+        cbar_kwargs['ticks'] = ticks
+        cbar_kwargs['fontsize'] = fontsize
+        cbar_kwargs['fraction'] = fraction
+        cbar_kwargs['location'] = location
+        cbar_kwargs['pad'] = pad
+        self._redraw_dict['colorbar'] = cbar
+        self._redraw_dict['colorbar_kwargs'] = cbar_kwargs
+
+        return cbar
 
     def draw_milky_way(self, width=10, linewidth=1.5, color='black', linestyle='-', **kwargs):
         """Draw the Milky Way galaxy.
