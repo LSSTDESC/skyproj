@@ -51,6 +51,8 @@ class Skyproj():
                              'im': None,
                              'inset_colorbar': None,
                              'inset_colorbar_kwargs': {},
+                             'colorbar': None,
+                             'colorbar_kwargs': {},
                              'lon_range_home': None,
                              'lat_range_home': None,
                              'vmin': None,
@@ -420,7 +422,7 @@ class Skyproj():
                 self._redraw_dict['vmin'] = vmin
                 self._redraw_dict['vmax'] = vmax
 
-                if self._redraw_dict['inset_colorbar']:
+                if self._redraw_dict['inset_colorbar'] or self._redraw_dict['colorbar']:
                     redraw_colorbar = True
                     # self._redraw_dict['inset_colorbar'].remove()
 
@@ -972,16 +974,42 @@ class Skyproj():
 
         return hpxmap, im, lon_raster, lat_raster, values_raster
 
-    def draw_inset_colorbar(self, ax=None, format=None, label=None, ticks=None, fontsize=11,
+    def draw_inset_colorbar(self, format=None, label=None, ticks=None, fontsize=11,
                             width="25%", height="5%", loc=7, bbox_to_anchor=(0., -0.04, 1, 1),
-                            orientation='horizontal', **kwargs):
+                            orientation='horizontal', ax=None, **kwargs):
         """Draw an inset colorbar.
 
         Parameters
         ----------
+        format : `str`, optional
+            Format string for tick labels.
+        label : `str`, optional
+            Label to attach to inset colorbar.
+        ticks : `list`, optional
+            List of tick values.
+        fontsize : `int`, optional
+            Font size to use for ticks.
+        width : `str`, optional
+            Fraction of total axis width for inset colorbar.
+        height : `str`, optional
+            Fraction of total axis height for inset colorbar.
+        loc : `int`, optional
+            Matplotlib location code.
+        bbox_to_anchor : `tuple`, optional
+            Where to put inset colorbar bbox.
+        orientation : `str`, optional
+            Inset colorbar orientation (``horizontal`` or ``vertical``).
+        ax : `SkyAxesSubplot`, optional
+            Axis associated with inset colorbar.  If None, use
+            skyaxes associated with map.
+
+        Returns
+        -------
+        colorbar : `matplotlib.colorbar.Colorbar`
+        colorbar_axis : `mpl_toolkits.axes_grid1.parasite_axes.AxesHostAxes`
         """
         if ax is None:
-            ax = plt.gca()
+            ax = self._ax
         im = plt.gci()
         cax = inset_axes(ax,
                          width=width,
@@ -1048,6 +1076,15 @@ class Skyproj():
         self._redraw_dict['inset_colorbar_kwargs'] = cbar_kwargs
 
         return cbar, cax
+
+    def draw_colorbar(self, format=None, label=None, ticks=None, fontsize=11,
+                      ax=None, **kwargs):
+        """Draw a colorbar.
+
+        Parameters
+        ----------
+        """
+        pass
 
     def draw_milky_way(self, width=10, linewidth=1.5, color='black', linestyle='-', **kwargs):
         """Draw the Milky Way galaxy.
