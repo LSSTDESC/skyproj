@@ -51,6 +51,8 @@ class Skyproj():
                              'im': None,
                              'inset_colorbar': None,
                              'inset_colorbar_kwargs': {},
+                             'lon_range_home': None,
+                             'lat_range_home': None,
                              'vmin': None,
                              'vmax': None,
                              'xsize': None,
@@ -103,6 +105,11 @@ class Skyproj():
         # Set up callbacks on axis zoom.
         self._xlc = self._ax.callbacks.connect('xlim_changed', self._change_axis)
         self._ylc = self._ax.callbacks.connect('ylim_changed', self._change_axis)
+
+        # Set up callback on figure resize.
+        self._frc = self.ax.figure.canvas.mpl_connect('resize_event', self._change_size)
+        self._dc = self.ax.figure.canvas.mpl_connect('draw_event', self._draw_callback)
+        self._initial_extent_xy = self._ax.get_extent(lonlat=False)
 
     def proj(self, lon, lat):
         """Apply forward projection to a set of lon/lat positions.
@@ -366,6 +373,10 @@ class Skyproj():
             # Nothing to do yet.
             return
 
+        gone_home = False
+        if np.all(np.isclose(ax.get_extent(lonlat=False), self._initial_extent_xy)):
+            gone_home = True
+
         # Reset to new extent
         self._changed_x_axis = False
         self._changed_y_axis = False
@@ -375,8 +386,12 @@ class Skyproj():
         if self._aa is not None:
             self._aa.set_position(self._ax.get_position(), which='original')
 
-        lon_range = [min(extent[0], extent[1]), max(extent[0], extent[1])]
-        lat_range = [extent[2], extent[3]]
+        if gone_home:
+            lon_range = self._redraw_dict['lon_range_home']
+            lat_range = self._redraw_dict['lat_range_home']
+        else:
+            lon_range = [min(extent[0], extent[1]), max(extent[0], extent[1])]
+            lat_range = [extent[2], extent[3]]
 
         if self._redraw_dict['hpxmap'] is not None:
             lon_raster, lat_raster, values_raster = hpxmap_to_xy(self._redraw_dict['hpxmap'],
@@ -427,6 +442,22 @@ class Skyproj():
             # self._redraw_dict['inset_colorbar'].remove()
             # self.draw_inset_colorbar(**self._redraw_dict['inset_colorbar_kwargs'])
             pass
+
+    def _change_size(self, event):
+        """Callback for figure resize.
+
+        Parameters
+        ----------
+        event : `matplotlib.backend_bases.Event`
+        """
+        # This synchronizes the axis artist to the plot axes after zoom.
+        if self._aa is not None:
+            self._aa.set_position(self._ax.get_position(), which='original')
+
+    def _draw_callback(self, event):
+        # On draw it's sometimes necessary to synchronize the axisartist.
+        if self._aa is not None:
+            self._aa.set_position(self._ax.get_position(), which='original')
 
     def set_xlabel(self, text, side='bottom', **kwargs):
         """Set the label on the x axis.
@@ -688,6 +719,8 @@ class Skyproj():
         # Link up callbacks
         self._redraw_dict['hspmap'] = None
         self._redraw_dict['hpxmap'] = hpxmap
+        self._redraw_dict['lon_range_home'] = lon_range
+        self._redraw_dict['lat_range_home'] = lat_range
         self._redraw_dict['nside'] = nside
         self._redraw_dict['nest'] = nest
         self._redraw_dict['vmin'] = vmin
@@ -868,6 +901,8 @@ class Skyproj():
         # Link up callbacks
         self._redraw_dict['hspmap'] = hspmap
         self._redraw_dict['hpxmap'] = None
+        self._redraw_dict['lon_range_home'] = lon_range
+        self._redraw_dict['lat_range_home'] = lat_range
         self._redraw_dict['im'] = im
         self._redraw_dict['vmin'] = vmin
         self._redraw_dict['vmax'] = vmax
