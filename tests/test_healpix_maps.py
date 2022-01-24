@@ -53,6 +53,7 @@ def test_healsparse(tmp_path):
     ax = fig.add_subplot(111)
     m = skyproj.McBrydeSkyproj(ax=ax)
     m.draw_hspmap(hspmap, lon_range=[4.9, 5.3], lat_range=[4.9, 5.3], cmap=plt.colormaps['rainbow'])
+    m.draw_colorbar()
     fname = 'healsparse_two.png'
     fig.savefig(tmp_path / fname)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
@@ -96,6 +97,7 @@ def test_healpix(tmp_path):
     m = skyproj.McBrydeSkyproj(ax=ax)
     m.draw_hpxmap(hpxmap, nest=True, lon_range=[4.9, 5.3], lat_range=[4.9, 5.3],
                   cmap=plt.colormaps['rainbow'])
+    m.draw_colorbar()
     fname = 'healsparse_two.png'
     fig.savefig(tmp_path / fname)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
@@ -131,6 +133,7 @@ def test_hpxpix(tmp_path):
     m.draw_hpxpix(hspmap.nside_sparse, pixels, values, nest=True,
                   lon_range=[4.9, 5.3], lat_range=[4.9, 5.3],
                   cmap=plt.colormaps['rainbow'])
+    m.draw_colorbar()
     fname = 'healsparse_two.png'
     fig.savefig(tmp_path / fname)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
