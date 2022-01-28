@@ -89,8 +89,13 @@ def hspmap_to_xy(hspmap, lon_range, lat_range, xsize=1000, aspect=1.0):
     clat = (lat_raster[1:, 1:] + lat_raster[:-1, :-1])/2.
 
     values = hspmap.get_values_pos(clon, clat)
-
-    mask = np.isclose(values, hspmap._sentinel)
+    if not hspmap.is_wide_mask_map:
+        mask = np.isclose(values, hspmap._sentinel)
+    else:
+        # Special case wide masks.  We just display 1 where any bit
+        # is defined, and 0 otherwise.
+        values = np.any(values, axis=2).astype(np.int32)
+        mask = (values == 0)
 
     return lon_raster, lat_raster, np.ma.array(values, mask=mask)
 
