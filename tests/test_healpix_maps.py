@@ -105,6 +105,52 @@ def test_healpix(tmp_path):
         raise ImageComparisonFailure(err)
 
 
+def test_healsparse_widemask(tmp_path):
+    """Test plotting a healsparse wide mask."""
+    # Start with a 1-byte width map
+    hspmap = hsp.HealSparseMap.make_empty(32, 4096, hsp.WIDE_MASK, wide_mask_maxbits=7)
+    poly = hsp.geom.Polygon(ra=[0.0, 10.0, 10.0, 0.0], dec=[0.0, 0.0, 10.0, 10.0], value=1.0)
+    pixels = poly.get_pixels(nside=hspmap.nside_sparse)
+    hspmap.set_bits_pix(pixels, [0])
+    poly2 = hsp.geom.Polygon(ra=[5, 5.2, 5.2, 5.0], dec=[5, 5.0, 5.2, 5.2], value=3.0)
+    pixels2 = poly2.get_pixels(nside=hspmap.nside_sparse)
+    hspmap.set_bits_pix(pixels2, [4])
+
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    m = skyproj.McBrydeSkyproj(ax=ax)
+    im, lon_raster, lat_raster, values_raster = m.draw_hspmap(hspmap)
+    m.draw_inset_colorbar()
+    fname = 'healsparse_wide_one.png'
+    fig.savefig(tmp_path / fname)
+    err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
+    if err:
+        raise ImageComparisonFailure(err)
+
+    # And do the same with a 2-byte wide map
+    hspmap = hsp.HealSparseMap.make_empty(32, 4096, hsp.WIDE_MASK, wide_mask_maxbits=15)
+    poly = hsp.geom.Polygon(ra=[0.0, 10.0, 10.0, 0.0], dec=[0.0, 0.0, 10.0, 10.0], value=1.0)
+    pixels = poly.get_pixels(nside=hspmap.nside_sparse)
+    hspmap.set_bits_pix(pixels, [0])
+    poly2 = hsp.geom.Polygon(ra=[5, 5.2, 5.2, 5.0], dec=[5, 5.0, 5.2, 5.2], value=3.0)
+    pixels2 = poly2.get_pixels(nside=hspmap.nside_sparse)
+    hspmap.set_bits_pix(pixels2, [10])
+
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    m = skyproj.McBrydeSkyproj(ax=ax)
+    im, lon_raster, lat_raster, values_raster = m.draw_hspmap(hspmap)
+    m.draw_inset_colorbar()
+    fname2 = 'healsparse_wide_one_alt.png'
+    fig.savefig(tmp_path / fname2)
+    # Compare to the previoues one.
+    err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname2, 40.0)
+    if err:
+        raise ImageComparisonFailure(err)
+
+
 def test_hpxpix(tmp_path):
     """Test plotting healpix pixels."""
     hspmap = _get_hspmap()
