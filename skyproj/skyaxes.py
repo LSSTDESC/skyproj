@@ -39,9 +39,6 @@ class SkyAxes(matplotlib.axes.Axes):
         # Always equal aspect ratio.
         self.set_aspect('equal')
 
-        # Can set datalim here based on projection?  Though
-        # that I think is unnecessary because I redo everything anyway.
-
         return result
 
     def set_extent(self, extent, lonlat=True):
@@ -150,9 +147,8 @@ class SkyAxes(matplotlib.axes.Axes):
 
     @_add_lonlat
     def plot(self, *args, **kwargs):
-        # Line segments that cross should be split.  I think the
-        # path code might do this?
-        # In fact it will always do geodesic curves?  That would be cool.
+        # The transformation code will automatically plot geodesics
+        # and split line segements that cross the wrapping boundary.
         result = super().plot(*args, **kwargs)
 
         return result
@@ -165,7 +161,6 @@ class SkyAxes(matplotlib.axes.Axes):
 
     @_add_lonlat
     def pcolormesh(self, X, Y, C, **kwargs):
-        # This is going to take much more work.
         if kwargs.get('lonlat', True):
             # Check for wrapping around the edges.
             # Note that this only works for regularly gridded pcolormeshes
@@ -196,7 +191,12 @@ class SkyAxes(matplotlib.axes.Axes):
 
     @_add_lonlat
     def fill(self, *args, **kwargs):
-        # This might be more work?
         result = super().fill(*args, **kwargs)
+
+        return result
+
+    @_add_lonlat
+    def text(self, *args, **kwargs):
+        result = super().text(*args, **kwargs)
 
         return result
