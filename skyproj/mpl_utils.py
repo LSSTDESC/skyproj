@@ -162,6 +162,8 @@ class GridHelperSkyproj(GridHelperCurveLinear):
                     dy = xy[1, 1] - xy[1, 0]
                     angle = np.rad2deg(np.arctan2(dy, dx))
 
+                    label_dx = 0.0
+                    label_dy = 0.0
                     if lat_level < 0.0:
                         # Extra shift for labels in the south.
                         xy2 = self.grid_finder.transform_xy([self._lon_0 + deltas[0]]*2,
@@ -169,12 +171,10 @@ class GridHelperSkyproj(GridHelperCurveLinear):
                         dx2 = xy2[0, 1] - xy2[0, 0]
                         dy2 = xy2[1, 1] - xy2[1, 0]
 
-                        bound_slope = dy2/dx2
-                        label_dx = dx_offset_sign*dx/bound_slope/2.
-                        label_dy = dx/bound_slope/2.
-                    else:
-                        label_dx = 0.0
-                        label_dy = 0.0
+                        if dx2 != 0:
+                            bound_slope = dy2/dx2
+                            label_dx = dx_offset_sign*dx/bound_slope/2.
+                            label_dy = dx/bound_slope/2.
 
                     tick_locs.append(((xy[0, 0] + label_dx, xy[1, 0] + label_dy), angle))
 
@@ -191,7 +191,11 @@ class GridHelperSkyproj(GridHelperCurveLinear):
                 xy = self.grid_finder.transform_xy(self._lon_0, lat)
 
                 tick_locs = [(tuple(xy[:, 0]), 0.0)]
-                tick_labels = self.grid_finder.tick_formatter1(axis_side, 1.0, [self._lon_0])
+                if np.isclose(self._lon_0, 179.9999):
+                    lon_0 = 180.0
+                else:
+                    lon_0 = self._lon_0
+                tick_labels = self.grid_finder.tick_formatter1(axis_side, 1.0, [lon_0])
 
             prev_xy = None
             for ctr, ((xy, a), l) in enumerate(zip(tick_locs, tick_labels)):
