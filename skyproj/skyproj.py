@@ -44,7 +44,8 @@ class Skyproj():
     **kwargs : `dict`, optional
         Additional arguments to send to cartosky/proj4 projection initialization.
     """
-    pole_clip = 0.0
+    _pole_clip = 0.0
+    _top_bottom_outlines = True
 
     def __init__(self, ax=None, projection_name='cyl', lon_0=0, gridlines=True, celestial=True,
                  extent=None, longitude_ticks='positive', autorescale=True, **kwargs):
@@ -101,8 +102,25 @@ class Skyproj():
         self._wrap = (lon_0 + 180.) % 360.
         self._lon_0 = self.projection.proj4_params['lon_0']
 
+        self._full_sky = False
+        self._full_sky_extent = [
+            lon_0 - 180.0,
+            lon_0 + 180.0,
+            -90.0 + self._pole_clip,
+            90.0 - self._pole_clip
+        ]
+
+        self._full_sky = False
         if extent is None:
-            extent = [lon_0 - 180.0, lon_0 + 180.0, -90.0 + self.pole_clip, 90.0 - self.pole_clip]
+            extent = self._full_sky_extent
+            self._full_sky = True
+        elif np.allclose(extent, self._full_sky_extent):
+            self._full_sky = True
+
+        self._edge_line1 = None
+        self._edge_line2 = None
+        self._top_line = None
+        self._bottom_line = None
 
         self._initialize_axes(extent)
 
@@ -114,7 +132,12 @@ class Skyproj():
         self._frc = self.ax.figure.canvas.mpl_connect('resize_event', self._change_size)
         self._dc = self.ax.figure.canvas.mpl_connect('draw_event', self._draw_callback)
         self._initial_extent_xy = self._ax.get_extent(lonlat=False)
-        self._has_zoomed = False
+        if self._full_sky:
+            # Update the values based on the actual realized extent
+            self._full_sky_extent = self._ax.get_extent(lonlat=True)
+
+        self._draw_aa_bounds()
+        self._grid_helper.set_full_sky(self._full_sky)
 
     def proj(self, lon, lat):
         """Apply forward projection to a set of lon/lat positions.
@@ -187,16 +210,9 @@ class Skyproj():
         if self.do_gridlines:
             self._aa.grid(True, linestyle=':', color='k', lw=0.5)
 
-        # Draw the outer edges of the projection.  This needs to be forward-
-        # projected and drawn in that space to prevent out-of-bounds clipping.
-        # It also needs to be done just inside -180/180 to prevent the transform
-        # from resolving to the same line.
-        x, y = self.proj(np.linspace(self._lon_0 - 179.9999, self._lon_0 - 179.9999),
-                         np.linspace(-90., 90.))
-        self._ax.plot(x, y, 'k-', lonlat=False)
-        x, y = self.proj(np.linspace(self._lon_0 + 179.9999, self._lon_0 + 179.9999),
-                         np.linspace(-90., 90.))
-        self._ax.plot(x, y, 'k-', lonlat=False)
+        if self._full_sky:
+            self._aa.axis[:].line.set_visible(False)
+            self._aa.axis[:].major_ticks.set_visible(False)
 
         self._extent = self._ax.get_extent(lonlat=True)
         self._changed_x_axis = False
@@ -215,6 +231,69 @@ class Skyproj():
         """
         self._set_axes_limits(extent, invert=self.do_celestial)
         self._extent = self._ax.get_extent(lonlat=True)
+
+        self._draw_aa_bounds()
+
+    def _draw_aa_bounds(self):
+        """Set the axisartist bounds and labels."""
+        # How to tell we are going back to the full sky?
+        if np.allclose(self._extent, self._full_sky_extent):
+            self._full_sky = True
+        else:
+            self._full_sky = False
+
+        self._grid_helper.set_full_sky(self._full_sky)
+
+        # Remove any previous lines
+        if self._edge_line1:
+            self._edge_line1.remove()
+            self._edge_line2.remove()
+            self._edge_line1 = None
+            self._edge_line2 = None
+        if self._top_line:
+            self._top_line.remove()
+            self._bottom_line.remove()
+            self._top_line = None
+            self._bottom_line = None
+
+        # Full sky, we do not want to clip to show the full outline.
+        # Partial sky, we only want boundaries that are within the plotting
+        # frame to show up.
+        bounds_clip_on = True
+        if self._full_sky:
+            bounds_clip_on = False
+
+        # Draw the outer edges of the projection.  This needs to be forward-
+        # projected and drawn in that space to prevent out-of-bounds clipping.
+        # It also needs to be done just inside -180/180 to prevent the transform
+        # from resolving to the same line.
+        edge_offset = 179.99999
+        x, y = self.proj(np.linspace(self._lon_0 - edge_offset, self._lon_0 - edge_offset),
+                         np.linspace(-90., 90.))
+        self._edge_line1 = self._ax.plot(x, y, 'k-', linewidth=1, lonlat=False,
+                                         clip_on=bounds_clip_on)[0]
+        x, y = self.proj(np.linspace(self._lon_0 + edge_offset, self._lon_0 + edge_offset),
+                         np.linspace(-90., 90.))
+        self._edge_line2 = self._ax.plot(x, y, 'k-', linewidth=1, lonlat=False,
+                                         clip_on=bounds_clip_on)[0]
+
+        # Draw the top and bottom lines if necessary
+        if self._full_sky and self._top_bottom_outlines:
+            x0, y0 = self.proj(self._lon_0 - edge_offset, 90. - self._pole_clip)
+            x1, y1 = self.proj(self._lon_0 + edge_offset, 90. - self._pole_clip)
+            self._top_line = self._ax.plot([x0[0], x1[0]], [y0[0], y1[0]], 'k-', linewidth=1,
+                                           lonlat=False, clip_on=bounds_clip_on)[0]
+            x0, y0 = self.proj(self._lon_0 - edge_offset, -90. + self._pole_clip)
+            x1, y1 = self.proj(self._lon_0 + edge_offset, -90. + self._pole_clip)
+            self._bottom_line = self._ax.plot([x0[0], x1[0]], [y0[0], y1[0]], 'k-', linewidth=1,
+                                              lonlat=False, clip_on=bounds_clip_on)[0]
+
+        if self._full_sky:
+            self._aa.axis[:].line.set_visible(False)
+            self._aa.axis[:].major_ticks.set_visible(False)
+        else:
+            self._aa.axis[:].line.set_visible(True)
+            self._aa.axis[:].major_ticks.set_visible(True)
 
     def get_extent(self):
         """Get the extent in lon/lat coordinates.
@@ -294,7 +373,9 @@ class Skyproj():
             grid_locator2=grid_locator2,
             tick_formatter1=tick_formatter1,
             tick_formatter2=tick_formatter2,
-            celestial=self.do_celestial
+            celestial=self.do_celestial,
+            lon_0=self._lon_0,
+            full_sky_top_bottom_lon_0=not self._top_bottom_outlines,
         )
 
         self._grid_helper = grid_helper
@@ -390,6 +471,8 @@ class Skyproj():
         # This synchronizes the axis artist to the plot axes after zoom.
         if self._aa is not None:
             self._aa.set_position(self._ax.get_position(), which='original')
+
+        self._draw_aa_bounds()
 
         if gone_home:
             lon_range = self._redraw_dict['lon_range_home']
@@ -1215,7 +1298,8 @@ class LaeaSkyproj(Skyproj):
 
 class MollweideSkyproj(Skyproj):
     # Mollweide
-    pole_clip = 1.0
+    _pole_clip = 1.0
+    _top_bottom_outlines = False
 
     def __init__(self, **kwargs):
         super().__init__(projection_name='moll', **kwargs)
@@ -1223,6 +1307,8 @@ class MollweideSkyproj(Skyproj):
 
 class HammerSkyproj(Skyproj):
     # Hammer-Aitoff
+    _top_bottom_outlines = False
+
     def __init__(self, **kwargs):
         super().__init__(projection_name='hammer', **kwargs)
 
