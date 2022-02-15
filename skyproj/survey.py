@@ -10,7 +10,12 @@ class SurveySkyproj(Skyproj):
     """
     def draw_des(self, **kwargs):
         """Draw the DES footprint."""
-        return self.draw_des17(**kwargs)
+        return self.draw_des19(**kwargs)
+
+    def draw_des19(self, edgecolor='red', lw=2, **kwargs):
+        """Draw the DES 2019 footprint."""
+        filename = get_datafile('des-round19-poly.txt')
+        return self.draw_polygon_file(filename, edgecolor=edgecolor, lw=lw, **kwargs)
 
     def draw_des17(self, edgecolor='red', lw=2, **kwargs):
         """Draw the DES 2017 footprint."""
