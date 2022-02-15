@@ -33,6 +33,8 @@ def _get_hspmap():
 
 def test_healsparse(tmp_path):
     """Test plotting a healsparse map."""
+    plt.rcParams.update(plt.rcParamsDefault)
+
     hspmap = _get_hspmap()
 
     fig = plt.figure(1, figsize=(8, 5))
@@ -75,6 +77,8 @@ def test_healsparse(tmp_path):
 
 def test_healpix(tmp_path):
     """Test plotting a healpix map."""
+    plt.rcParams.update(plt.rcParamsDefault)
+
     hspmap = _get_hspmap()
     hpxmap = hspmap.generate_healpix_map()
 
@@ -107,6 +111,8 @@ def test_healpix(tmp_path):
 
 def test_healsparse_widemask(tmp_path):
     """Test plotting a healsparse wide mask."""
+    plt.rcParams.update(plt.rcParamsDefault)
+
     # Start with a 1-byte width map
     hspmap = hsp.HealSparseMap.make_empty(32, 4096, hsp.WIDE_MASK, wide_mask_maxbits=7)
     poly = hsp.geom.Polygon(ra=[0.0, 10.0, 10.0, 0.0], dec=[0.0, 0.0, 10.0, 10.0], value=1.0)
@@ -153,6 +159,8 @@ def test_healsparse_widemask(tmp_path):
 
 def test_hpxpix(tmp_path):
     """Test plotting healpix pixels."""
+    plt.rcParams.update(plt.rcParamsDefault)
+
     hspmap = _get_hspmap()
     pixels = hspmap.valid_pixels
     values = hspmap[pixels]

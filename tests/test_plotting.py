@@ -14,6 +14,8 @@ ROOT = os.path.abspath(os.path.dirname(__file__))
 
 def test_skyproj_plotting(tmp_path):
     """Test basic plotting routines."""
+    plt.rcParams.update(plt.rcParamsDefault)
+
     # Tests are consolidated for fewer comparisons.
     # Note that tests of wrapping lines and polygons are in
     # test_lines_polygons.

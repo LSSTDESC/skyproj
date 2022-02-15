@@ -14,6 +14,8 @@ ROOT = os.path.abspath(os.path.dirname(__file__))
 
 def test_draw_milky_way(tmp_path):
     """Test drawing the Milky Way."""
+    plt.rcParams.update(plt.rcParamsDefault)
+
     fig = plt.figure(1, figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)

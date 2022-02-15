@@ -19,6 +19,8 @@ ROOT = os.path.abspath(os.path.dirname(__file__))
                                           (skyproj.DecalsSkyproj, "DECaLS")])
 def test_survey_outlines(tmp_path, survey_tuple):
     """Test drawing survey outlines."""
+    plt.rcParams.update(plt.rcParamsDefault)
+
     survey = survey_tuple[0]
     name = survey_tuple[1]
 

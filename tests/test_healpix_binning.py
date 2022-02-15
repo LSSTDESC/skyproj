@@ -17,6 +17,8 @@ ROOT = os.path.abspath(os.path.dirname(__file__))
 
 def test_healpix_binning(tmp_path):
     """Test healpix binning functionality."""
+    plt.rcParams.update(plt.rcParamsDefault)
+
     np.random.seed(1234)
 
     ra = np.random.uniform(low=30.0, high=40.0, size=10000)
