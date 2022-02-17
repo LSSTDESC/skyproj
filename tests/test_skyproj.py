@@ -21,6 +21,8 @@ ROOT = os.path.abspath(os.path.dirname(__file__))
 @pytest.mark.parametrize("lon_0", [0.0, -100.0, 100.0, 180.0])
 def test_skyproj_basic(tmp_path, skyproj, lon_0):
     """Test full sky maps."""
+    plt.rcParams.update(plt.rcParamsDefault)
+
     # Full image
     fig = plt.figure(1, figsize=(8, 5))
     fig.clf()
@@ -40,6 +42,8 @@ def test_skyproj_basic(tmp_path, skyproj, lon_0):
                                      skyproj.EqualEarthSkyproj,
                                      skyproj.LaeaSkyproj])
 def test_skyproj_zoom(tmp_path, skyproj):
+    plt.rcParams.update(plt.rcParamsDefault)
+
     # Simple zoom
     fig = plt.figure(1, figsize=(8, 5))
     fig.clf()

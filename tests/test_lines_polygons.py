@@ -16,6 +16,8 @@ ROOT = os.path.abspath(os.path.dirname(__file__))
 @pytest.mark.parametrize("lon_0", [0.0, 180.0])
 def test_lines_polygons(tmp_path, lon_0):
     """Test drawing lines and polygons."""
+    plt.rcParams.update(plt.rcParamsDefault)
+
     # This code draws a bunch of geodesics and polygons that are
     # both empty and filled, and cross over the boundary, to ensure
     # that features are working as intended.
