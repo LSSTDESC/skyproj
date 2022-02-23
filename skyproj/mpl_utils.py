@@ -43,7 +43,6 @@ class WrappedFormatterDMS(angle_helper.FormatterDMS):
             Array of wrapped values, scaled by factor.
         """
         _values = np.atleast_1d(values)/factor
-        # _values = (_values + self._wrap) % 360 - self._wrap
         _values = wrap_values(_values, wrap=self._wrap)
         if self._longitude_ticks == 1:
             # Values should all be positive, 0 to 360
@@ -188,14 +187,16 @@ class GridHelperSkyproj(GridHelperCurveLinear):
                     lat = 89.99999
                 else:
                     lat = -89.99999
-                xy = self.grid_finder.transform_xy(self._lon_0, lat)
+
+                # Find the closest longitude line to lon_0
+                ind = np.argmin(np.abs(np.array(_grid_info["lon"]["levels"]) - self._lon_0))
+                lon_label = _grid_info["lon"]["levels"][ind]
+                xy = self.grid_finder.transform_xy(lon_label, lat)
 
                 tick_locs = [(tuple(xy[:, 0]), 0.0)]
-                if np.isclose(self._lon_0, 179.9999):
-                    lon_0 = 180.0
-                else:
-                    lon_0 = self._lon_0
-                tick_labels = self.grid_finder.tick_formatter1(axis_side, 1.0, [lon_0])
+                if np.isclose(lon_label, 179.9999):
+                    lon_label = 180.0
+                tick_labels = self.grid_finder.tick_formatter1(axis_side, 1.0, [lon_label])
 
             prev_xy = None
             for ctr, ((xy, a), l) in enumerate(zip(tick_locs, tick_labels)):
