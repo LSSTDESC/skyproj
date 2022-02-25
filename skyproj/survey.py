@@ -1,12 +1,12 @@
-from .skyproj import Skyproj
+from .skyproj import McBrydeSkyproj, LaeaSkyproj
 from .utils import get_datafile  # fix this
 
-__all__ = ['SurveySkyproj', 'DESSkyproj', 'BlissSkyproj', 'MaglitesSkyproj',
+__all__ = ['DESSkyproj', 'BlissSkyproj', 'MaglitesSkyproj',
            'DecalsSkyproj']
 
 
-class SurveySkyproj(Skyproj):
-    """Extension of a Skyproj to add routines for drawing survey outlines.
+class _Survey:
+    """Extension class to add routines for drawing survey outlines.
     """
     def draw_des(self, **kwargs):
         """Draw the DES footprint."""
@@ -97,29 +97,29 @@ class SurveySkyproj(Skyproj):
                                    **kwargs)
 
 
-class DESSkyproj(SurveySkyproj):
-    def __init__(self, ax=None, projection_name='mbtfpq', lon_0=0, gridlines=True,
+class DESSkyproj(McBrydeSkyproj, _Survey):
+    def __init__(self, ax=None, lon_0=0, gridlines=True,
                  celestial=True, extent=[90, -50, -75, 10], **kwargs):
-        super().__init__(ax=ax, projection_name=projection_name, lon_0=lon_0, gridlines=gridlines,
+        super().__init__(ax=ax, lon_0=lon_0, gridlines=gridlines,
                          celestial=celestial, extent=extent, **kwargs)
 
 
-class BlissSkyproj(SurveySkyproj):
-    def __init__(self, ax=None, projection_name='mbtfpq', lon_0=100, gridlines=True,
+class BlissSkyproj(McBrydeSkyproj, _Survey):
+    def __init__(self, ax=None, lon_0=100, gridlines=True,
                  celestial=True, extent=[-60, 250, -55, 0], **kwargs):
-        super().__init__(ax=ax, projection_name=projection_name, lon_0=lon_0, gridlines=gridlines,
+        super().__init__(ax=ax, lon_0=lon_0, gridlines=gridlines,
                          celestial=celestial, extent=extent, **kwargs)
 
 
-class MaglitesSkyproj(SurveySkyproj):
-    def __init__(self, ax=None, projection_name='laea', lon_0=0, lat_0=-90, gridlines=True,
+class MaglitesSkyproj(LaeaSkyproj, _Survey):
+    def __init__(self, ax=None, lon_0=0, lat_0=-90, gridlines=True,
                  celestial=True, extent=[-150, 70, -85, -50], **kwargs):
-        super().__init__(ax=ax, projection_name=projection_name, lon_0=lon_0, lat_0=lat_0,
+        super().__init__(ax=ax, lon_0=lon_0, lat_0=lat_0,
                          gridlines=gridlines, celestial=celestial, extent=extent, **kwargs)
 
 
-class DecalsSkyproj(SurveySkyproj):
-    def __init__(self, ax=None, projection_name='mbtfpq', lon_0=105.0, gridlines=True,
+class DecalsSkyproj(McBrydeSkyproj, _Survey):
+    def __init__(self, ax=None, lon_0=105.0, gridlines=True,
                  celestial=True, extent=[180, -180, -30, 40], **kwargs):
-        super().__init__(ax=ax, projection_name=projection_name, lon_0=lon_0, gridlines=gridlines,
+        super().__init__(ax=ax, lon_0=lon_0, gridlines=gridlines,
                          celestial=celestial, extent=extent, **kwargs)
