@@ -46,6 +46,8 @@ class Skyproj():
     """
     _pole_clip = 0.0
     _top_bottom_outlines = True
+    _edge_outlines = True
+    _full_circle = False
 
     def __init__(self, ax=None, projection_name='cyl', lon_0=0, gridlines=True, celestial=True,
                  extent=None, longitude_ticks='positive', autorescale=True, **kwargs):
@@ -102,7 +104,6 @@ class Skyproj():
         self._wrap = (lon_0 + 180.) % 360.
         self._lon_0 = self.projection.proj4_params['lon_0']
 
-        self._full_sky = False
         self._full_sky_extent = [
             lon_0 - 180.0,
             lon_0 + 180.0,
@@ -263,19 +264,21 @@ class Skyproj():
         if self._full_sky:
             bounds_clip_on = False
 
-        # Draw the outer edges of the projection.  This needs to be forward-
-        # projected and drawn in that space to prevent out-of-bounds clipping.
-        # It also needs to be done just inside -180/180 to prevent the transform
-        # from resolving to the same line.
-        edge_offset = 179.99999
-        x, y = self.proj(np.linspace(self._lon_0 - edge_offset, self._lon_0 - edge_offset),
-                         np.linspace(-90., 90.))
-        self._edge_line1 = self._ax.plot(x, y, 'k-', linewidth=1, lonlat=False,
-                                         clip_on=bounds_clip_on)[0]
-        x, y = self.proj(np.linspace(self._lon_0 + edge_offset, self._lon_0 + edge_offset),
-                         np.linspace(-90., 90.))
-        self._edge_line2 = self._ax.plot(x, y, 'k-', linewidth=1, lonlat=False,
-                                         clip_on=bounds_clip_on)[0]
+        if self._edge_outlines:
+            # Draw the outer edges of the projection.  This needs to be forward-
+            # projected and drawn in that space to prevent out-of-bounds clipping.
+            # It also needs to be done just inside -180/180 to prevent the transform
+            # from resolving to the same line.
+            print('Drawing edge outlines')
+            edge_offset = 179.99999
+            x, y = self.proj(np.linspace(self._lon_0 - edge_offset, self._lon_0 - edge_offset),
+                             np.linspace(-90., 90.))
+            self._edge_line1 = self._ax.plot(x, y, 'k-', linewidth=1, lonlat=False,
+                                             clip_on=bounds_clip_on)[0]
+            x, y = self.proj(np.linspace(self._lon_0 + edge_offset, self._lon_0 + edge_offset),
+                             np.linspace(-90., 90.))
+            self._edge_line2 = self._ax.plot(x, y, 'k-', linewidth=1, lonlat=False,
+                                             clip_on=bounds_clip_on)[0]
 
         # Draw the top and bottom lines if necessary
         if self._full_sky and self._top_bottom_outlines:
@@ -348,7 +351,7 @@ class Skyproj():
             Axis extent [lon_min, lon_max, lat_min, lat_max] (degrees).
         """
         extreme_finder = ExtremeFinderWrapped(20, 20, self._wrap)
-        if self._wrap == 180.0:
+        if self._wrap == 180.0 and not self._full_circle:
             include_last_lon = True
         else:
             include_last_lon = False
@@ -1292,6 +1295,9 @@ class McBrydeSkyproj(Skyproj):
 
 class LaeaSkyproj(Skyproj):
     # Lambert Azimuthal Equal Area
+    _edge_outlines = False
+    _full_circle = True
+
     def __init__(self, **kwargs):
         super().__init__(projection_name='laea', **kwargs)
 
