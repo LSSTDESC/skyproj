@@ -17,7 +17,7 @@ __all__ = ['Skyproj', 'McBrydeSkyproj', 'LaeaSkyproj', 'MollweideSkyproj',
            'HammerSkyproj', 'EqualEarthSkyproj']
 
 
-class Skyproj():
+class _Skyproj():
     """Base class for creating Skyproj objects.
 
     Parameters
@@ -1284,16 +1284,24 @@ class Skyproj():
                           linestyle='--', **kwargs)
 
 
+# The default skyproj is a cylindrical Plate Carree projection.
+
+class Skyproj(_Skyproj):
+    # Plate Carree
+    def __init__(self, **kwargs):
+        super().__init__(projection_name='cyl', **kwargs)
+
+
 # The following skyprojs include the equal-area projections that are tested
 # and known to work.
 
-class McBrydeSkyproj(Skyproj):
+class McBrydeSkyproj(_Skyproj):
     # McBryde-Thomas Flat Polar Quartic
     def __init__(self, **kwargs):
         super().__init__(projection_name='mbtfpq', **kwargs)
 
 
-class LaeaSkyproj(Skyproj):
+class LaeaSkyproj(_Skyproj):
     # Lambert Azimuthal Equal Area
     _edge_outlines = False
     _full_circle = True
@@ -1302,7 +1310,7 @@ class LaeaSkyproj(Skyproj):
         super().__init__(projection_name='laea', **kwargs)
 
 
-class MollweideSkyproj(Skyproj):
+class MollweideSkyproj(_Skyproj):
     # Mollweide
     _pole_clip = 1.0
     _top_bottom_outlines = False
@@ -1311,7 +1319,7 @@ class MollweideSkyproj(Skyproj):
         super().__init__(projection_name='moll', **kwargs)
 
 
-class HammerSkyproj(Skyproj):
+class HammerSkyproj(_Skyproj):
     # Hammer-Aitoff
     _top_bottom_outlines = False
 
@@ -1319,7 +1327,7 @@ class HammerSkyproj(Skyproj):
         super().__init__(projection_name='hammer', **kwargs)
 
 
-class EqualEarthSkyproj(Skyproj):
+class EqualEarthSkyproj(_Skyproj):
     # Equal Earth
     def __init__(self, **kwargs):
         super().__init__(projection_name='eqearth', **kwargs)
