@@ -104,12 +104,7 @@ class _Skyproj():
         self._wrap = (lon_0 + 180.) % 360.
         self._lon_0 = self.projection.proj4_params['lon_0']
 
-        self._full_sky_extent = [
-            lon_0 - 180.0,
-            lon_0 + 180.0,
-            -90.0 + self._pole_clip,
-            90.0 - self._pole_clip
-        ]
+        self._full_sky_extent = self._full_sky_extent_initial
 
         self._full_sky = False
         if extent is None:
@@ -1283,6 +1278,12 @@ class _Skyproj():
                 self.plot(ra, dec, linewidth=1.0, color=color,
                           linestyle='--', **kwargs)
 
+    @property
+    def _full_sky_extent_initial(self):
+        return [self._lon_0 - 180.0,
+                self._lon_0 + 180.0,
+                -90.0 + self._pole_clip,
+                90.0 - self._pole_clip]
 
 # The default skyproj is a cylindrical Plate Carree projection.
 
@@ -1303,11 +1304,29 @@ class McBrydeSkyproj(_Skyproj):
 
 class LaeaSkyproj(_Skyproj):
     # Lambert Azimuthal Equal Area
+    _top_bottom_outlines = False
     _edge_outlines = False
     _full_circle = True
 
     def __init__(self, **kwargs):
         super().__init__(projection_name='laea', **kwargs)
+
+    @property
+    def _full_sky_extent_initial(self):
+        lon0 = self._lon_0 - 180.0
+        lon1 = self._lon_0 + 180.0
+        _lat_0 = self.projection.proj4_params['lat_0']
+        if _lat_0 == -90.0:
+            lat0 = -90.0
+            lat1 = 90.0 - 1e-5
+        elif _lat_0 == 90.0:
+            lat0 = -90.0 + 1e-5
+            lat1 = 90.0
+        else:
+            lat0 = -90.0 + 1e-5
+            lat1 = 90.0 - 1e-5
+
+        return [lon0, lon1, lat0, lat1]
 
 
 class MollweideSkyproj(_Skyproj):
