@@ -12,7 +12,7 @@ __all__ = ["SkyProjection", "PlateCarree", "McBrydeThomasFlatPolarQuartic", "Mol
            "get_projection", "get_available_projections"]
 
 
-RADIUS = 6378137.0  # meters
+RADIUS = 1.0
 
 
 class SkyProjection(CRS):
