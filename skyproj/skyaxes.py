@@ -33,7 +33,6 @@ class SkyAxes(matplotlib.axes.Axes):
         self.xaxis.set_visible(False)
         self.yaxis.set_visible(False)
 
-        # Whether the frame should be on is a decision of the axis artist maybe?
         self.set_frame_on(False)
 
         # Always equal aspect ratio.
