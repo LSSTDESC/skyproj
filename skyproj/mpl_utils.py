@@ -142,22 +142,11 @@ class GridHelperSkyproj(GridHelperCurveLinear):
             tick_locs = _grid_info[lon_or_lat]["tick_locs"][axis_side]
             tick_labels = _grid_info[lon_or_lat]["tick_labels"][axis_side]
 
-            if lon_or_lat == "lon" and self._full_sky and self._full_sky_top_bottom_lon_0 \
-               and axis_side in ["top", "bottom"]:
-                if axis_side == "top":
-                    lat = 89.99999
-                else:
-                    lat = -89.99999
-
-                # Find the closest longitude line to lon_0
-                ind = np.argmin(np.abs(np.array(_grid_info["lon"]["levels"]) - self._lon_0))
-                lon_label = _grid_info["lon"]["levels"][ind]
-                xy = self.grid_finder.transform_xy(lon_label, lat)
-
-                tick_locs = [(tuple(xy[:, 0]), 0.0)]
-                if np.isclose(lon_label, 179.9999):
-                    lon_label = 180.0
-                tick_labels = self.grid_finder.tick_formatter1(axis_side, 1.0, [lon_label])
+            if lon_or_lat == "lon" \
+               and np.max(_grid_info['lat']["levels"]) > 89.0 \
+               and self._equatorial_labels:
+                tick_locs = []
+                tick_labels = []
 
             prev_xy = None
             for ctr, ((xy, a), l) in enumerate(zip(tick_locs, tick_labels)):
@@ -171,10 +160,7 @@ class GridHelperSkyproj(GridHelperCurveLinear):
                     if abs(xy[0] - prev_xy[0])/delta_x < 0.05:
                         continue
                 prev_xy = xy
-                # if lon_or_lat == 'lat':
                 yield xy, angle_normal, angle_tangent, l
-                # else:
-                #    yield xy, angle_normal, angle_tangent, ''
         else:
             for (xy, a), l in zip(
                     _grid_info[lon_or_lat]["tick_locs"][axis_side],
