@@ -103,11 +103,14 @@ class ExtremeFinderWrapped(ExtremeFinderSimple):
 class GridHelperSkyproj(GridHelperCurveLinear):
     """GridHelperCurveLinear with tick overlap protection and additional labels.
     """
-    def __init__(self, *args, celestial=True, lon_0=0.0, full_sky_top_bottom_lon_0=False, **kwargs):
+    def __init__(self, *args, celestial=True, lon_0=0.0, full_sky_top_bottom_lon_0=False,
+                 equatorial_labels=False, **kwargs):
         self._celestial = celestial
         self._full_sky = False
         self._lon_0 = lon_0
         self._full_sky_top_bottom_lon_0 = full_sky_top_bottom_lon_0
+        self._equatorial_labels = equatorial_labels
+
         super().__init__(*args, **kwargs)
 
     def set_full_sky(self, full_sky):
@@ -120,7 +123,6 @@ class GridHelperSkyproj(GridHelperCurveLinear):
         self._full_sky = full_sky
 
     def get_tick_iterator(self, nth_coord, axis_side, minor=False):
-
         try:
             _grid_info = self._grid_info
         except AttributeError:
@@ -140,49 +142,8 @@ class GridHelperSkyproj(GridHelperCurveLinear):
             tick_locs = _grid_info[lon_or_lat]["tick_locs"][axis_side]
             tick_labels = _grid_info[lon_or_lat]["tick_labels"][axis_side]
 
-            if lon_or_lat == "lat" and self._full_sky and axis_side in ['left', 'right']:
-                # We need additional ticks following the curved boundary
-                if axis_side == 'left':
-                    deltas = np.array([-179.99999, -175.])
-                    dx_offset_sign = 1.0
-                else:
-                    deltas = np.array([179.99999, 175.0])
-                    dx_offset_sign = -1.0
-
-                levels = []
-                tick_locs = []
-                for lat_level in _grid_info["lat"]["levels"]:
-                    # Skip any levels near the pole
-                    if np.abs(np.abs(lat_level) - 90.0) < 5.0:
-                        continue
-
-                    xy = self.grid_finder.transform_xy(self._lon_0 + deltas, [lat_level]*2)
-                    dx = xy[0, 1] - xy[0, 0]
-                    dy = xy[1, 1] - xy[1, 0]
-                    angle = np.rad2deg(np.arctan2(dy, dx))
-
-                    label_dx = 0.0
-                    label_dy = 0.0
-                    if lat_level < 0.0:
-                        # Extra shift for labels in the south.
-                        xy2 = self.grid_finder.transform_xy([self._lon_0 + deltas[0]]*2,
-                                                            [lat_level - 1.0, lat_level + 1.0])
-                        dx2 = xy2[0, 1] - xy2[0, 0]
-                        dy2 = xy2[1, 1] - xy2[1, 0]
-
-                        if dx2 != 0:
-                            bound_slope = dy2/dx2
-                            label_dx = dx_offset_sign*dx/bound_slope/2.
-                            label_dy = dx/bound_slope/2.
-
-                    tick_locs.append(((xy[0, 0] + label_dx, xy[1, 0] + label_dy), angle))
-
-                    levels.append(lat_level)
-
-                tick_labels = self.grid_finder.tick_formatter2(axis_side, 1.0, levels)
-
-            elif (lon_or_lat == "lon" and self._full_sky and self._full_sky_top_bottom_lon_0
-                  and axis_side in ["top", "bottom"]):
+            if lon_or_lat == "lon" and self._full_sky and self._full_sky_top_bottom_lon_0 \
+               and axis_side in ["top", "bottom"]:
                 if axis_side == "top":
                     lat = 89.99999
                 else:
@@ -210,7 +171,10 @@ class GridHelperSkyproj(GridHelperCurveLinear):
                     if abs(xy[0] - prev_xy[0])/delta_x < 0.05:
                         continue
                 prev_xy = xy
+                # if lon_or_lat == 'lat':
                 yield xy, angle_normal, angle_tangent, l
+                # else:
+                #    yield xy, angle_normal, angle_tangent, ''
         else:
             for (xy, a), l in zip(
                     _grid_info[lon_or_lat]["tick_locs"][axis_side],
