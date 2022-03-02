@@ -302,8 +302,12 @@ class _Skyproj():
         if inverted:
             gi_side_map = {'left': 'right',
                            'right': 'left'}
+            x0_index = 1
+            x1_index = 0
         else:
             gi_side_map = {side: side for side in ['left', 'right']}
+            x0_index = 0
+            x1_index = 1
 
         boundary_labels = []
 
@@ -339,6 +343,9 @@ class _Skyproj():
 
                 # Skip any that are out of the y bounding box.
                 if lat_line_y[0] < extent_xy[2] or lat_line_y[0] > extent_xy[3]:
+                    continue
+
+                if lat_line_x[0] < extent_xy[x0_index] or lat_line_y[0] > extent_xy[x1_index]:
                     continue
 
                 label = self._tick_formatter2(axis_side, 1.0, [lat_level])[0]
