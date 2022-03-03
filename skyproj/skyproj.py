@@ -103,14 +103,8 @@ class _Skyproj():
         self._wrap = (lon_0 + 180.) % 360.
         self._lon_0 = self.projection.proj4_params['lon_0']
 
-        self._full_sky_extent = self._full_sky_extent_initial
-
-        self._full_sky = False
         if extent is None:
-            extent = self._full_sky_extent
-            self._full_sky = True
-        elif np.allclose(extent, self._full_sky_extent):
-            self._full_sky = True
+            extent = self._full_sky_extent_initial
 
         self._boundary_lines = None
         self._boundary_labels = []
@@ -125,12 +119,8 @@ class _Skyproj():
         self._frc = self.ax.figure.canvas.mpl_connect('resize_event', self._change_size)
         self._dc = self.ax.figure.canvas.mpl_connect('draw_event', self._draw_callback)
         self._initial_extent_xy = self._ax.get_extent(lonlat=False)
-        if self._full_sky:
-            # Update the values based on the actual realized extent
-            self._full_sky_extent = self._ax.get_extent(lonlat=True)
 
         self._draw_aa_bounds_and_labels()
-        self._grid_helper.set_full_sky(self._full_sky)
 
     def proj(self, lon, lat):
         """Apply forward projection to a set of lon/lat positions.
@@ -234,15 +224,6 @@ class _Skyproj():
 
     def _draw_aa_bounds_and_labels(self):
         """Set the axisartist bounds and labels."""
-        # How to tell we are going back to the full sky?
-        # if np.allclose(self._extent, self._full_sky_extent):
-        if np.allclose(self.get_extent(), self._full_sky_extent):
-            self._full_sky = True
-        else:
-            self._full_sky = False
-
-        self._grid_helper.set_full_sky(self._full_sky)
-
         # Remove any previous lines
         if self._boundary_lines:
             for line in self._boundary_lines:
@@ -386,48 +367,88 @@ class _Skyproj():
 
         boundary_labels = []
 
-        for axis_side in ['top', 'bottom']:
-            if not self._aa.axis[axis_side].major_ticklabels.get_visible():
-                continue
+        draw_equatorial_labels = False
+        if self._equatorial_labels:
+            min_lat = np.min(grid_info['lat']['levels'])
+            max_lat = np.max(grid_info['lat']['levels'])
+            if min_lat < -89.0 and max_lat > 89.0:
+                draw_equatorial_labels = True
 
-            tick_levels = grid_info['lon']['tick_levels'][axis_side]
+        if draw_equatorial_labels:
+            inverted = (extent_xy[1] < extent_xy[0])
+            if inverted:
+                x0_index = 1
+                x1_index = 0
+            else:
+                x0_index = 0
+                x1_index = 1
+
+            levels = np.array(grid_info['lon']['levels'])
+
+            x, y = self.proj(levels, np.zeros(len(levels)))
+
+            ok, = np.where((x > extent_xy[x0_index]) & (x < extent_xy[x1_index]))
 
             prev_x = None
-            for lon_level, lon_line in zip(levels, lines):
-                if lon_level in tick_levels:
-                    continue
-
-                lon_line_x = lon_line[0][0]
-                lon_line_y = lon_line[0][1]
-
-                if (lon_line_y[0] < extent_xy[2] or lon_line_y[0] > extent_xy[3]):
-                    continue
-
-                if axis_side == 'top':
-                    va = 'bottom'
-                    index = -1
-                    y_offset = 0.02*(lon_line_y[-1] - lon_line_y[0])
-                else:
-                    va = 'top'
-                    index = 0
-                    y_offset = -0.02*(lon_line_y[-1] - lon_line_y[0])
-
+            for i in ok:
                 if prev_x is not None:
-                    # check if too close to last label.
-                    if abs(lon_line_x[index] - prev_x)/delta_x < 0.05:
+                    # Check if too close to last label.
+                    if abs(x[i] - prev_x)/delta_x < 0.05:
                         continue
+                prev_x = x[i]
 
-                prev_x = lon_line_x[index]
-
-                label = self._tick_formatter1(axis_side, 1.0, [lon_level])[0]
-                boundary_labels.append(self._ax.text(lon_line_x[index],
-                                                     lon_line_y[index] + y_offset,
+                label = self._tick_formatter1('top', 1.0, [levels[i]])[0]
+                boundary_labels.append(self._ax.text(x[i],
+                                                     y[i],
                                                      label,
                                                      size=plt.rcParams['xtick.labelsize'],
                                                      lonlat=False,
                                                      clip_on=False,
-                                                     ha='center',
-                                                     va=va))
+                                                     ha='right',
+                                                     va='bottom'))
+        else:
+            for axis_side in ['top', 'bottom']:
+                if not self._aa.axis[axis_side].major_ticklabels.get_visible():
+                    continue
+
+                tick_levels = grid_info['lon']['tick_levels'][axis_side]
+
+                prev_x = None
+                for lon_level, lon_line in zip(levels, lines):
+                    if lon_level in tick_levels:
+                        continue
+
+                    lon_line_x = lon_line[0][0]
+                    lon_line_y = lon_line[0][1]
+
+                    if (lon_line_y[0] < extent_xy[2] or lon_line_y[0] > extent_xy[3]):
+                        continue
+
+                    if axis_side == 'top':
+                        va = 'bottom'
+                        index = -1
+                        y_offset = 0.02*(lon_line_y[-1] - lon_line_y[0])
+                    else:
+                        va = 'top'
+                        index = 0
+                        y_offset = -0.02*(lon_line_y[-1] - lon_line_y[0])
+
+                    if prev_x is not None:
+                        # check if too close to last label.
+                        if abs(lon_line_x[index] - prev_x)/delta_x < 0.05:
+                            continue
+
+                    prev_x = lon_line_x[index]
+
+                    label = self._tick_formatter1(axis_side, 1.0, [lon_level])[0]
+                    boundary_labels.append(self._ax.text(lon_line_x[index],
+                                                         lon_line_y[index] + y_offset,
+                                                         label,
+                                                         size=plt.rcParams['xtick.labelsize'],
+                                                         lonlat=False,
+                                                         clip_on=False,
+                                                         ha='center',
+                                                         va=va))
 
         return boundary_labels
 
@@ -510,7 +531,6 @@ class _Skyproj():
             tick_formatter1=self._tick_formatter1,
             tick_formatter2=self._tick_formatter2,
             celestial=self.do_celestial,
-            lon_0=self._lon_0,
             equatorial_labels=self._equatorial_labels
         )
 

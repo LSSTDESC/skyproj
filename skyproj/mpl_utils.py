@@ -103,24 +103,11 @@ class ExtremeFinderWrapped(ExtremeFinderSimple):
 class GridHelperSkyproj(GridHelperCurveLinear):
     """GridHelperCurveLinear with tick overlap protection and additional labels.
     """
-    def __init__(self, *args, celestial=True, lon_0=0.0, full_sky_top_bottom_lon_0=False,
-                 equatorial_labels=False, **kwargs):
+    def __init__(self, *args, celestial=True, equatorial_labels=False, **kwargs):
         self._celestial = celestial
-        self._full_sky = False
-        self._lon_0 = lon_0
-        self._full_sky_top_bottom_lon_0 = full_sky_top_bottom_lon_0
         self._equatorial_labels = equatorial_labels
 
         super().__init__(*args, **kwargs)
-
-    def set_full_sky(self, full_sky):
-        """Set the grid helper for full sky mode.
-
-        Parameters
-        ----------
-        full_sky : `bool`
-        """
-        self._full_sky = full_sky
 
     def get_tick_iterator(self, nth_coord, axis_side, minor=False):
         try:
@@ -142,11 +129,13 @@ class GridHelperSkyproj(GridHelperCurveLinear):
             tick_locs = _grid_info[lon_or_lat]["tick_locs"][axis_side]
             tick_labels = _grid_info[lon_or_lat]["tick_labels"][axis_side]
 
-            if lon_or_lat == "lon" \
-               and np.max(_grid_info['lat']["levels"]) > 89.0 \
-               and self._equatorial_labels:
-                tick_locs = []
-                tick_labels = []
+            if lon_or_lat == "lon" and self._equatorial_labels:
+                min_lat = np.min(_grid_info["lat"]["levels"])
+                max_lat = np.max(_grid_info["lat"]["levels"])
+                if (min_lat < -89.0 and axis_side == "bottom") \
+                   or (max_lat > 89.0 and axis_side == "top"):
+                    tick_locs = []
+                    tick_labels = []
 
             prev_xy = None
             for ctr, ((xy, a), l) in enumerate(zip(tick_locs, tick_labels)):
