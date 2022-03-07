@@ -99,7 +99,7 @@ class _Survey:
 
 class DESSkyproj(McBrydeSkyproj, _Survey):
     def __init__(self, ax=None, lon_0=0, gridlines=True,
-                 celestial=True, extent=[90, -50, -75, 10], **kwargs):
+                 celestial=True, extent=[90, -50, -74, 10], **kwargs):
         super().__init__(ax=ax, lon_0=lon_0, gridlines=gridlines,
                          celestial=celestial, extent=extent, **kwargs)
 
