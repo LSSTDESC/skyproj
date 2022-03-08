@@ -574,8 +574,8 @@ class _Skyproj():
         self._aa.axis['bottom'].major_ticklabels.set_visible(True)
         self._aa.axis['top'].major_ticklabels.set_visible(True)
 
-        self.set_xlabel('Right Ascension', size=16)
-        self.set_ylabel('Declination', size=16)
+        self.set_xlabel(self._default_xy_labels[0], size=16)
+        self.set_ylabel(self._default_xy_labels[1], size=16)
 
         fig.sca(self._ax)
 
@@ -1499,6 +1499,11 @@ class _Skyproj():
         # Is the initial extent in x/y space?
         return False
 
+    @property
+    def _default_xy_labels(self):
+        # Default labels in x, y
+        return ("Right Ascension", "Declination")
+
 
 class _Stadium:
     """Extension class to create a stadium-shaped projection boundary.
@@ -1625,6 +1630,10 @@ class LaeaSkyproj(_Skyproj, _Circle):
     @property
     def _radial_labels(self):
         return True
+
+    @property
+    def _default_xy_labels(self):
+        return ("", "")
 
     @property
     def _full_sky_extent_initial(self):
