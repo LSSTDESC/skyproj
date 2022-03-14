@@ -22,6 +22,28 @@ class SkyProjection(CRS):
         self.proj4_params.update(**kwargs)
         super().__init__(self.proj4_params)
 
+    def with_new_center(self, lon_0, lat_0=None):
+        """Create a new SkyProjection with a new lon_0/lat_0.
+
+        Parameters
+        ----------
+        lon_0 : `float`
+            New longitude center.
+        lat_0 : `float`, optional
+            New latitude center (for projections that support it.)
+
+        Returns
+        -------
+        proj : `skyproj.SkyProjection`
+            New projection.
+        """
+        proj4_params = self.proj4_params.copy()
+        proj4_params['lon_0'] = lon_0
+        if lat_0 is not None:
+            proj4_params['lat_0'] = lat_0
+
+        return self.__class__(**proj4_params)
+
     def transform_points(self, src_crs, x, y):
         result_shape = tuple(x.shape[i] for i in range(x.ndim)) + (2, )
 
@@ -57,6 +79,17 @@ class SkyProjection(CRS):
             return result.reshape(result_shape)
 
         return result
+
+    @property
+    def lon_0(self):
+        return self.proj4_params['lon_0']
+
+    @property
+    def lat_0(self):
+        if 'lat_0' in self.proj4_params:
+            return self.proj4_params['lat_0']
+        else:
+            return None
 
     def _as_mpl_transform(self, axes=None):
         from .transforms import SkyTransform
