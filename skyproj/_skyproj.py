@@ -94,7 +94,6 @@ class _Skyproj():
         self._autorescale = autorescale
 
         self._wrap = (lon_0 + 180.) % 360.
-        self._lon_0 = self.projection.proj4_params['lon_0']
 
         extent_xy = None
         if extent is None:
@@ -826,24 +825,24 @@ class _Skyproj():
         # Compute lon_min so that it fits all the data.
         enclosed = False
         lon_min = lon_cent - lon_step
-        while not enclosed and lon_min > (self._lon_0 - 180.0):
+        while not enclosed and lon_min > (self.lon_0 - 180.0):
             e_x, e_y = self.proj([lon_min, lon_min], [lat_min, lat_max])
             n_out = np.sum(x < e_x.min())
             if n_out == 0:
                 enclosed = True
             else:
-                lon_min = np.clip(lon_min - lon_step, self._lon_0 - 180., None)
+                lon_min = np.clip(lon_min - lon_step, self.lon_0 - 180., None)
 
         # Compute lon_max so that it fits all the data
         enclosed = False
         lon_max = lon_cent + lon_step
-        while not enclosed and lon_max < (self._lon_0 + 180.0):
+        while not enclosed and lon_max < (self.lon_0 + 180.0):
             e_x, e_y = self.proj([lon_max, lon_max], [lat_min, lat_max])
             n_out = np.sum(x > e_x.max())
             if n_out == 0:
                 enclosed = True
             else:
-                lon_max = np.clip(lon_max + lon_step, None, self._lon_0 + 180.)
+                lon_max = np.clip(lon_max + lon_step, None, self.lon_0 + 180.)
 
         return [lon_max, lon_min, lat_min, lat_max]
 
@@ -1481,9 +1480,17 @@ class _Skyproj():
                           linestyle='--', **kwargs)
 
     @property
+    def lon_0(self):
+        return self._ax.lon_0
+
+    @property
+    def lat_0(self):
+        return self._ax.lat_0
+
+    @property
     def _full_sky_extent_initial(self):
-        return [self._lon_0 - 180.0,
-                self._lon_0 + 180.0,
+        return [self.lon_0 - 180.0,
+                self.lon_0 + 180.0,
                 -90.0 + self._pole_clip,
                 90.0 - self._pole_clip]
 

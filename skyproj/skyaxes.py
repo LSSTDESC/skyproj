@@ -199,3 +199,11 @@ class SkyAxes(matplotlib.axes.Axes):
         result = super().text(*args, **kwargs)
 
         return result
+
+    @property
+    def lon_0(self):
+        return self.projection.lon_0
+
+    @property
+    def lat_0(self):
+        return self.projection.lat_0

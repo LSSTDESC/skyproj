@@ -15,32 +15,32 @@ class _Stadium:
         edge_offset = 180.0 - 1e-6
         nstep = 1000
 
-        x, y = self.proj(np.linspace(self._lon_0 - edge_offset,
-                                     self._lon_0 - edge_offset,
+        x, y = self.proj(np.linspace(self.lon_0 - edge_offset,
+                                     self.lon_0 - edge_offset,
                                      nstep),
                          np.linspace(-90.0 + 1e-6,
                                      90.0 - 1e-6,
                                      nstep))
         proj_boundary_xy['left'] = np.column_stack((x, y))
 
-        x, y = self.proj(np.linspace(self._lon_0 + edge_offset,
-                                     self._lon_0 + edge_offset,
+        x, y = self.proj(np.linspace(self.lon_0 + edge_offset,
+                                     self.lon_0 + edge_offset,
                                      nstep),
                          np.linspace(-90.0 + 1e-6,
                                      90.0 - 1e-6,
                                      nstep))
         proj_boundary_xy['right'] = np.column_stack((x, y))
 
-        x, y = self.proj(np.linspace(self._lon_0 - edge_offset,
-                                     self._lon_0 + edge_offset,
+        x, y = self.proj(np.linspace(self.lon_0 - edge_offset,
+                                     self.lon_0 + edge_offset,
                                      nstep),
                          np.linspace(90.0 - 1e-6,
                                      90.0 - 1e-6,
                                      nstep))
         proj_boundary_xy['top'] = np.column_stack((x, y))
 
-        x, y = self.proj(np.linspace(self._lon_0 - edge_offset,
-                                     self._lon_0 + edge_offset,
+        x, y = self.proj(np.linspace(self.lon_0 - edge_offset,
+                                     self.lon_0 + edge_offset,
                                      nstep),
                          np.linspace(-90.0 + 1e-6,
                                      -90.0 + 1e-6,
@@ -138,9 +138,9 @@ class LaeaSkyproj(_Skyproj, _Circle):
 
     @property
     def _full_sky_extent_initial(self):
-        lon0 = self._lon_0 - 180.0
-        lon1 = self._lon_0 + 180.0
-        _lat_0 = self.projection.proj4_params['lat_0']
+        lon0 = self.lon_0 - 180.0
+        lon1 = self.lon_0 + 180.0
+        _lat_0 = self.lat_0
         if _lat_0 == -90.0:
             lat0 = -90.0
             lat1 = 90.0 - 1e-5
@@ -194,8 +194,8 @@ class GnomonicSkyproj(_Skyproj, _Circle):
 
     @property
     def _full_sky_extent_initial(self):
-        lon_0 = self._lon_0
-        lat_0 = self.projection.proj4_params['lat_0']
+        lon_0 = self.lon_0
+        lat_0 = self.lat_0
         cos_lat = np.cos(np.deg2rad(lat_0))
         return [lon_0 - 0.5/cos_lat, lon_0 + 0.5/cos_lat,
                 lat_0 - 0.5, lat_0 + 0.5]
