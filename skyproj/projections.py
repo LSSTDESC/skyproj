@@ -8,7 +8,7 @@ from pyproj.exceptions import ProjError
 from .utils import wrap_values
 
 __all__ = ["SkyProjection", "PlateCarree", "McBrydeThomasFlatPolarQuartic", "Mollweide",
-           "Hammer", "EqualEarth", "LambertAzimuthalEqualArea",
+           "Hammer", "EqualEarth", "LambertAzimuthalEqualArea", "Gnomonic",
            "get_projection", "get_available_projections"]
 
 
@@ -125,13 +125,23 @@ class LambertAzimuthalEqualArea(SkyProjection):
         super().__init__(radius=radius, **proj4_params)
 
 
+class Gnomonic(SkyProjection):
+    def __init__(self, lon_0=0.0, lat_0=0.0, radius=RADIUS):
+        proj4_params = {'proj': 'gnom',
+                        'lon_0': lon_0,
+                        'lat_0': lat_0}
+
+        super().__init__(radius=radius, **proj4_params)
+
+
 _projections = {
     'hammer': ('Hammer', Hammer),
     'mbtfpq': ('McBryde-Thomas Flat Polar Quartic', McBrydeThomasFlatPolarQuartic),
     'cyl': ('Plate Carree', PlateCarree),
     'eqearth': ('Equal Earth', EqualEarth),
     'laea': ('Lambert Azimuthal Equal Area', LambertAzimuthalEqualArea),
-    'moll': ('Mollweide', Mollweide)
+    'moll': ('Mollweide', Mollweide),
+    'gnom': ('Gnomonic', Gnomonic)
 }
 
 

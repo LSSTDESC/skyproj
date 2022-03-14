@@ -3,7 +3,7 @@ import numpy as np
 from ._skyproj import _Skyproj
 
 __all__ = ['Skyproj', 'McBrydeSkyproj', 'LaeaSkyproj', 'MollweideSkyproj',
-           'HammerSkyproj', 'EqualEarthSkyproj']
+           'HammerSkyproj', 'EqualEarthSkyproj', 'GnomonicSkyproj']
 
 
 class _Stadium:
@@ -182,3 +182,20 @@ class EqualEarthSkyproj(_Skyproj, _Stadium):
     # Equal Earth
     def __init__(self, **kwargs):
         super().__init__(projection_name='eqearth', **kwargs)
+
+
+# The Gnomonic (tangent plane) projection is not equal-area and
+# is not available for full-sky plots.  It is only for small
+# zoomed regions
+class GnomonicSkyproj(_Skyproj, _Circle):
+    # Gnomonic
+    def __init__(self, **kwargs):
+        super().__init__(projection_name='gnom', **kwargs)
+
+    @property
+    def _full_sky_extent_initial(self):
+        lon_0 = self._lon_0
+        lat_0 = self.projection.proj4_params['lat_0']
+        cos_lat = np.cos(np.deg2rad(lat_0))
+        return [lon_0 - 0.5/cos_lat, lon_0 + 0.5/cos_lat,
+                lat_0 - 0.5, lat_0 + 0.5]
