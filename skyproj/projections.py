@@ -73,63 +73,70 @@ class SkyProjection(CRS):
 
 
 class PlateCarree(SkyProjection):
-    def __init__(self, lon_0=0.0, radius=RADIUS):
+    def __init__(self, lon_0=0.0, radius=RADIUS, **kwargs):
         proj4_params = {'proj': 'eqc',
                         'lon_0': lon_0,
                         'to_meter': math.radians(1)*radius,
                         'vto_meter': 1}
+        proj4_params = {**proj4_params, **kwargs}
 
         super().__init__(radius=radius, **proj4_params)
 
 
 class McBrydeThomasFlatPolarQuartic(SkyProjection):
-    def __init__(self, lon_0=0.0, lat_0=0.0, radius=RADIUS):
+    def __init__(self, lon_0=0.0, lat_0=0.0, radius=RADIUS, **kwargs):
         proj4_params = {'proj': 'mbtfpq',
                         'lon_0': lon_0,
                         'lat_0': lat_0}
+        proj4_params = {**proj4_params, **kwargs}
 
         super().__init__(radius=radius, **proj4_params)
 
 
 class Mollweide(SkyProjection):
-    def __init__(self, lon_0=0.0, radius=RADIUS):
+    def __init__(self, lon_0=0.0, radius=RADIUS, **kwargs):
         proj4_params = {'proj': 'moll',
                         'lon_0': lon_0}
+        proj4_params = {**proj4_params, **kwargs}
 
         super().__init__(radius=radius, **proj4_params)
 
 
 class Hammer(SkyProjection):
-    def __init__(self, lon_0=0.0, lat_0=0.0, radius=RADIUS):
+    def __init__(self, lon_0=0.0, lat_0=0.0, radius=RADIUS, **kwargs):
         proj4_params = {'proj': 'hammer',
                         'lon_0': lon_0,
                         'lat_0': lat_0}
+        proj4_params = {**proj4_params, **kwargs}
 
         super().__init__(radius=radius, **proj4_params)
 
 
 class EqualEarth(SkyProjection):
-    def __init__(self, lon_0=0.0, radius=RADIUS):
+    def __init__(self, lon_0=0.0, radius=RADIUS, **kwargs):
         proj4_params = {'proj': 'eqearth',
                         'lon_0': lon_0}
+        proj4_params = {**proj4_params, **kwargs}
 
         super().__init__(radius=radius, **proj4_params)
 
 
 class LambertAzimuthalEqualArea(SkyProjection):
-    def __init__(self, lon_0=0.0, lat_0=0.0, radius=RADIUS):
+    def __init__(self, lon_0=0.0, lat_0=0.0, radius=RADIUS, **kwargs):
         proj4_params = {'proj': 'laea',
                         'lon_0': lon_0,
                         'lat_0': lat_0}
+        proj4_params = {**proj4_params, **kwargs}
 
         super().__init__(radius=radius, **proj4_params)
 
 
 class Gnomonic(SkyProjection):
-    def __init__(self, lon_0=0.0, lat_0=0.0, radius=RADIUS):
+    def __init__(self, lon_0=0.0, lat_0=0.0, radius=RADIUS, **kwargs):
         proj4_params = {'proj': 'gnom',
                         'lon_0': lon_0,
                         'lat_0': lat_0}
+        proj4_params = {**proj4_params, **kwargs}
 
         super().__init__(radius=radius, **proj4_params)
 
