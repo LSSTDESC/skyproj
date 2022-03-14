@@ -256,17 +256,29 @@ class _Skyproj():
                 label.remove()
             self._boundary_labels = []
 
-        grid_info = self._grid_helper.grid_finder.get_grid_info(
+        grid_finder = self._grid_helper.grid_finder
+        grid_info = grid_finder.get_grid_info(
             extent_xy[0],
             extent_xy[2],
             extent_xy[1],
             extent_xy[3]
         )
 
-        self._boundary_labels.extend(self._draw_aa_lat_labels(extent_xy, grid_info))
-        self._boundary_labels.extend(self._draw_aa_lon_labels(extent_xy, grid_info))
+        # Recover lon_level, lat_level
+        extremes = grid_finder.extreme_finder(
+            grid_finder.inv_transform_xy,
+            extent_xy[0],
+            extent_xy[2],
+            extent_xy[1],
+            extent_xy[3]
+        )
+        _, _, lon_factor = grid_finder.grid_locator1(extremes[0], extremes[1])
+        _, _, lat_factor = grid_finder.grid_locator2(extremes[2], extremes[3])
 
-    def _draw_aa_lat_labels(self, extent_xy, grid_info):
+        self._boundary_labels.extend(self._draw_aa_lat_labels(extent_xy, grid_info, lat_factor))
+        self._boundary_labels.extend(self._draw_aa_lon_labels(extent_xy, grid_info, lon_factor))
+
+    def _draw_aa_lat_labels(self, extent_xy, grid_info, factor):
         """Draw axis artist latitude labels.
 
         Parameters
@@ -275,6 +287,8 @@ class _Skyproj():
             Extent in x/y space
         grid_info : `dict`
             Grid info to determine label locations
+        factor : `float`
+            Multiplicative factor to convert ticks to values.
 
         Returns
         -------
@@ -308,7 +322,7 @@ class _Skyproj():
                 if np.abs(np.abs(lat_level) - 90.0) < 1.0:
                     continue
 
-                if lat_level in tick_levels:
+                if int(lat_level*factor) in tick_levels:
                     continue
 
                 lat_line_x = lat_line[0][0]
@@ -335,7 +349,7 @@ class _Skyproj():
                 if lat_line_x[0] < extent_xy[x0_index] or lat_line_y[0] > extent_xy[x1_index]:
                     continue
 
-                label = self._tick_formatter2(axis_side, 1.0, [lat_level])[0]
+                label = self._tick_formatter2(axis_side, factor, [lat_level])[0]
                 boundary_labels.append(self._ax.text(lat_line_x[0],
                                                      lat_line_y[0],
                                                      label,
@@ -346,7 +360,7 @@ class _Skyproj():
                                                      va=va))
         return boundary_labels
 
-    def _draw_aa_lon_labels(self, extent_xy, grid_info):
+    def _draw_aa_lon_labels(self, extent_xy, grid_info, factor):
         """Draw axis artist latitude labels.
 
         Parameters
@@ -355,6 +369,8 @@ class _Skyproj():
             Extent in x/y space
         grid_info : `dict`
             Grid info to determine label locations
+        factor : `float`
+            Multiplicative factor to convert ticks to values.
 
         Returns
         -------
@@ -405,7 +421,7 @@ class _Skyproj():
                         continue
                 prev_x = x[i]
 
-                label = self._tick_formatter1('top', 1.0, [levels[i]])[0]
+                label = self._tick_formatter1('top', factor, [levels[i]])[0]
                 boundary_labels.append(self._ax.text(x[i],
                                                      y[i],
                                                      label,
@@ -427,7 +443,7 @@ class _Skyproj():
 
                 prev_x = None
                 for lon_level, lon_line in zip(levels, lines):
-                    if lon_level in tick_levels:
+                    if int(lon_level*factor) in tick_levels:
                         continue
 
                     lon_line_x = lon_line[0][0]
@@ -455,7 +471,7 @@ class _Skyproj():
 
                     prev_x = lon_line_x[index]
 
-                    label = self._tick_formatter1(axis_side, 1.0, [lon_level])[0]
+                    label = self._tick_formatter1(axis_side, factor, [lon_level])[0]
                     boundary_labels.append(self._ax.text(lon_line_x[index],
                                                          lon_line_y[index] + y_offset,
                                                          label,
