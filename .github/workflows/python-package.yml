@@ -34,7 +34,7 @@ jobs:
     - name: Install dependencies
       run: |
         export PATH="$CONDA/bin:$PATH"
-        mamba create -q -n testenv python=${{ matrix.python-version }} numpy "astropy>=4.0" "matplotlib>=3.1" healpy setuptools_scm setuptools_scm_git_archive healsparse "pyproj>=3.1" flake8 pytest pytest-flake8 jupyter nbconvert -c conda-forge
+        mamba create -q -n testenv python=${{ matrix.python-version }} numpy "astropy>=4.0" "matplotlib>=3.1" healpy setuptools_scm setuptools_scm_git_archive healsparse "pyproj>=3.1" flake8 "pytest<7" pytest-flake8 jupyter nbconvert -c conda-forge
         source activate testenv
         pip install --no-deps .
     - name: Test with pytest

@@ -43,7 +43,6 @@ class WrappedFormatterDMS(angle_helper.FormatterDMS):
             Array of wrapped values, scaled by factor.
         """
         _values = np.atleast_1d(values)/factor
-        # _values = (_values + self._wrap) % 360 - self._wrap
         _values = wrap_values(_values, wrap=self._wrap)
         if self._longitude_ticks == 1:
             # Values should all be positive, 0 to 360
@@ -102,14 +101,15 @@ class ExtremeFinderWrapped(ExtremeFinderSimple):
 
 
 class GridHelperSkyproj(GridHelperCurveLinear):
-    """GridHelperCurveLinear with tick overlap protection.
+    """GridHelperCurveLinear with tick overlap protection and additional labels.
     """
-    def __init__(self, *args, celestial=True, **kwargs):
+    def __init__(self, *args, celestial=True, equatorial_labels=False, **kwargs):
         self._celestial = celestial
+        self._equatorial_labels = equatorial_labels
+
         super().__init__(*args, **kwargs)
 
     def get_tick_iterator(self, nth_coord, axis_side, minor=False):
-
         try:
             _grid_info = self._grid_info
         except AttributeError:
@@ -126,10 +126,19 @@ class GridHelperSkyproj(GridHelperCurveLinear):
                 x_max = max((x_max, np.max(line[0])))
             delta_x = x_max - x_min
         if not minor:  # major ticks
+            tick_locs = _grid_info[lon_or_lat]["tick_locs"][axis_side]
+            tick_labels = _grid_info[lon_or_lat]["tick_labels"][axis_side]
+
+            if lon_or_lat == "lon" and self._equatorial_labels:
+                min_lat = np.min(_grid_info["lat"]["levels"])
+                max_lat = np.max(_grid_info["lat"]["levels"])
+                if (min_lat < -89.0 and axis_side == "bottom") \
+                   or (max_lat > 89.0 and axis_side == "top"):
+                    tick_locs = []
+                    tick_labels = []
+
             prev_xy = None
-            for ctr, ((xy, a), l) in enumerate(zip(
-                    _grid_info[lon_or_lat]["tick_locs"][axis_side],
-                    _grid_info[lon_or_lat]["tick_labels"][axis_side])):
+            for ctr, ((xy, a), l) in enumerate(zip(tick_locs, tick_labels)):
                 if self._celestial and _celestial_angle_360:
                     angle_normal = 360.0 - a
                 else:
