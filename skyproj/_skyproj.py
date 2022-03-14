@@ -83,9 +83,8 @@ class _Skyproj():
             lon_0 = 179.9999
 
         kwargs['lon_0'] = lon_0
-        self.projection = get_projection(projection_name, **kwargs)
-        self.projection_name = projection_name
-        self._ax = fig.add_subplot(subspec, projection=self.projection)
+        projection = get_projection(projection_name, **kwargs)
+        self._ax = fig.add_subplot(subspec, projection=projection)
 
         self._aa = None
 
@@ -1486,6 +1485,14 @@ class _Skyproj():
     @property
     def lat_0(self):
         return self._ax.lat_0
+
+    @property
+    def projection(self):
+        return self._ax.projection
+
+    @property
+    def projection_name(self):
+        return self._ax.projection.name
 
     @property
     def _full_sky_extent_initial(self):
