@@ -207,3 +207,12 @@ class SkyAxes(matplotlib.axes.Axes):
     @property
     def lat_0(self):
         return self.projection.lat_0
+
+    def update_projection(self, proj_new):
+        """Update the projection central coordinate.
+
+        Parameters
+        ----------
+        proj_new : `skyproj.SkyProjection`
+        """
+        self.projection = proj_new

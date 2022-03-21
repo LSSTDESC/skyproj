@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+
 import numpy as np
 import healpy as hp
 
@@ -8,7 +9,7 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.cm import ScalarMappable
 from matplotlib.colors import Normalize
 
-from .projections import get_projection, PlateCarree
+from .projections import get_projection, PlateCarree, Gnomonic
 from .hpx_utils import healpix_pixels_range, hspmap_to_xy, hpxmap_to_xy, healpix_to_xy, healpix_bin
 from .mpl_utils import ExtremeFinderWrapped, WrappedFormatterDMS, GridHelperSkyproj
 from .utils import wrap_values, _get_boundary_poly_xy
@@ -85,6 +86,8 @@ class _Skyproj():
         kwargs['lon_0'] = lon_0
         projection = get_projection(projection_name, **kwargs)
         self._ax = fig.add_subplot(subspec, projection=projection)
+        self._projection_orig = projection
+        self._reprojected = False
 
         self._aa = None
 
@@ -115,13 +118,15 @@ class _Skyproj():
         self._initialize_axes(extent, extent_xy=extent_xy)
 
         # Set up callbacks on axis zoom.
-        self._xlc = self._ax.callbacks.connect('xlim_changed', self._change_axis)
-        self._ylc = self._ax.callbacks.connect('ylim_changed', self._change_axis)
+        self._add_change_axis_callbacks()
 
         # Set up callback on figure resize.
         self._frc = self.ax.figure.canvas.mpl_connect('resize_event', self._change_size)
         self._dc = self.ax.figure.canvas.mpl_connect('draw_event', self._draw_callback)
-        self._initial_extent_xy = self._ax.get_extent(lonlat=False)
+        self._initial_extent_xy = [0]*4
+
+        # Set up reproject callback.
+        self._rpc = self.ax.figure.canvas.mpl_connect('key_press_event', self._keypress_callback)
 
         self._draw_aa_bounds_and_labels()
 
@@ -636,6 +641,16 @@ class _Skyproj():
             coord_string += ', val=%f' % (val)
         return coord_string
 
+    def _add_change_axis_callbacks(self):
+        """Add callbacks to change axis."""
+        self._xlc = self._ax.callbacks.connect('xlim_changed', self._change_axis)
+        self._ylc = self._ax.callbacks.connect('ylim_changed', self._change_axis)
+
+    def _remove_change_axis_callbacks(self):
+        """Remove callbacks to change axis."""
+        self._ax.callbacks.disconnect(self._xlc)
+        self._ax.callbacks.disconnect(self._ylc)
+
     def _change_axis(self, ax):
         """Callback for axis change.
 
@@ -660,6 +675,13 @@ class _Skyproj():
         gone_home = False
         if np.all(np.isclose(ax.get_extent(lonlat=False), self._initial_extent_xy)):
             gone_home = True
+
+            if self._reprojected:
+                self._remove_change_axis_callbacks()
+                ax.update_projection(self._projection_orig)
+                self._initialize_axes(self._initial_extent_lonlat)
+                self._reprojected = False
+                self._add_change_axis_callbacks()
 
         # Reset to new extent
         self._changed_x_axis = False
@@ -749,6 +771,39 @@ class _Skyproj():
         # On draw it's sometimes necessary to synchronize the axisartist.
         if self._aa is not None:
             self._aa.set_position(self._ax.get_position(), which='original')
+
+        # We need to set the initial extent on first draw
+        if np.allclose(self._initial_extent_xy, 0):
+            self._initial_extent_xy = self._ax.get_extent(lonlat=False)
+            self._initial_extent_lonlat = self._ax.get_extent(lonlat=True)
+
+    def _keypress_callback(self, event):
+        if event.key == 'R':
+            self._remove_change_axis_callbacks()
+            extent = self._ax.get_extent(lonlat=True)
+
+            lon_0_new = (extent[0] + extent[1])/2.
+            if self.lat_0 is not None:
+                lat_0_new = (extent[2] + extent[3])/2.
+            else:
+                lat_0_new = None
+
+            # Decide if gnomonic or not
+            if (extent[1] - extent[0])/2. < 1.0 and (extent[3] - extent[2])/2. < 1.0:
+                # Make this a gnomonic projection
+                proj_new = Gnomonic(lon_0=lon_0_new, lat_0=(extent[2] + extent[3])/2.)
+            else:
+                proj_new = self._projection_orig.with_new_center(lon_0_new, lat_0=lat_0_new)
+
+            self._ax.update_projection(proj_new)
+            self._initialize_axes(extent)
+            self._changed_x_axis = True
+            self._changed_y_axis = True
+            self._change_axis(self._ax)
+            self._add_change_axis_callbacks()
+            plt.draw()
+
+            self._reprojected = True
 
     def set_xlabel(self, text, side='bottom', **kwargs):
         """Set the label on the x axis.
