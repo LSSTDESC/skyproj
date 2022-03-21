@@ -680,7 +680,6 @@ class _Skyproj():
                 self._remove_change_axis_callbacks()
                 ax.update_projection(self._projection_orig)
                 self._initialize_axes(self._initial_extent_lonlat)
-                self._reprojected = False
                 self._add_change_axis_callbacks()
 
         # Reset to new extent
