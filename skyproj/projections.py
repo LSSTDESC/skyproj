@@ -9,7 +9,7 @@ from .utils import wrap_values
 
 __all__ = ["SkyProjection", "PlateCarree", "McBrydeThomasFlatPolarQuartic", "Mollweide",
            "Hammer", "EqualEarth", "LambertAzimuthalEqualArea", "Gnomonic",
-           "get_projection", "get_available_projections"]
+           "ObliqueMollweide", "get_projection", "get_available_projections"]
 
 
 RADIUS = 1.0
@@ -96,6 +96,10 @@ class SkyProjection(CRS):
     def name(self):
         return self._name
 
+    @property
+    def radius(self):
+        return self.proj4_params['a']
+
     def _as_mpl_transform(self, axes=None):
         from .transforms import SkyTransform
 
@@ -138,6 +142,22 @@ class Mollweide(SkyProjection):
         proj4_params = {**proj4_params, **kwargs}
 
         super().__init__(name=name, radius=radius, **proj4_params)
+
+
+class ObliqueMollweide(SkyProjection):
+    def __init__(self, name='obmoll', lon_0=0.0, lat_p=90.0, lon_p=0.0, radius=RADIUS, **kwargs):
+        proj4_params = {'proj': 'ob_tran',
+                        'o_proj': 'moll',
+                        'o_lat_p': lat_p,
+                        'o_lon_p': lon_p,
+                        'lon_0': lon_0}
+        proj4_params = {**proj4_params, **kwargs}
+
+        super().__init__(name=name, radius=radius, **proj4_params)
+
+    @property
+    def lon_0(self):
+        return self.proj4_params['lon_0'] + self.proj4_params['o_lon_p']
 
 
 class Hammer(SkyProjection):
@@ -186,6 +206,7 @@ _projections = {
     'eqearth': ('Equal Earth', EqualEarth),
     'laea': ('Lambert Azimuthal Equal Area', LambertAzimuthalEqualArea),
     'moll': ('Mollweide', Mollweide),
+    'obmoll': ('Oblique Mollweide', ObliqueMollweide),
     'gnom': ('Gnomonic', Gnomonic)
 }
 

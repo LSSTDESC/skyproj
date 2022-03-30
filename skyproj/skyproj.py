@@ -3,7 +3,8 @@ import numpy as np
 from ._skyproj import _Skyproj
 
 __all__ = ['Skyproj', 'McBrydeSkyproj', 'LaeaSkyproj', 'MollweideSkyproj',
-           'HammerSkyproj', 'EqualEarthSkyproj', 'GnomonicSkyproj']
+           'HammerSkyproj', 'EqualEarthSkyproj', 'GnomonicSkyproj',
+           'ObliqueMollweideSkyproj']
 
 
 class _Stadium:
@@ -182,6 +183,39 @@ class EqualEarthSkyproj(_Skyproj, _Stadium):
     # Equal Earth
     def __init__(self, **kwargs):
         super().__init__(projection_name='eqearth', **kwargs)
+
+
+class ObliqueMollweideSkyproj(_Skyproj, _Ellipse21):
+    # Oblique Mollweide
+    def __init__(self, **kwargs):
+        """Oblique Mollweide Projection.
+
+        Parameters
+        ----------
+        lon_0 : `float`, optional
+            Central longitude of the underlying Mollweide projection.
+        lat_p : `float`, optional
+            Latitude of the North Pole of the unrotated coordinate system.
+        lon_p : `float`, optional
+            Longitude of the North Pole of the unrotated coordinate system.
+        """
+        super().__init__(projection_name='obmoll', **kwargs)
+
+    @property
+    def _pole_clip(self):
+        return 1.0
+
+    @property
+    def _equatorial_labels(self):
+        return True
+
+    @property
+    def _default_xy_labels(self):
+        return ("", "")
+
+    @property
+    def _init_extent_xy(self):
+        return True
 
 
 # The Gnomonic (tangent plane) projection is not equal-area and
