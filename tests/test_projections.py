@@ -9,7 +9,8 @@ import skyproj
                                       'eqearth',
                                       'laea',
                                       'moll',
-                                      'gnom'])
+                                      'gnom',
+                                      'obmoll'])
 def test_get_projection(projname):
     """Test getting a projection and making a new instance."""
     proj = skyproj.get_projection(projname)
@@ -26,7 +27,8 @@ def test_get_projection(projname):
                                       'eqearth',
                                       'laea',
                                       'moll',
-                                      'gnom'])
+                                      'gnom',
+                                      'obmoll'])
 def test_update_projection_lon_0(projname):
     """Test updating a projection lon_0."""
     proj = skyproj.get_projection(projname)

@@ -82,3 +82,22 @@ def test_skyproj_gnom(tmp_path, lonlat):
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 10.0)
     if err:
         raise ImageComparisonFailure(err)
+
+
+@pytest.mark.parametrize("lonlatplonp", [(0.0, 45.0, -90.0),
+                                         (100.0, 80.0, 0.0)])
+def test_skyproj_obmoll(tmp_path, lonlatplonp):
+    """Test Oblique Mollweide."""
+    plt.rcParams.update(plt.rcParamsDefault)
+
+    lon_0, lat_p, lon_p = lonlatplonp
+
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    m = skyproj.ObliqueMollweideSkyproj(ax=ax, lon_0=lon_0, lat_p=lat_p, lon_p=lon_p)
+    fname = f'{m.projection_name}_{lon_0}_{lat_p}_{lon_p}.png'
+    fig.savefig(tmp_path / fname)
+    err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 10.0)
+    if err:
+        raise ImageComparisonFailure(err)
