@@ -95,7 +95,7 @@ class _Skyproj():
         self.do_gridlines = gridlines
         self._autorescale = autorescale
 
-        self._wrap = (lon_0 + 180.) % 360.
+        self._wrap = (self.lon_0 + 180.) % 360.
 
         extent_xy = None
         if extent is None:
@@ -566,6 +566,11 @@ class _Skyproj():
             proj_xy = self.projection.transform_points(PlateCarree(), lon, lat)
             return proj_xy[..., 0], proj_xy[..., 1]
 
+        if self.projection.name == 'cyl':
+            delta_cut = 80.0
+        else:
+            delta_cut = 0.5*self.projection.radius
+
         grid_helper = GridHelperSkyproj(
             (proj_wrap, self.proj_inverse),
             extreme_finder=extreme_finder,
@@ -574,7 +579,8 @@ class _Skyproj():
             tick_formatter1=self._tick_formatter1,
             tick_formatter2=self._tick_formatter2,
             celestial=self.do_celestial,
-            equatorial_labels=self._equatorial_labels
+            equatorial_labels=self._equatorial_labels,
+            delta_cut=delta_cut
         )
 
         self._grid_helper = grid_helper
