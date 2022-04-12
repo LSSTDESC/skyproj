@@ -121,13 +121,13 @@ class GridHelperSkyproj(GridHelperCurveLinear):
         return grid_lines
 
     def _cut_grid_line_jumps(self, gl):
-        dx = gl[0][0][1: ] - gl[0][0][: -1]
-        dy = gl[0][1][1: ] - gl[0][1][: -1]
+        dx = gl[0][0][1:] - gl[0][0][: -1]
+        dy = gl[0][1][1:] - gl[0][1][: -1]
 
         split, = (np.hypot(dx, dy) > self._delta_cut).nonzero()
 
         if split.size == 0:
-             return gl
+            return gl
 
         gl_new = [(np.insert(gl[0][0], split + 1, np.nan),
                    np.insert(gl[0][1], split + 1, np.nan))]

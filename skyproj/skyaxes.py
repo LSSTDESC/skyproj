@@ -4,7 +4,6 @@ import numpy as np
 import matplotlib.axes
 
 from .projections import PlateCarree
-from .utils import wrap_values
 
 __all__ = ["SkyAxes"]
 
@@ -168,8 +167,8 @@ class SkyAxes(matplotlib.axes.Axes):
             X_proj = proj_xy[..., 0]
             Y_proj = proj_xy[..., 1]
 
-            dist = np.hypot(X_proj[1: , 1:] - X_proj[0: -1, 0: -1],
-                            Y_proj[1: , 1:] - Y_proj[0: -1, 0: -1])
+            dist = np.hypot(X_proj[1:, 1:] - X_proj[0: -1, 0: -1],
+                            Y_proj[1:, 1:] - Y_proj[0: -1, 0: -1])
 
             # If we have a jump of 10% of the radius, assume it's bad,
             # except if we are using PlateCarree which doesn't use the radius.
