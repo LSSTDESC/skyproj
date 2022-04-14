@@ -101,13 +101,38 @@ class ExtremeFinderWrapped(ExtremeFinderSimple):
 
 
 class GridHelperSkyproj(GridHelperCurveLinear):
-    """GridHelperCurveLinear with tick overlap protection and additional labels.
+    """GridHelperCurveLinear with tick overlap protection.
     """
-    def __init__(self, *args, celestial=True, equatorial_labels=False, **kwargs):
+    def __init__(self, *args, celestial=True, equatorial_labels=False, delta_cut=80.0, **kwargs):
         self._celestial = celestial
         self._equatorial_labels = equatorial_labels
+        self._delta_cut = delta_cut
 
         super().__init__(*args, **kwargs)
+
+    def get_gridlines(self, which="major", axis="both"):
+        grid_lines = []
+        if axis in ["both", "x"]:
+            for gl in self._grid_info["lon"]["lines"]:
+                grid_lines.extend(self._cut_grid_line_jumps(gl))
+        if axis in ["both", "y"]:
+            for gl in self._grid_info["lat"]["lines"]:
+                grid_lines.extend(self._cut_grid_line_jumps(gl))
+        return grid_lines
+
+    def _cut_grid_line_jumps(self, gl):
+        dx = gl[0][0][1:] - gl[0][0][: -1]
+        dy = gl[0][1][1:] - gl[0][1][: -1]
+
+        split, = (np.hypot(dx, dy) > self._delta_cut).nonzero()
+
+        if split.size == 0:
+            return gl
+
+        gl_new = [(np.insert(gl[0][0], split + 1, np.nan),
+                   np.insert(gl[0][1], split + 1, np.nan))]
+
+        return gl_new
 
     def get_tick_iterator(self, nth_coord, axis_side, minor=False):
         try:

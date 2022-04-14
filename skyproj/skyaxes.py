@@ -4,7 +4,6 @@ import numpy as np
 import matplotlib.axes
 
 from .projections import PlateCarree
-from .utils import wrap_values
 
 __all__ = ["SkyAxes"]
 
@@ -160,31 +159,30 @@ class SkyAxes(matplotlib.axes.Axes):
 
     @_add_lonlat
     def pcolormesh(self, X, Y, C, **kwargs):
+        C_temp = C.copy()
+
         if kwargs.get('lonlat', True):
-            # Check for wrapping around the edges.
-            # Note that this only works for regularly gridded pcolormeshes
-            # with flat shading.
-            # TODO: check for settings and fall back to regular version otherwise.
-            lon_0 = self.projection.proj4_params['lon_0']
-            wrap = wrap_values((lon_0 + 180.) % 360.)
+            # Check for wrapping by projecting and looking for jumps.
+            proj_xy = self.projection.transform_points(self.plate_carree, X, Y)
+            X_proj = proj_xy[..., 0]
+            Y_proj = proj_xy[..., 1]
 
-            cut, = np.where((X[0, :-1] < wrap) & (X[0, 1:] > wrap))
+            dist = np.hypot(X_proj[1:, 1:] - X_proj[0: -1, 0: -1],
+                            Y_proj[1:, 1:] - Y_proj[0: -1, 0: -1])
 
-            if cut.size == 1:
-                # We need to do two calls to pcolormesh
-                c = cut[0] + 1
+            # If we have a jump of 10% of the radius, assume it's bad,
+            # except if we are using PlateCarree which doesn't use the radius.
+            if self.projection == self.plate_carree:
+                max_dist = 90.0
+            else:
+                max_dist = 0.1*self.projection.radius
 
-                result1 = super().pcolormesh(X[:, 0: c],
-                                             Y[:, 0: c],
-                                             C[:, 0: c - 1], **kwargs)
-                _ = super().pcolormesh(X[:, c:],
-                                       Y[:, c:],
-                                       C[:, c:], **kwargs)
-                # We can only return one result, so just return the first.
-                return result1
+            split = (dist > max_dist).nonzero()
 
-        # No wrap or not lon-lat, we can just pass things along.
-        result = super().pcolormesh(X, Y, C, **kwargs)
+            # By marking these jumps as masked then pcolormesh works just fine.
+            C_temp.mask[split] = True
+
+        result = super().pcolormesh(X, Y, C_temp, **kwargs)
 
         return result
 
@@ -199,3 +197,20 @@ class SkyAxes(matplotlib.axes.Axes):
         result = super().text(*args, **kwargs)
 
         return result
+
+    @property
+    def lon_0(self):
+        return self.projection.lon_0
+
+    @property
+    def lat_0(self):
+        return self.projection.lat_0
+
+    def update_projection(self, proj_new):
+        """Update the projection central coordinate.
+
+        Parameters
+        ----------
+        proj_new : `skyproj.SkyProjection`
+        """
+        self.projection = proj_new

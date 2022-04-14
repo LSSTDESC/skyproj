@@ -26,6 +26,7 @@ class SkyTransform(matplotlib.transforms.Transform):
 
         # Number of geodesic sub-samples for paths.
         self._nsamp = 10
+        self._nsamp_resolve = 50
         self._geod = Geod(a=RADIUS)
 
         self._lon_0 = self.target_proj.proj4_params['lon_0']
@@ -51,6 +52,9 @@ class SkyTransform(matplotlib.transforms.Transform):
         if self._inverse:
             # Just send this upstream if we're not computing geodesics.
             return super().transform_path_non_affine(path)
+
+        if self.target_proj.name == 'obmoll':
+            return self._transform_path_non_affine_oblique(path)
 
         lonlats = []
         codes = []
@@ -216,3 +220,74 @@ class SkyTransform(matplotlib.transforms.Transform):
         codes = np.append(codes, codes_append)
 
         return lonlats, codes
+
+    def _transform_path_non_affine_oblique(self, path):
+        # In the future, this routine may be merged with the one above.
+        # However, there are significant challenges in tracking the edge
+        # of the warp for oblique transforms which is necessary to create
+        # wrapped filled polygons.
+        vertices_xform = []
+        codes = []
+
+        last_vertex = None
+        for vertex, code in path.iter_segments(simplify=False):
+            if code == Path.MOVETO:
+                vertex_xform = self.target_proj.transform_points(self.source_proj,
+                                                                 vertex[0],
+                                                                 vertex[1])
+                vertices_xform.extend([(vertex_xform[0][0], vertex_xform[0][1])])
+                codes.append(Path.MOVETO)
+                last_vertex = vertex
+            elif code in (Path.LINETO, None):
+                # Connect the last vertex
+                lonlats_step = np.array(self._geod.npts(last_vertex[0], last_vertex[1],
+                                                        vertex[0], vertex[1], self._nsamp + 1,
+                                                        initial_idx=0, terminus_idx=0))
+
+                lonlats_step_xform = self.target_proj.transform_points(self.source_proj,
+                                                                       lonlats_step[:, 0],
+                                                                       lonlats_step[:, 1])
+
+                dxdy = lonlats_step_xform[1:, :] - lonlats_step_xform[0: -1, :]
+                split, = (np.hypot(dxdy[:, 0], dxdy[:, 1]) > 0.5*self.target_proj.radius).nonzero()
+
+                if split.size > 0:
+                    if split.size > 1:
+                        raise NotImplementedError("Cannot plot a line with more than one cut.")
+
+                    index = split[0] + 1
+
+                    lonlats_temp = np.array(self._geod.npts(lonlats_step[index - 1, 0],
+                                                            lonlats_step[index - 1, 1],
+                                                            lonlats_step[index, 0],
+                                                            lonlats_step[index, 1],
+                                                            self._nsamp_resolve + 1,
+                                                            initial_idx=1, terminus_idx=0))
+                    lonlats_temp_xform = self.target_proj.transform_points(self.source_proj,
+                                                                           lonlats_temp[:, 0],
+                                                                           lonlats_temp[:, 1])
+                    dxdy_temp = lonlats_temp_xform[1:, :] - lonlats_temp_xform[0: -1, :]
+                    split_temp, = (np.hypot(dxdy_temp[:, 0], dxdy_temp[:, 1])
+                                   > 0.5*self.target_proj.radius).nonzero()
+
+                    index_temp = split_temp[0] + 1
+
+                    # Pre-step
+                    vertices_xform.extend(lonlats_step_xform[: index, :].tolist())
+                    codes.extend([Path.LINETO]*index)
+                    vertices_xform.extend(lonlats_temp_xform[: index_temp, :].tolist())
+                    codes.extend([Path.LINETO]*index_temp)
+                    vertices_xform.extend(lonlats_temp_xform[index_temp:, :].tolist())
+                    codes.extend([Path.MOVETO])
+                    codes.extend([Path.LINETO]*(self._nsamp_resolve - index_temp))
+                    vertices_xform.extend(lonlats_step_xform[index:, :].tolist())
+                    codes.extend([Path.LINETO]*(self._nsamp + 1 - index))
+                else:
+                    vertices_xform.extend(lonlats_step_xform.tolist())
+                    codes.extend([Path.LINETO]*(self._nsamp + 1))
+
+                last_vertex = vertex
+
+        new_path = Path(np.array(vertices_xform), codes)
+
+        return new_path
