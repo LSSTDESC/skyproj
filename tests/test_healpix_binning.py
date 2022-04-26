@@ -28,8 +28,8 @@ def test_healpix_binning(tmp_path):
     fig = plt.figure(1, figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
-    m = skyproj.McBrydeSkyproj(ax=ax)
-    hpxmap, im, lon_raster, lat_raster, values_raster = m.draw_hpxbin(ra, dec)
+    sp = skyproj.McBrydeSkyproj(ax=ax)
+    hpxmap, im, lon_raster, lat_raster, values_raster = sp.draw_hpxbin(ra, dec)
 
     # Spot-check a pixel
     pix = hp.ang2pix(hp.npix2nside(hpxmap.size), ra, dec, lonlat=True)
@@ -46,8 +46,8 @@ def test_healpix_binning(tmp_path):
     fig = plt.figure(1, figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
-    m = skyproj.McBrydeSkyproj(ax=ax)
-    hpxmap, im, lon_raster, lat_raster, values_raster = m.draw_hpxbin(ra, dec, C=C)
+    sp = skyproj.McBrydeSkyproj(ax=ax)
+    hpxmap, im, lon_raster, lat_raster, values_raster = sp.draw_hpxbin(ra, dec, C=C)
 
     # Spot-check the pixel
     np.testing.assert_approx_equal(hpxmap[87864], np.mean(C[test]))

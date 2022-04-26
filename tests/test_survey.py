@@ -27,16 +27,16 @@ def test_survey_outlines(tmp_path, survey_tuple):
     fig = plt.figure(1, figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
-    m = survey(ax=ax)
+    sp = survey(ax=ax)
     if name == 'DES':
-        m.draw_des(label=name)
+        sp.draw_des(label=name)
     elif name == 'BLISS':
-        m.draw_bliss(label=name)
+        sp.draw_bliss(label=name)
     elif name == 'MagLiTeS':
-        m.draw_maglites(label=name)
+        sp.draw_maglites(label=name)
     elif name == 'DECaLS':
-        m.draw_decals(label=name)
-    m.legend()
+        sp.draw_decals(label=name)
+    sp.legend()
     fname = f'{name}_survey.png'
     fig.savefig(tmp_path / fname)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 10.0)
