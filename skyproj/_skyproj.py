@@ -38,7 +38,7 @@ class _Skyproj():
         Label longitude ticks from 0 to 360 degrees (``positive``) or
         from -180 to 180 degrees (``symmetric``).
     autorescale : `bool`, optional
-        Automatically rescale map visualizations on zoom?
+        Automatically rescale color bars when zoomed?
     **kwargs : `dict`, optional
         Additional arguments to send to cartosky/proj4 projection initialization.
     """
@@ -917,6 +917,9 @@ class _Skyproj():
     def fill(self, *args, **kwargs):
         return self._ax.fill(*args, **kwargs)
 
+    def circle(self, *args, **kwargs):
+        return self._ax.circle(*args, **kwargs)
+
     def legend(self, *args, loc='upper left', **kwargs):
         """Add legend to the axis with ax.legend(*args, **kwargs)."""
         return self._ax.legend(*args, loc=loc, **kwargs)
@@ -1537,6 +1540,40 @@ class _Skyproj():
                 dec = radec.dec.degree
                 self.plot(ra, dec, linewidth=1.0, color=color,
                           linestyle='--', **kwargs)
+
+    def tissot_indicatrices(self, radius=5.0, num_lon=9, num_lat=5, color='red', alpha=0.5):
+        """Draw Tissot indicatrices.
+
+        See https://en.wikipedia.org/wiki/Tissot%27s_indicatrix for details.
+
+        Parameters
+        ----------
+        radius : `float`
+            Radius of each indicatrix circle.
+        num_lon : `int`
+            Number of indicatrices in the longitude direction.
+        num_lat : `int`
+            Number of indicatrices in the latitude direction.
+        color : `str`, optional
+            Color of indicatrices.
+        alpha : `float`, optional
+            Alpha of indicatrices.
+        """
+        lons = np.linspace(-175.0, 175.0, num_lon)
+        lats = np.linspace(-80.0, 80.0, num_lat)
+
+        for lat in lats:
+            # We want to skip alternate indicatrices at high latitudes.
+            skip_alternate = False
+            if np.abs(lat) >= 75.0:
+                skip_alternate = True
+            skipped = False
+            for lon in lons:
+                if skip_alternate and not skipped:
+                    skipped = True
+                    continue
+                _ = self._ax.circle(lon, lat, radius, fill=True, color=color, alpha=alpha)
+                skipped = False
 
     @property
     def lon_0(self):

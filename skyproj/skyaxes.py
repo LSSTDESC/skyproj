@@ -2,8 +2,9 @@ import functools
 import numpy as np
 
 import matplotlib.axes
+from pyproj import Geod
 
-from .projections import PlateCarree
+from .projections import PlateCarree, RADIUS
 
 __all__ = ["SkyAxes"]
 
@@ -197,6 +198,42 @@ class SkyAxes(matplotlib.axes.Axes):
         result = super().text(*args, **kwargs)
 
         return result
+
+    @_add_lonlat
+    def circle(self, lon, lat, radius, nsamp=100, fill=False, **kwargs):
+        """Draw a geodesic circle centered at given position.
+
+        Parameters
+        ----------
+        lon : `float`
+            Longitude of center of circle (degrees).
+        lat : `float`
+            Latitude of center of circle (degrees).
+        radius : `float`
+            Radius of circle (degrees).
+        nsamp : `int`, optional
+            Number of points to sample.
+        fill : `bool`, optional
+            Draw filled circle?
+        **kwargs : `dict`
+            Extra plotting kwargs.
+        """
+        geod = Geod(a=RADIUS)
+
+        # We need the radius in meters
+        radius_m = RADIUS*np.deg2rad(radius)
+
+        az = np.linspace(360.0, 0.0, nsamp)
+        lons, lats, _ = geod.fwd(
+            np.full(nsamp, lon, dtype=np.float64),
+            np.full(nsamp, lat, dtype=np.float64),
+            az,
+            np.full(nsamp, radius_m)
+        )
+        if fill:
+            return self.fill(lons, lats, **kwargs)
+        else:
+            return self.plot(lons, lats, **kwargs)
 
     @property
     def lon_0(self):
