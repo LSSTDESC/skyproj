@@ -102,6 +102,7 @@ class _Circle:
 # The default skyproj is a cylindrical Plate Carree projection.
 
 class Skyproj(_Skyproj, _Stadium):
+    # docstring inherited
     # Plate Carree
     def __init__(self, **kwargs):
         super().__init__(projection_name='cyl', **kwargs)
@@ -111,12 +112,14 @@ class Skyproj(_Skyproj, _Stadium):
 # and known to work.
 
 class McBrydeSkyproj(_Skyproj, _Stadium):
+    # docstring inherited
     # McBryde-Thomas Flat Polar Quartic
     def __init__(self, **kwargs):
         super().__init__(projection_name='mbtfpq', **kwargs)
 
 
 class LaeaSkyproj(_Skyproj, _Circle):
+    # docstring inherited
     # Lambert Azimuthal Equal Area
     def __init__(self, **kwargs):
         super().__init__(projection_name='laea', **kwargs)
@@ -156,6 +159,7 @@ class LaeaSkyproj(_Skyproj, _Circle):
 
 
 class MollweideSkyproj(_Skyproj, _Ellipse21):
+    # docstring inherited
     # Mollweide
     def __init__(self, **kwargs):
         super().__init__(projection_name='moll', **kwargs)
@@ -170,6 +174,7 @@ class MollweideSkyproj(_Skyproj, _Ellipse21):
 
 
 class HammerSkyproj(_Skyproj, _Ellipse21):
+    # docstring inherited
     # Hammer-Aitoff
     def __init__(self, **kwargs):
         super().__init__(projection_name='hammer', **kwargs)
@@ -180,25 +185,28 @@ class HammerSkyproj(_Skyproj, _Ellipse21):
 
 
 class EqualEarthSkyproj(_Skyproj, _Stadium):
+    # docstring inherited
     # Equal Earth
     def __init__(self, **kwargs):
         super().__init__(projection_name='eqearth', **kwargs)
 
 
 class ObliqueMollweideSkyproj(_Skyproj, _Ellipse21):
+    """Oblique Mollweide Projection.
+
+    Parameters
+    ----------
+    lon_0 : `float`, optional
+        Central longitude of the underlying Mollweide projection.
+    lat_p : `float`, optional
+        Latitude of the North Pole of the unrotated coordinate system.
+    lon_p : `float`, optional
+        Longitude of the North Pole of the unrotated coordinate system.
+    **kwargs : `dict`, optional
+        Additional kwargs for `skyproj._Skyproj`.
+    """
     # Oblique Mollweide
     def __init__(self, **kwargs):
-        """Oblique Mollweide Projection.
-
-        Parameters
-        ----------
-        lon_0 : `float`, optional
-            Central longitude of the underlying Mollweide projection.
-        lat_p : `float`, optional
-            Latitude of the North Pole of the unrotated coordinate system.
-        lon_p : `float`, optional
-            Longitude of the North Pole of the unrotated coordinate system.
-        """
         super().__init__(projection_name='obmoll', **kwargs)
 
     @property
@@ -222,6 +230,7 @@ class ObliqueMollweideSkyproj(_Skyproj, _Ellipse21):
 # is not available for full-sky plots.  It is only for small
 # zoomed regions
 class GnomonicSkyproj(_Skyproj, _Circle):
+    # docstring inherited
     # Gnomonic
     def __init__(self, **kwargs):
         super().__init__(projection_name='gnom', **kwargs)

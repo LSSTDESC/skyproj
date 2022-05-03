@@ -20,6 +20,7 @@ def _add_lonlat(func):
 
 
 class SkyAxes(matplotlib.axes.Axes):
+    # docstring inherited
     def __init__(self, *args, **kwargs):
         self.projection = kwargs.pop("sky_projection")
 
@@ -47,7 +48,7 @@ class SkyAxes(matplotlib.axes.Axes):
         ----------
         extent : `tuple` [`float`]
             Set the extent by [lon0, lon1, lat0, lat1] or [x0, x1, y0, y1].
-        lonat : `bool`, optional
+        lonlat : `bool`, optional
             Extent is specified in lon/lat coordinates?  Otherwise native.
         """
         if not lonlat:
@@ -146,6 +147,8 @@ class SkyAxes(matplotlib.axes.Axes):
 
     @_add_lonlat
     def plot(self, *args, **kwargs):
+        # docstring inherited
+
         # The transformation code will automatically plot geodesics
         # and split line segements that cross the wrapping boundary.
         result = super().plot(*args, **kwargs)
@@ -154,12 +157,14 @@ class SkyAxes(matplotlib.axes.Axes):
 
     @_add_lonlat
     def scatter(self, *args, **kwargs):
+        # docstring inherited
         result = super().scatter(*args, **kwargs)
 
         return result
 
     @_add_lonlat
     def pcolormesh(self, X, Y, C, **kwargs):
+        # docstring inherited
         C_temp = C.copy()
 
         if kwargs.get('lonlat', True):
@@ -189,12 +194,14 @@ class SkyAxes(matplotlib.axes.Axes):
 
     @_add_lonlat
     def fill(self, *args, **kwargs):
+        # docstring inherited
         result = super().fill(*args, **kwargs)
 
         return result
 
     @_add_lonlat
     def text(self, *args, **kwargs):
+        # docstring inherited
         result = super().text(*args, **kwargs)
 
         return result

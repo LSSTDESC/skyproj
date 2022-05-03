@@ -40,6 +40,7 @@ class _Survey:
     # Override zoom default for survey maps to keep the default fixed.
     def draw_hpxmap(self, hpxmap, nest=False, zoom=False, xsize=1000, vmin=None, vmax=None,
                     rasterized=True, lon_range=None, lat_range=None, **kwargs):
+        # docstring inherited
         return super().draw_hpxmap(hpxmap,
                                    nest=nest,
                                    zoom=zoom,
@@ -54,6 +55,7 @@ class _Survey:
     def draw_hpxpix(self, nside, pixels, values, nest=False, zoom=False, xsize=1000,
                     vmin=None, vmax=None,
                     rasterized=True, lon_range=None, lat_range=None, **kwargs):
+        # docstring inherited
         return super().draw_hpxpix(nside,
                                    pixels,
                                    values,
@@ -69,6 +71,7 @@ class _Survey:
 
     def draw_hspmap(self, hspmap, zoom=False, xsize=1000, vmin=None, vmax=None,
                     rasterized=True, lon_range=None, lat_range=None, **kwargs):
+        # docstring inherited
         return super().draw_hspmap(hspmap,
                                    zoom=zoom,
                                    xsize=xsize,
@@ -82,6 +85,7 @@ class _Survey:
     def draw_hpxbin(self, lon, lat, C=None, nside=256, nest=False, zoom=False, xsize=1000,
                     vmin=None, vmax=None,
                     rasterized=True, lon_range=None, lat_range=None, **kwargs):
+        # docstring inherited
         return super().draw_hpxmap(lon,
                                    lat,
                                    C=C,
@@ -98,6 +102,7 @@ class _Survey:
 
 
 class DESSkyproj(McBrydeSkyproj, _Survey):
+    # docstring inherited
     def __init__(self, ax=None, lon_0=0, gridlines=True,
                  celestial=True, extent=[90, -50, -74, 10], **kwargs):
         super().__init__(ax=ax, lon_0=lon_0, gridlines=gridlines,
@@ -105,6 +110,7 @@ class DESSkyproj(McBrydeSkyproj, _Survey):
 
 
 class BlissSkyproj(McBrydeSkyproj, _Survey):
+    # docstring inherited
     def __init__(self, ax=None, lon_0=100, gridlines=True,
                  celestial=True, extent=[-60, 250, -55, 0], **kwargs):
         super().__init__(ax=ax, lon_0=lon_0, gridlines=gridlines,
@@ -112,6 +118,7 @@ class BlissSkyproj(McBrydeSkyproj, _Survey):
 
 
 class MaglitesSkyproj(LaeaSkyproj, _Survey):
+    # docstring inherited
     def __init__(self, ax=None, lon_0=0, lat_0=-90, gridlines=True,
                  celestial=True, extent=[-150, 70, -85, -50], **kwargs):
         super().__init__(ax=ax, lon_0=lon_0, lat_0=lat_0,
@@ -119,6 +126,7 @@ class MaglitesSkyproj(LaeaSkyproj, _Survey):
 
 
 class DecalsSkyproj(McBrydeSkyproj, _Survey):
+    # docstring inherited
     def __init__(self, ax=None, lon_0=105.0, gridlines=True,
                  celestial=True, extent=[180, -180, -30, 40], **kwargs):
         super().__init__(ax=ax, lon_0=lon_0, gridlines=gridlines,

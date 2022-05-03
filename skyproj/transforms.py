@@ -10,6 +10,22 @@ __all__ = ["SkyTransform"]
 
 
 class SkyTransform(matplotlib.transforms.Transform):
+    """Class for transforming to and from sky coordinates.
+
+    This class implements the `matplotlib.transforms.Transform` API
+    to convert to and from the rectilinear Plate caree (lon/lat)
+    coordinate space to a specified coordinate system.  It does not
+    do general transformations between two arbitrary coordinate systems.
+
+    Parameters
+    ----------
+    proj : `skyproj.SkyProjection`
+        Sky projection to transform from/to.
+    inverse : `bool`, optional
+        If ``False``, the transform will convert from lon/lat to the
+        coordinate system ``proj``.  If ``True``, the transform will
+        convert from ``proj`` to lon/lat.
+    """
     input_dims = 2
     output_dims = 2
     is_separable = False
@@ -35,6 +51,7 @@ class SkyTransform(matplotlib.transforms.Transform):
         super().__init__()
 
     def inverted(self):
+        # docstring inherited
         if not self._inverse:
             # Return the inverse
             return SkyTransform(self.target_proj, inverse=True)
@@ -43,12 +60,14 @@ class SkyTransform(matplotlib.transforms.Transform):
             return SkyTransform(self.source_proj, inverse=False)
 
     def transform_non_affine(self, xy):
+        # docstring inherited
         res = self.target_proj.transform_points(self.source_proj,
                                                 xy[:, 0], xy[:, 1])
 
         return res
 
     def transform_path_non_affine(self, path):
+        # docstring inherited
         if self._inverse:
             # Just send this upstream if we're not computing geodesics.
             return super().transform_path_non_affine(path)
@@ -222,6 +241,18 @@ class SkyTransform(matplotlib.transforms.Transform):
         return lonlats, codes
 
     def _transform_path_non_affine_oblique(self, path):
+        """Transform a non-affine path for an oblique transformation.
+
+        Parameters
+        ----------
+        path : `matplotlib.path.Path`
+            Path to transform.
+
+        Returns
+        -------
+        transformed_path : `matplotlib.path.Path`
+            Path transformed to new coordinate system.
+        """
         # In the future, this routine may be merged with the one above.
         # However, there are significant challenges in tracking the edge
         # of the warp for oblique transforms which is necessary to create

@@ -17,6 +17,16 @@ __all__ = ['WrappedFormatterDMS', 'ExtremeFinderWrapped', 'GridHelperSkyproj']
 
 
 class WrappedFormatterDMS(angle_helper.FormatterDMS):
+    """A tick formatter that handles longitude wrapping.
+
+    Parameters
+    ----------
+    wrap : `float`
+        Angle (degrees) which should be wrapped (subtract 360).
+    longitude_ticks : `str`
+        Type of longitude ticks, either ``positive`` (0 to 360)
+        or ``symmetric`` (-180 to 180).
+    """
     def __init__(self, wrap, longitude_ticks):
         self._wrap = wrap
         if longitude_ticks == 'positive':
@@ -57,21 +67,19 @@ class WrappedFormatterDMS(angle_helper.FormatterDMS):
 
 
 class ExtremeFinderWrapped(ExtremeFinderSimple):
-    # docstring inherited
+    """
+    Find extremes with configurable wrap angle and correct limits.
 
+    Parameters
+    ----------
+    nx : `int`
+        Number of samples in x direction.
+    ny : `int`
+        Number of samples in y direction.
+    wrap_angle : `float`
+        Angle at which the 360-degree cycle should be wrapped.
+    """
     def __init__(self, nx, ny, wrap_angle):
-        """
-        Find extremes with configurable wrap angle and correct limits.
-
-        Parameters
-        ----------
-        nx : `int`
-            Number of samples in x direction.
-        ny : `int`
-            Number of samples in y direction.
-        wrap_angle : `float`
-            Angle at which the 360-degree cycle should be wrapped.
-        """
         self.nx, self.ny = nx, ny
         self._wrap = wrap_angle
         self._eps = 1e-5
@@ -102,6 +110,19 @@ class ExtremeFinderWrapped(ExtremeFinderSimple):
 
 class GridHelperSkyproj(GridHelperCurveLinear):
     """GridHelperCurveLinear with tick overlap protection.
+
+    Parameters
+    ----------
+    *args : `list`
+        Arguments for ``GridHelperCurveLinear``.
+    celestial : `bool`, optional
+        Plot is celestial, and angles should be 0 to 360.  Otherwise -180 to 180.
+    equatorial_labels : `bool`, optional
+        Longitude labels are marked on the equator instead of edges.
+    delta_cut : `float`, optional
+        Gridline step (degrees) to signify a jump around a wrapped edge.
+    **kwargs : `dict`, optional
+        Additional kwargs for ``GridHelperCurveLinear``.
     """
     def __init__(self, *args, celestial=True, equatorial_labels=False, delta_cut=80.0, **kwargs):
         self._celestial = celestial
@@ -111,6 +132,7 @@ class GridHelperSkyproj(GridHelperCurveLinear):
         super().__init__(*args, **kwargs)
 
     def get_gridlines(self, which="major", axis="both"):
+        # docstring inherited
         grid_lines = []
         if axis in ["both", "x"]:
             for gl in self._grid_info["lon"]["lines"]:
@@ -121,6 +143,19 @@ class GridHelperSkyproj(GridHelperCurveLinear):
         return grid_lines
 
     def _cut_grid_line_jumps(self, gl):
+        """Check for jumps and cut gridlines into multiple sections.
+
+        Parameters
+        ----------
+        gl : `list` [`tuple`]
+            Input gridlines.  List of tuples of numpy arrays.
+
+        Returns
+        -------
+        gl_new : `list` [`tuple`]
+            New gridlines.  Jumps have been replaced with `np.nan`
+            values to ensure lines are not connected around edges.
+        """
         dx = gl[0][0][1:] - gl[0][0][: -1]
         dy = gl[0][1][1:] - gl[0][1][: -1]
 
@@ -135,6 +170,7 @@ class GridHelperSkyproj(GridHelperCurveLinear):
         return gl_new
 
     def get_tick_iterator(self, nth_coord, axis_side, minor=False):
+        # docstring inherited
         try:
             _grid_info = self._grid_info
         except AttributeError:

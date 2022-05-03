@@ -16,6 +16,22 @@ RADIUS = 1.0
 
 
 class SkyProjection(CRS):
+    """Projection class describing sky projections.
+
+    This is a specialized subclass of a `pyproj.CRS` Coordinate Reference
+    System object.  Unlike a general earth-based CRS it uses a fixed
+    reference radius instead of a generalized ellipsoidal model.  And it
+    has additional routines used by SkyProj.
+
+    Parameters
+    ----------
+    name : `str`, optional
+        Name of projection type.
+    radius : `float`, optional
+        Radius of projected sphere.
+    **kwargs : `dict`, optional
+        Additional kwargs for PROJ4 parameters.
+    """
     def __init__(self, name=None, radius=RADIUS, **kwargs):
         self._name = name
         self.proj4_params = {'a': radius,
@@ -46,6 +62,24 @@ class SkyProjection(CRS):
         return self.__class__(**proj4_params)
 
     def transform_points(self, src_crs, x, y):
+        """Transform points from a source coordinate reference system (CRS)
+        to this CRS.
+
+        Parameters
+        ----------
+        src_crs : `skyproj.SkyProjection`
+            Source coordinate reference system describing x/y points.
+        x : `np.ndarray`
+            Array of x values, may be any number of dimensions.
+        y : `np.ndarray`
+            Array of y values, may be any number of dimensions.
+
+        Returns
+        -------
+        result : `np.ndarray`
+            Array of transformed points. Dimensions are [dim_x, 2]
+            such that the final index gives the transformed x_prime, y_prime.
+        """
         result_shape = tuple(x.shape[i] for i in range(x.ndim)) + (2, )
 
         x = x.ravel()
@@ -115,6 +149,19 @@ class SkyProjection(CRS):
 
 
 class PlateCarree(SkyProjection):
+    """Equirectangular (Plate carree) sky projection CRS.
+
+    Parameters
+    ----------
+    name : `str`, optional
+        Name of projection. Must be ``cyl``.
+    lon_0 : `float`, optional
+        Central longitude of projection.
+    radius : `float`, optional
+        Radius of projected sphere.
+    **kwargs : `dict`, optional
+        Additional kwargs for PROJ4 parameters.
+    """
     def __init__(self, name='cyl', lon_0=0.0, radius=RADIUS, **kwargs):
         proj4_params = {'proj': 'eqc',
                         'lon_0': lon_0,
@@ -126,16 +173,41 @@ class PlateCarree(SkyProjection):
 
 
 class McBrydeThomasFlatPolarQuartic(SkyProjection):
-    def __init__(self, name='mbtfpq', lon_0=0.0, lat_0=0.0, radius=RADIUS, **kwargs):
+    """McBryde Thomas Flat Polar Quartic sky projection CRS.
+
+    Parameters
+    ----------
+    name : `str`, optional
+        Name of projection. Must be ``mbtfpq``.
+    lon_0 : `float`, optional
+        Central longitude of projection.
+    radius : `float`, optional
+        Radius of projected sphere.
+    **kwargs : `dict`, optional
+        Additional kwargs for PROJ4 parameters.
+    """
+    def __init__(self, name='mbtfpq', lon_0=0.0, radius=RADIUS, **kwargs):
         proj4_params = {'proj': 'mbtfpq',
-                        'lon_0': lon_0,
-                        'lat_0': lat_0}
+                        'lon_0': lon_0}
         proj4_params = {**proj4_params, **kwargs}
 
         super().__init__(name=name, radius=radius, **proj4_params)
 
 
 class Mollweide(SkyProjection):
+    """Mollweide sky projection CRS.
+
+    Parameters
+    ----------
+    name : `str`, optional
+        Name of projection. Must be ``moll``.
+    lon_0 : `float`, optional
+        Central longitude of projection.
+    radius : `float`, optional
+        Radius of projected sphere.
+    **kwargs : `dict`, optional
+        Additional kwargs for PROJ4 parameters.
+    """
     def __init__(self, name='moll', lon_0=0.0, radius=RADIUS, **kwargs):
         proj4_params = {'proj': 'moll',
                         'lon_0': lon_0}
@@ -145,6 +217,23 @@ class Mollweide(SkyProjection):
 
 
 class ObliqueMollweide(SkyProjection):
+    """Oblique Mollweide sky projection CRS.
+
+    Parameters
+    ----------
+    name : `str`, optional
+        Name of projection. Must be ``moll``.
+    lon_0 : `float`, optional
+        Central longitude of projection.
+    lat_p : `float`, optional
+        Latitude of the North Pole of the unrotated coordinate system.
+    lon_p : `float`, optional
+        Longitude of the North Pole of the unrotated coordinate system.
+    radius : `float`, optional
+        Radius of projected sphere.
+    **kwargs : `dict`, optional
+        Additional kwargs for PROJ4 parameters.
+    """
     def __init__(self, name='obmoll', lon_0=0.0, lat_p=90.0, lon_p=0.0, radius=RADIUS, **kwargs):
         proj4_params = {'proj': 'ob_tran',
                         'o_proj': 'moll',
@@ -161,16 +250,41 @@ class ObliqueMollweide(SkyProjection):
 
 
 class Hammer(SkyProjection):
-    def __init__(self, name='hammer', lon_0=0.0, lat_0=0.0, radius=RADIUS, **kwargs):
+    """Hammer-Aitoff sky projection CRS.
+
+    Parameters
+    ----------
+    name : `str`, optional
+        Name of projection. Must be ``hammer``.
+    lon_0 : `float`, optional
+        Central longitude of projection.
+    radius : `float`, optional
+        Radius of projected sphere.
+    **kwargs : `dict`, optional
+        Additional kwargs for PROJ4 parameters.
+    """
+    def __init__(self, name='hammer', lon_0=0.0, radius=RADIUS, **kwargs):
         proj4_params = {'proj': 'hammer',
-                        'lon_0': lon_0,
-                        'lat_0': lat_0}
+                        'lon_0': lon_0}
         proj4_params = {**proj4_params, **kwargs}
 
         super().__init__(name=name, radius=radius, **proj4_params)
 
 
 class EqualEarth(SkyProjection):
+    """Equal Earth sky projection CRS.
+
+    Parameters
+    ----------
+    name : `str`, optional
+        Name of projection. Must be ``eqearth``.
+    lon_0 : `float`, optional
+        Central longitude of projection.
+    radius : `float`, optional
+        Radius of projected sphere.
+    **kwargs : `dict`, optional
+        Additional kwargs for PROJ4 parameters.
+    """
     def __init__(self, name='eqearth', lon_0=0.0, radius=RADIUS, **kwargs):
         proj4_params = {'proj': 'eqearth',
                         'lon_0': lon_0}
@@ -180,6 +294,21 @@ class EqualEarth(SkyProjection):
 
 
 class LambertAzimuthalEqualArea(SkyProjection):
+    """Lambert Azimuthal Equal Area sky projection CRS.
+
+    Parameters
+    ----------
+    name : `str`, optional
+        Name of projection. Must be ``laea``.
+    lon_0 : `float`, optional
+        Central longitude of projection.
+    lat_0 : `float`, optional
+        Central latitude of projection.
+    radius : `float`, optional
+        Radius of projected sphere.
+    **kwargs : `dict`, optional
+        Additional kwargs for PROJ4 parameters.
+    """
     def __init__(self, name='laea', lon_0=0.0, lat_0=0.0, radius=RADIUS, **kwargs):
         proj4_params = {'proj': 'laea',
                         'lon_0': lon_0,
@@ -190,6 +319,21 @@ class LambertAzimuthalEqualArea(SkyProjection):
 
 
 class Gnomonic(SkyProjection):
+    """Gnomonic sky projection CRS.
+
+    Parameters
+    ----------
+    name : `str`, optional
+        Name of projection. Must be ``gnom``.
+    lon_0 : `float`, optional
+        Central longitude of projection.
+    lat_0 : `float`, optional
+        Central latitude of projection.
+    radius : `float`, optional
+        Radius of projected sphere.
+    **kwargs : `dict`, optional
+        Additional kwargs for PROJ4 parameters.
+    """
     def __init__(self, name='gnom', lon_0=0.0, lat_0=0.0, radius=RADIUS, **kwargs):
         proj4_params = {'proj': 'gnom',
                         'lon_0': lon_0,
