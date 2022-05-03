@@ -10,7 +10,7 @@ except PackageNotFoundError:
     pass
 
 from .skyproj import *
-from .projections import *
+from .skycrs import *
 from .transforms import *
 from .skyaxes import *
 from .survey import *

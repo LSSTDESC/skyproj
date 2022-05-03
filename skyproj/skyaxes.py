@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.axes
 from pyproj import Geod
 
-from .projections import PlateCarreeCRS, RADIUS
+from .skycrs import PlateCarreeCRS, RADIUS
 
 __all__ = ["SkyAxes"]
 
