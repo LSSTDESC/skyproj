@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.axes
 from pyproj import Geod
 
-from .projections import PlateCarree, RADIUS
+from .projections import PlateCarreeCRS, RADIUS
 
 __all__ = ["SkyAxes"]
 
@@ -22,9 +22,9 @@ def _add_lonlat(func):
 class SkyAxes(matplotlib.axes.Axes):
     # docstring inherited
     def __init__(self, *args, **kwargs):
-        self.projection = kwargs.pop("sky_projection")
+        self.projection = kwargs.pop("sky_crs")
 
-        self.plate_carree = PlateCarree()
+        self.plate_carree = PlateCarreeCRS()
 
         super().__init__(*args, **kwargs)
 
@@ -250,11 +250,11 @@ class SkyAxes(matplotlib.axes.Axes):
     def lat_0(self):
         return self.projection.lat_0
 
-    def update_projection(self, proj_new):
+    def update_projection(self, crs_new):
         """Update the projection central coordinate.
 
         Parameters
         ----------
-        proj_new : `skyproj.SkyProjection`
+        crs_new : `skyproj.SkyCRS`
         """
-        self.projection = proj_new
+        self.projection = crs_new

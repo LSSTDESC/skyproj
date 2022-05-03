@@ -9,7 +9,7 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.cm import ScalarMappable
 from matplotlib.colors import Normalize
 
-from .projections import get_projection, PlateCarree, Gnomonic
+from .projections import get_crs, PlateCarreeCRS, GnomonicCRS
 from .hpx_utils import healpix_pixels_range, hspmap_to_xy, hpxmap_to_xy, healpix_to_xy, healpix_bin
 from .mpl_utils import ExtremeFinderWrapped, WrappedFormatterDMS, GridHelperSkyproj
 from .utils import wrap_values, _get_boundary_poly_xy
@@ -40,7 +40,7 @@ class _Skyproj():
     autorescale : `bool`, optional
         Automatically rescale color bars when zoomed?
     **kwargs : `dict`, optional
-        Additional arguments to send to cartosky/proj4 projection initialization.
+        Additional arguments to send to cartosky/proj4 projection CRS initialization.
     """
     def __init__(self, ax=None, projection_name='cyl', lon_0=0, gridlines=True, celestial=True,
                  extent=None, longitude_ticks='positive', autorescale=True, **kwargs):
@@ -84,9 +84,9 @@ class _Skyproj():
             lon_0 = 179.9999
 
         kwargs['lon_0'] = lon_0
-        projection = get_projection(projection_name, **kwargs)
-        self._ax = fig.add_subplot(subspec, projection=projection)
-        self._projection_orig = projection
+        crs = get_crs(projection_name, **kwargs)
+        self._ax = fig.add_subplot(subspec, projection=crs)
+        self._crs_orig = crs
         self._reprojected = False
 
         self._aa = None
@@ -153,7 +153,7 @@ class _Skyproj():
         lat = np.atleast_1d(lat)
         out = ((lat < (-90.0 + self._pole_clip))
                | (lat > (90.0 - self._pole_clip)))
-        proj_xy = self.projection.transform_points(PlateCarree(), lon, lat)
+        proj_xy = self.crs.transform_points(PlateCarreeCRS(), lon, lat)
         # FIXME I don't like this, look at the get_extent code instead/as well?
         proj_xy[..., 1][out] = np.nan
         return proj_xy[..., 0], proj_xy[..., 1]
@@ -179,7 +179,7 @@ class _Skyproj():
         """
         x = np.atleast_1d(x)
         y = np.atleast_1d(y)
-        proj_lonlat = PlateCarree().transform_points(self.projection, x, y)
+        proj_lonlat = PlateCarreeCRS().transform_points(self.crs, x, y)
         return proj_lonlat[..., 0], proj_lonlat[..., 1]
 
     def _initialize_axes(self, extent, extent_xy=None):
@@ -563,13 +563,13 @@ class _Skyproj():
             lon = np.atleast_1d(lon)
             lat = np.atleast_1d(lat)
             lon[np.isclose(lon, self._wrap)] = self._wrap - 1e-10
-            proj_xy = self.projection.transform_points(PlateCarree(), lon, lat)
+            proj_xy = self.crs.transform_points(PlateCarreeCRS(), lon, lat)
             return proj_xy[..., 0], proj_xy[..., 1]
 
-        if self.projection.name == 'cyl':
+        if self.crs.name == 'cyl':
             delta_cut = 80.0
         else:
-            delta_cut = 0.5*self.projection.radius
+            delta_cut = 0.5*self.crs.radius
 
         grid_helper = GridHelperSkyproj(
             (proj_wrap, self.proj_inverse),
@@ -684,7 +684,7 @@ class _Skyproj():
 
             if self._reprojected:
                 self._remove_change_axis_callbacks()
-                ax.update_projection(self._projection_orig)
+                ax.update_projection(self._crs_orig)
                 self._initialize_axes(self._initial_extent_lonlat)
                 self._add_change_axis_callbacks()
 
@@ -796,11 +796,11 @@ class _Skyproj():
             # Decide if gnomonic or not
             if (extent[1] - extent[0])/2. < 1.0 and (extent[3] - extent[2])/2. < 1.0:
                 # Make this a gnomonic projection
-                proj_new = Gnomonic(lon_0=lon_0_new, lat_0=(extent[2] + extent[3])/2.)
+                crs_new = GnomonicCRS(lon_0=lon_0_new, lat_0=(extent[2] + extent[3])/2.)
             else:
-                proj_new = self._projection_orig.with_new_center(lon_0_new, lat_0=lat_0_new)
+                crs_new = self._crs_orig.with_new_center(lon_0_new, lat_0=lat_0_new)
 
-            self._ax.update_projection(proj_new)
+            self._ax.update_projection(crs_new)
             self._initialize_axes(extent)
             self._changed_x_axis = True
             self._changed_y_axis = True
@@ -1584,7 +1584,7 @@ class _Skyproj():
         return self._ax.lat_0
 
     @property
-    def projection(self):
+    def crs(self):
         return self._ax.projection
 
     @property

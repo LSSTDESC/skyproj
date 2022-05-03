@@ -3,7 +3,7 @@ from matplotlib.path import Path
 import numpy as np
 from pyproj import Geod
 
-from .projections import PlateCarree, RADIUS
+from .projections import PlateCarreeCRS, RADIUS
 from .utils import wrap_values
 
 __all__ = ["SkyTransform"]
@@ -34,11 +34,11 @@ class SkyTransform(matplotlib.transforms.Transform):
     def __init__(self, proj, inverse=False):
         self._inverse = inverse
         if not inverse:
-            self.source_proj = PlateCarree()
+            self.source_proj = PlateCarreeCRS()
             self.target_proj = proj
         else:
             self.source_proj = proj
-            self.target_proj = PlateCarree()
+            self.target_proj = PlateCarreeCRS()
 
         # Number of geodesic sub-samples for paths.
         self._nsamp = 10

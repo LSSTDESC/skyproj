@@ -7,16 +7,16 @@ from pyproj.exceptions import ProjError
 
 from .utils import wrap_values
 
-__all__ = ["SkyProjection", "PlateCarree", "McBrydeThomasFlatPolarQuartic", "Mollweide",
-           "Hammer", "EqualEarth", "LambertAzimuthalEqualArea", "Gnomonic",
-           "ObliqueMollweide", "get_projection", "get_available_projections"]
+__all__ = ["SkyCRS", "PlateCarreeCRS", "McBrydeThomasFlatPolarQuarticCRS", "MollweideCRS",
+           "HammerCRS", "EqualEarthCRS", "LambertAzimuthalEqualAreaCRS", "GnomonicCRS",
+           "ObliqueMollweideCRS", "get_crs", "get_available_crs"]
 
 
 RADIUS = 1.0
 
 
-class SkyProjection(CRS):
-    """Projection class describing sky projections.
+class SkyCRS(CRS):
+    """Coordinate Reference System (CRS) class describing sky projections.
 
     This is a specialized subclass of a `pyproj.CRS` Coordinate Reference
     System object.  Unlike a general earth-based CRS it uses a fixed
@@ -26,7 +26,7 @@ class SkyProjection(CRS):
     Parameters
     ----------
     name : `str`, optional
-        Name of projection type.
+        Name of projection CRS type.
     radius : `float`, optional
         Radius of projected sphere.
     **kwargs : `dict`, optional
@@ -40,7 +40,7 @@ class SkyProjection(CRS):
         super().__init__(self.proj4_params)
 
     def with_new_center(self, lon_0, lat_0=None):
-        """Create a new SkyProjection with a new lon_0/lat_0.
+        """Create a new SkyCRS with a new lon_0/lat_0.
 
         Parameters
         ----------
@@ -51,8 +51,8 @@ class SkyProjection(CRS):
 
         Returns
         -------
-        proj : `skyproj.SkyProjection`
-            New projection.
+        crs : `skyproj.SkyCRS`
+            New projection CRS.
         """
         proj4_params = self.proj4_params.copy()
         proj4_params['lon_0'] = lon_0
@@ -67,7 +67,7 @@ class SkyProjection(CRS):
 
         Parameters
         ----------
-        src_crs : `skyproj.SkyProjection`
+        src_crs : `skyproj.SkyCRS`
             Source coordinate reference system describing x/y points.
         x : `np.ndarray`
             Array of x values, may be any number of dimensions.
@@ -89,7 +89,7 @@ class SkyProjection(CRS):
 
         result = np.zeros([npts, 2], dtype=np.float64)
         if npts:
-            if isinstance(src_crs, PlateCarree):
+            if isinstance(src_crs, PlateCarreeCRS):
                 # We need to wrap to [-180, 180)
                 x = wrap_values(x)
             try:
@@ -145,16 +145,16 @@ class SkyProjection(CRS):
     def _as_mpl_axes(self):
         from .skyaxes import SkyAxes
 
-        return SkyAxes, {'sky_projection': self}
+        return SkyAxes, {'sky_crs': self}
 
 
-class PlateCarree(SkyProjection):
-    """Equirectangular (Plate carree) sky projection CRS.
+class PlateCarreeCRS(SkyCRS):
+    """Equirectangular (Plate carree) sky CRS.
 
     Parameters
     ----------
     name : `str`, optional
-        Name of projection. Must be ``cyl``.
+        Name of projection CRS. Must be ``cyl``.
     lon_0 : `float`, optional
         Central longitude of projection.
     radius : `float`, optional
@@ -172,13 +172,13 @@ class PlateCarree(SkyProjection):
         super().__init__(name=name, radius=radius, **proj4_params)
 
 
-class McBrydeThomasFlatPolarQuartic(SkyProjection):
-    """McBryde Thomas Flat Polar Quartic sky projection CRS.
+class McBrydeThomasFlatPolarQuarticCRS(SkyCRS):
+    """McBryde Thomas Flat Polar Quartic sky CRS.
 
     Parameters
     ----------
     name : `str`, optional
-        Name of projection. Must be ``mbtfpq``.
+        Name of projection CRS. Must be ``mbtfpq``.
     lon_0 : `float`, optional
         Central longitude of projection.
     radius : `float`, optional
@@ -194,13 +194,13 @@ class McBrydeThomasFlatPolarQuartic(SkyProjection):
         super().__init__(name=name, radius=radius, **proj4_params)
 
 
-class Mollweide(SkyProjection):
-    """Mollweide sky projection CRS.
+class MollweideCRS(SkyCRS):
+    """Mollweide sky CRS.
 
     Parameters
     ----------
     name : `str`, optional
-        Name of projection. Must be ``moll``.
+        Name of projection CRS. Must be ``moll``.
     lon_0 : `float`, optional
         Central longitude of projection.
     radius : `float`, optional
@@ -216,13 +216,13 @@ class Mollweide(SkyProjection):
         super().__init__(name=name, radius=radius, **proj4_params)
 
 
-class ObliqueMollweide(SkyProjection):
-    """Oblique Mollweide sky projection CRS.
+class ObliqueMollweideCRS(SkyCRS):
+    """Oblique Mollweide sky CRS.
 
     Parameters
     ----------
     name : `str`, optional
-        Name of projection. Must be ``moll``.
+        Name of projection CRS. Must be ``moll``.
     lon_0 : `float`, optional
         Central longitude of projection.
     lat_p : `float`, optional
@@ -249,13 +249,13 @@ class ObliqueMollweide(SkyProjection):
         return self.proj4_params['lon_0'] + self.proj4_params['o_lon_p']
 
 
-class Hammer(SkyProjection):
-    """Hammer-Aitoff sky projection CRS.
+class HammerCRS(SkyCRS):
+    """Hammer-Aitoff sky CRS.
 
     Parameters
     ----------
     name : `str`, optional
-        Name of projection. Must be ``hammer``.
+        Name of projection CRS. Must be ``hammer``.
     lon_0 : `float`, optional
         Central longitude of projection.
     radius : `float`, optional
@@ -271,13 +271,13 @@ class Hammer(SkyProjection):
         super().__init__(name=name, radius=radius, **proj4_params)
 
 
-class EqualEarth(SkyProjection):
-    """Equal Earth sky projection CRS.
+class EqualEarthCRS(SkyCRS):
+    """Equal Earth sky CRS.
 
     Parameters
     ----------
     name : `str`, optional
-        Name of projection. Must be ``eqearth``.
+        Name of projection CRS. Must be ``eqearth``.
     lon_0 : `float`, optional
         Central longitude of projection.
     radius : `float`, optional
@@ -293,13 +293,13 @@ class EqualEarth(SkyProjection):
         super().__init__(name=name, radius=radius, **proj4_params)
 
 
-class LambertAzimuthalEqualArea(SkyProjection):
-    """Lambert Azimuthal Equal Area sky projection CRS.
+class LambertAzimuthalEqualAreaCRS(SkyCRS):
+    """Lambert Azimuthal Equal Area sky CRS.
 
     Parameters
     ----------
     name : `str`, optional
-        Name of projection. Must be ``laea``.
+        Name of projection CRS. Must be ``laea``.
     lon_0 : `float`, optional
         Central longitude of projection.
     lat_0 : `float`, optional
@@ -318,13 +318,13 @@ class LambertAzimuthalEqualArea(SkyProjection):
         super().__init__(name=name, radius=radius, **proj4_params)
 
 
-class Gnomonic(SkyProjection):
-    """Gnomonic sky projection CRS.
+class GnomonicCRS(SkyCRS):
+    """Gnomonic sky CRS.
 
     Parameters
     ----------
     name : `str`, optional
-        Name of projection. Must be ``gnom``.
+        Name of projection CRS. Must be ``gnom``.
     lon_0 : `float`, optional
         Central longitude of projection.
     lat_0 : `float`, optional
@@ -343,53 +343,53 @@ class Gnomonic(SkyProjection):
         super().__init__(name=name, radius=radius, **proj4_params)
 
 
-_projections = {
-    'hammer': ('Hammer', Hammer),
-    'mbtfpq': ('McBryde-Thomas Flat Polar Quartic', McBrydeThomasFlatPolarQuartic),
-    'cyl': ('Plate Carree', PlateCarree),
-    'eqearth': ('Equal Earth', EqualEarth),
-    'laea': ('Lambert Azimuthal Equal Area', LambertAzimuthalEqualArea),
-    'moll': ('Mollweide', Mollweide),
-    'obmoll': ('Oblique Mollweide', ObliqueMollweide),
-    'gnom': ('Gnomonic', Gnomonic)
+_crss = {
+    'hammer': ('Hammer', HammerCRS),
+    'mbtfpq': ('McBryde-Thomas Flat Polar Quartic', McBrydeThomasFlatPolarQuarticCRS),
+    'cyl': ('Plate Carree', PlateCarreeCRS),
+    'eqearth': ('Equal Earth', EqualEarthCRS),
+    'laea': ('Lambert Azimuthal Equal Area', LambertAzimuthalEqualAreaCRS),
+    'moll': ('Mollweide', MollweideCRS),
+    'obmoll': ('Oblique Mollweide', ObliqueMollweideCRS),
+    'gnom': ('Gnomonic', GnomonicCRS)
 }
 
 
-def get_projection(name, **kwargs):
-    """Return a skyproj projection.
+def get_crs(name, **kwargs):
+    """Return a skyproj CRS.
 
-    For list of projections available, use skyproj.get_available_projections().
+    For list of projections available, use skyproj.get_available_crs().
 
     Parameters
     ----------
     name : `str`
-        Skyproj name of projection.
+        Skyproj name of projection CRS.
     **kwargs :
-        Additional kwargs appropriate for given projection.
+        Additional kwargs appropriate for given projection CRS.
 
     Returns
     -------
-    proj : `skyproj.SkyProjection`
+    crs : `skyproj.SkyCRS`
     """
-    # Is this a listed projection?
-    if name not in _projections:
-        raise ValueError(f'{name} projection name is not recognized.  See get_available_projections()')
+    # Is this a listed projection CRS?
+    if name not in _crss:
+        raise ValueError(f'{name} CRS name is not recognized.  See get_available_crs()')
 
-    descr, projclass = _projections[name]
+    descr, crsclass = _crss[name]
 
-    return projclass(name=name, **kwargs)
+    return crsclass(name=name, **kwargs)
 
 
-def get_available_projections():
-    """Return dict of available projections.
+def get_available_crs():
+    """Return dict of available projection CRSs.
 
     Returns
     -------
-    available_projections: `dict`
-        Available projections.  Key is cartosky name, value is brief description.
+    available_crs: `dict`
+        Available CRSs.  Key is skyproj name, value is brief description.
     """
-    available_projections = {}
-    for name, (descr, projclass) in _projections.items():
-        available_projections[name] = descr
+    available_crs = {}
+    for name, (descr, crsclass) in _crss.items():
+        available_crs[name] = descr
 
-    return available_projections
+    return available_crs
