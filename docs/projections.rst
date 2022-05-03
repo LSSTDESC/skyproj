@@ -5,15 +5,30 @@
 SkyProj Projections
 ===================
 
-`SkyProj` supports a wide variety of projections, primarily equal-area.
+`SkyProj` supports a wide variety of map projections, primarily equal-area.
 
-When initializing any sky projection object, there are a number of parameters that can be set.
+The fundamental base projection class is the :code:`skyproj.Skyproj()` sky projection.
+This class is a container for a number of elements.
+In particular, it contains:
+
+* A coordinate reference system (CRS) (a subclass of :code:`skyproj.SkyCRS()`) which describes a given PROJ projection.
+  The :code:`skyproj.SkyCRS()` conforms to the matplotlib :code:`projection` interface.
+* A matplotlib axis (:code:`skyproj.SkyAxes()`) to handle general plotting.
+* A matplotlib axis artist (:code:`mpl_toolkits.axisartist.Axes()`) for drawing gridlines and labels.
+* A large number of methods for drawing maps, lines, polygons, and colorbars.
+
+When initializing any :code:`skyproj.Skyproj()` object, there are a number of parameters that can be set.
 The most common options that a user would want to specify are:
 
 * :code:`ax`: The specific axis object to replace with the skyproj axis.  If not specified, it will use the current axis as determined by matplotlib.
-* :code:`lon_0`: The central longitude of the projection.  For most pseudocylindrical projections, The distortion will be smallest near the central longitude.
-* :code:`extent`: Default extent of the map, specified as :code:`[lon_min, lon_max, lat_min, lat_max]`.  This may be overridden if a map is plotted with :code:`zoom=True`.
-* :code:`autorescale`: If this is set then the color bars will automatically rescale when the map is zoomed.  This can be useful for maps with wide dynamic range.
+* :code:`lon_0`: The central longitude of the projection.
+  For most pseudocylindrical projections, the distortion will be smallest near the central longitude.
+* :code:`lat_0`: The central latitude of the projection.
+  Only :code:`skyproj.LaeaSkyproj()` and :code:`skyproj.GnomonicSkyproj()` support :code:`lat_0`.
+* :code:`extent`: Default extent of the map, specified as :code:`[lon_min, lon_max, lat_min, lat_max]`.
+  This may be overridden if a map is plotted with :code:`zoom=True`.
+* :code:`autorescale`: If this is set then the color bars will automatically rescale when the map is zoomed.
+  This can be useful for maps with wide dynamic range.
 
 
 Cylindrical/Plate carrée

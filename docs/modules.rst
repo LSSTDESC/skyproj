@@ -32,9 +32,9 @@ SkyAxes
     :special-members:
     :show-inheritance:
 
-Projections
------------
-.. automodule:: skyproj.projections
+SkyCRS
+------
+.. automodule:: skyproj.SkyCRS
     :members:
     :special-members:
     :show-inheritance:

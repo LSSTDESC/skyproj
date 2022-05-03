@@ -13,7 +13,7 @@ It has its origins in `cartosky <https://github.com/kadrlica/cartosky>`_, which 
 However, it has diverged significantly as the needs of mapping the sky are somewhat different from mapping the Earth.
 
 The fundamental base class for `SkyProj` is the :code:`skyproj.Skyproj()` sky projection.
-This class is a container for a matplotlib axis (for plotting); a matplotlib axis artist (for drawing gridlines and labels); and a large number of methods for plotting maps, lines, polygons, and colorbars.
+This class is a container for a matplotlib axis (for plotting); a matplotlib axis artist (for drawing gridlines and labels); a coordinate reference system (CRS) which describes a particular map projection; and a large number of methods for plotting maps, lines, polygons, and colorbars.
 The :code:`Skyproj()` class is designed to create projections that are accurate and attractive for full-sky and zoomed maps.
 
 Creating a Default :code:`Skyproj()`
