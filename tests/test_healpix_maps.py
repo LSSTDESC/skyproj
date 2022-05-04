@@ -40,9 +40,9 @@ def test_healsparse(tmp_path):
     fig = plt.figure(1, figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
-    m = skyproj.McBrydeSkyproj(ax=ax)
-    im, lon_raster, lat_raster, values_raster = m.draw_hspmap(hspmap)
-    m.draw_inset_colorbar()
+    sp = skyproj.McBrydeSkyproj(ax=ax)
+    im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(hspmap)
+    sp.draw_inset_colorbar()
     fname = 'healsparse_one.png'
     fig.savefig(tmp_path / fname)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
@@ -53,9 +53,9 @@ def test_healsparse(tmp_path):
     fig = plt.figure(1, figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
-    m = skyproj.McBrydeSkyproj(ax=ax)
-    m.draw_hspmap(hspmap, lon_range=[4.9, 5.3], lat_range=[4.9, 5.3], cmap=plt.colormaps['rainbow'])
-    m.draw_colorbar()
+    sp = skyproj.McBrydeSkyproj(ax=ax)
+    sp.draw_hspmap(hspmap, lon_range=[4.9, 5.3], lat_range=[4.9, 5.3], cmap=plt.colormaps['rainbow'])
+    sp.draw_colorbar()
     fname = 'healsparse_two.png'
     fig.savefig(tmp_path / fname)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
@@ -65,9 +65,9 @@ def test_healsparse(tmp_path):
     fig = plt.figure(1, figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
-    m = skyproj.McBrydeSkyproj(ax=ax, lon_0=-175.0)
-    im, lon_raster, lat_raster, values_raster = m.draw_hspmap(hspmap, zoom=False)
-    m.draw_inset_colorbar()
+    sp = skyproj.McBrydeSkyproj(ax=ax, lon_0=-175.0)
+    im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(hspmap, zoom=False)
+    sp.draw_inset_colorbar()
     fname = 'healsparse_three.png'
     fig.savefig(tmp_path / fname)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
@@ -85,9 +85,9 @@ def test_healpix(tmp_path):
     fig = plt.figure(1, figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
-    m = skyproj.McBrydeSkyproj(ax=ax)
-    im, lon_raster, lat_raster, values_raster = m.draw_hpxmap(hpxmap, nest=True)
-    m.draw_inset_colorbar()
+    sp = skyproj.McBrydeSkyproj(ax=ax)
+    im, lon_raster, lat_raster, values_raster = sp.draw_hpxmap(hpxmap, nest=True)
+    sp.draw_inset_colorbar()
     # These should match the healsparse maps, so we can use the same comparison.
     fname = 'healsparse_one.png'
     fig.savefig(tmp_path / fname)
@@ -98,10 +98,10 @@ def test_healpix(tmp_path):
     fig = plt.figure(1, figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
-    m = skyproj.McBrydeSkyproj(ax=ax)
-    m.draw_hpxmap(hpxmap, nest=True, lon_range=[4.9, 5.3], lat_range=[4.9, 5.3],
-                  cmap=plt.colormaps['rainbow'])
-    m.draw_colorbar()
+    sp = skyproj.McBrydeSkyproj(ax=ax)
+    sp.draw_hpxmap(hpxmap, nest=True, lon_range=[4.9, 5.3], lat_range=[4.9, 5.3],
+                   cmap=plt.colormaps['rainbow'])
+    sp.draw_colorbar()
     fname = 'healsparse_two.png'
     fig.savefig(tmp_path / fname)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
@@ -125,9 +125,9 @@ def test_healsparse_widemask(tmp_path):
     fig = plt.figure(1, figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
-    m = skyproj.McBrydeSkyproj(ax=ax)
-    im, lon_raster, lat_raster, values_raster = m.draw_hspmap(hspmap)
-    m.draw_inset_colorbar()
+    sp = skyproj.McBrydeSkyproj(ax=ax)
+    im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(hspmap)
+    sp.draw_inset_colorbar()
     fname = 'healsparse_wide_one.png'
     fig.savefig(tmp_path / fname)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
@@ -146,9 +146,9 @@ def test_healsparse_widemask(tmp_path):
     fig = plt.figure(1, figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
-    m = skyproj.McBrydeSkyproj(ax=ax)
-    im, lon_raster, lat_raster, values_raster = m.draw_hspmap(hspmap)
-    m.draw_inset_colorbar()
+    sp = skyproj.McBrydeSkyproj(ax=ax)
+    im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(hspmap)
+    sp.draw_inset_colorbar()
     fname2 = 'healsparse_wide_one_alt.png'
     fig.savefig(tmp_path / fname2)
     # Compare to the previoues one.
@@ -168,12 +168,12 @@ def test_hpxpix(tmp_path):
     fig = plt.figure(1, figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
-    m = skyproj.McBrydeSkyproj(ax=ax)
-    im, lon_raster, lat_raster, values_raster = m.draw_hpxpix(hspmap.nside_sparse,
-                                                              pixels,
-                                                              values,
-                                                              nest=True)
-    m.draw_inset_colorbar()
+    sp = skyproj.McBrydeSkyproj(ax=ax)
+    im, lon_raster, lat_raster, values_raster = sp.draw_hpxpix(hspmap.nside_sparse,
+                                                               pixels,
+                                                               values,
+                                                               nest=True)
+    sp.draw_inset_colorbar()
     fname = 'healsparse_one.png'
     fig.savefig(tmp_path / fname)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
@@ -183,11 +183,11 @@ def test_hpxpix(tmp_path):
     fig = plt.figure(1, figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
-    m = skyproj.McBrydeSkyproj(ax=ax)
-    m.draw_hpxpix(hspmap.nside_sparse, pixels, values, nest=True,
-                  lon_range=[4.9, 5.3], lat_range=[4.9, 5.3],
-                  cmap=plt.colormaps['rainbow'])
-    m.draw_colorbar()
+    sp = skyproj.McBrydeSkyproj(ax=ax)
+    sp.draw_hpxpix(hspmap.nside_sparse, pixels, values, nest=True,
+                   lon_range=[4.9, 5.3], lat_range=[4.9, 5.3],
+                   cmap=plt.colormaps['rainbow'])
+    sp.draw_colorbar()
     fname = 'healsparse_two.png'
     fig.savefig(tmp_path / fname)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)

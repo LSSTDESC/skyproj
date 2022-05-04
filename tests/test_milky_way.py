@@ -19,10 +19,27 @@ def test_draw_milky_way(tmp_path):
     fig = plt.figure(1, figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
-    m = skyproj.McBrydeSkyproj(ax=ax)
-    m.draw_milky_way(label='Milky Way')
-    m.legend()
+    sp = skyproj.McBrydeSkyproj(ax=ax)
+    sp.draw_milky_way(label='Milky Way')
+    sp.legend()
     fname = 'milky_way.png'
+    fig.savefig(tmp_path / fname)
+    err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 10.0)
+    if err:
+        raise ImageComparisonFailure(err)
+
+
+def test_draw_milky_way_galactic(tmp_path):
+    """Test drawing the Milky Way (Galactic Coordinates)."""
+    plt.rcParams.update(plt.rcParamsDefault)
+
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    sp = skyproj.McBrydeSkyproj(ax=ax, galactic=True, longitude_ticks='symmetric')
+    sp.draw_milky_way(label='Milky Way')
+    sp.legend()
+    fname = 'milky_way_galactic.png'
     fig.savefig(tmp_path / fname)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 10.0)
     if err:

@@ -2,8 +2,9 @@ import functools
 import numpy as np
 
 import matplotlib.axes
+from pyproj import Geod
 
-from .projections import PlateCarree
+from .skycrs import PlateCarreeCRS, RADIUS
 
 __all__ = ["SkyAxes"]
 
@@ -19,10 +20,11 @@ def _add_lonlat(func):
 
 
 class SkyAxes(matplotlib.axes.Axes):
+    # docstring inherited
     def __init__(self, *args, **kwargs):
-        self.projection = kwargs.pop("sky_projection")
+        self.projection = kwargs.pop("sky_crs")
 
-        self.plate_carree = PlateCarree()
+        self.plate_carree = PlateCarreeCRS()
 
         super().__init__(*args, **kwargs)
 
@@ -46,7 +48,7 @@ class SkyAxes(matplotlib.axes.Axes):
         ----------
         extent : `tuple` [`float`]
             Set the extent by [lon0, lon1, lat0, lat1] or [x0, x1, y0, y1].
-        lonat : `bool`, optional
+        lonlat : `bool`, optional
             Extent is specified in lon/lat coordinates?  Otherwise native.
         """
         if not lonlat:
@@ -145,6 +147,8 @@ class SkyAxes(matplotlib.axes.Axes):
 
     @_add_lonlat
     def plot(self, *args, **kwargs):
+        # docstring inherited
+
         # The transformation code will automatically plot geodesics
         # and split line segements that cross the wrapping boundary.
         result = super().plot(*args, **kwargs)
@@ -153,12 +157,14 @@ class SkyAxes(matplotlib.axes.Axes):
 
     @_add_lonlat
     def scatter(self, *args, **kwargs):
+        # docstring inherited
         result = super().scatter(*args, **kwargs)
 
         return result
 
     @_add_lonlat
     def pcolormesh(self, X, Y, C, **kwargs):
+        # docstring inherited
         C_temp = C.copy()
 
         if kwargs.get('lonlat', True):
@@ -188,15 +194,53 @@ class SkyAxes(matplotlib.axes.Axes):
 
     @_add_lonlat
     def fill(self, *args, **kwargs):
+        # docstring inherited
         result = super().fill(*args, **kwargs)
 
         return result
 
     @_add_lonlat
     def text(self, *args, **kwargs):
+        # docstring inherited
         result = super().text(*args, **kwargs)
 
         return result
+
+    @_add_lonlat
+    def circle(self, lon, lat, radius, nsamp=100, fill=False, **kwargs):
+        """Draw a geodesic circle centered at given position.
+
+        Parameters
+        ----------
+        lon : `float`
+            Longitude of center of circle (degrees).
+        lat : `float`
+            Latitude of center of circle (degrees).
+        radius : `float`
+            Radius of circle (degrees).
+        nsamp : `int`, optional
+            Number of points to sample.
+        fill : `bool`, optional
+            Draw filled circle?
+        **kwargs : `dict`
+            Extra plotting kwargs.
+        """
+        geod = Geod(a=RADIUS)
+
+        # We need the radius in meters
+        radius_m = RADIUS*np.deg2rad(radius)
+
+        az = np.linspace(360.0, 0.0, nsamp)
+        lons, lats, _ = geod.fwd(
+            np.full(nsamp, lon, dtype=np.float64),
+            np.full(nsamp, lat, dtype=np.float64),
+            az,
+            np.full(nsamp, radius_m)
+        )
+        if fill:
+            return self.fill(lons, lats, **kwargs)
+        else:
+            return self.plot(lons, lats, **kwargs)
 
     @property
     def lon_0(self):
@@ -206,11 +250,11 @@ class SkyAxes(matplotlib.axes.Axes):
     def lat_0(self):
         return self.projection.lat_0
 
-    def update_projection(self, proj_new):
+    def update_projection(self, crs_new):
         """Update the projection central coordinate.
 
         Parameters
         ----------
-        proj_new : `skyproj.SkyProjection`
+        crs_new : `skyproj.SkyCRS`
         """
-        self.projection = proj_new
+        self.projection = crs_new
