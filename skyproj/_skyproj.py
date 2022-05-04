@@ -39,11 +39,14 @@ class _Skyproj():
         from -180 to 180 degrees (``symmetric``).
     autorescale : `bool`, optional
         Automatically rescale color bars when zoomed?
+    galactic : `bool`, optional
+        Plotting in Galactic coordinates?  Recommendation for Galactic plots
+        is to have longitude_ticks set to ``symmetric`` and celestial = True.
     **kwargs : `dict`, optional
         Additional arguments to send to cartosky/proj4 projection CRS initialization.
     """
     def __init__(self, ax=None, projection_name='cyl', lon_0=0, gridlines=True, celestial=True,
-                 extent=None, longitude_ticks='positive', autorescale=True, **kwargs):
+                 extent=None, longitude_ticks='positive', autorescale=True, galactic=False, **kwargs):
         self._redraw_dict = {'hpxmap': None,
                              'hspmap': None,
                              'im': None,
@@ -94,6 +97,7 @@ class _Skyproj():
         self.do_celestial = celestial
         self.do_gridlines = gridlines
         self._autorescale = autorescale
+        self._galactic = galactic
 
         self._wrap = (self.lon_0 + 180.) % 360.
 
@@ -1524,21 +1528,29 @@ class _Skyproj():
         glon = np.linspace(0, 360, 500)
         glat = np.zeros_like(glon)
 
-        gc = SkyCoord(l=glon*u.degree, b=glat*u.degree, frame='galactic')
-        radec = gc.fk5
-        ra = radec.ra.degree
-        dec = radec.dec.degree
+        if not self._galactic:
+            gc = SkyCoord(l=glon*u.degree, b=glat*u.degree, frame='galactic')
+            radec = gc.fk5
+            lon = radec.ra.degree
+            lat = radec.dec.degree
+        else:
+            lon = glon
+            lat = glat
 
-        self.plot(ra, dec, linewidth=linewidth, color=color, linestyle=linestyle, **kwargs)
+        self.plot(lon, lat, linewidth=linewidth, color=color, linestyle=linestyle, **kwargs)
         # pop any labels
         kwargs.pop('label', None)
         if width > 0:
             for delta in [+width, -width]:
-                gc = SkyCoord(l=glon*u.degree, b=(glat + delta)*u.degree, frame='galactic')
-                radec = gc.fk5
-                ra = radec.ra.degree
-                dec = radec.dec.degree
-                self.plot(ra, dec, linewidth=1.0, color=color,
+                if not self._galactic:
+                    gc = SkyCoord(l=glon*u.degree, b=(glat + delta)*u.degree, frame='galactic')
+                    radec = gc.fk5
+                    lon = radec.ra.degree
+                    lat = radec.dec.degree
+                else:
+                    lon = glon
+                    lat = glat + delta
+                self.plot(lon, lat, linewidth=1.0, color=color,
                           linestyle='--', **kwargs)
 
     def tissot_indicatrices(self, radius=5.0, num_lon=9, num_lat=5, color='red', alpha=0.5):
@@ -1626,4 +1638,7 @@ class _Skyproj():
     @property
     def _default_xy_labels(self):
         # Default labels in x, y
-        return ("Right Ascension", "Declination")
+        if self._galactic:
+            return ("Galactic Longitude", "Galactic Latitude")
+        else:
+            return ("Right Ascension", "Declination")
