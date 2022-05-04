@@ -131,6 +131,25 @@ The default is to plot a thick line along the Galactic equator, and two dashed l
    :alt: McBrydeSkyproj with Milky Way.
 
 
+It is also possible to specify that the default plotting units should be Galactic coordinates rather than Equatorial coordinates.
+When using :code:`draw_milky_way()`, it will plot in Galactic coordinates.
+
+.. code-block :: python
+
+    import matplotlib.pyplot as plt
+    import skyproj
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    sp = skyproj.McBrydeSkyproj(ax=ax, galactic=True, longitude_ticks='symmetric')
+    sp.draw_milky_way(label='Milky Way')
+    sp.legend()
+    plt.show()
+
+.. image:: images/milky_way_galactic.png
+   :width: 600
+   :alt: McBrydeSkyproj in Galactic coordinates with Milky Way.
+
+
 Survey Maps
 -----------
 
