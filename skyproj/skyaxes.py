@@ -272,10 +272,10 @@ class SkyAxes(matplotlib.axes.Axes):
         b_m = RADIUS * np.deg2rad(b)
 
         az = np.linspace(360.0, 0.0, nsamp)
-        pa_offset = 90  # Position Angle is defined as degrees East of North
 
-        phase_rad = np.deg2rad(az - (theta + pa_offset))
+        phase_rad = np.deg2rad(az - theta)
 
+        # Position Angle is defined as degrees East from North
         denom = np.sqrt((b_m * np.cos(phase_rad))**2 + (a_m * np.sin(phase_rad))**2)
         dist = a_m * b_m / denom
 
