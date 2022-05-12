@@ -924,6 +924,9 @@ class _Skyproj():
     def circle(self, *args, **kwargs):
         return self._ax.circle(*args, **kwargs)
 
+    def ellipse(self, *args, **kwargs):
+        return self._ax.ellipse(*args, **kwargs)
+
     def legend(self, *args, loc='upper left', **kwargs):
         """Add legend to the axis with ax.legend(*args, **kwargs)."""
         return self._ax.legend(*args, loc=loc, **kwargs)
