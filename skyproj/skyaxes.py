@@ -242,6 +242,58 @@ class SkyAxes(matplotlib.axes.Axes):
         else:
             return self.plot(lons, lats, **kwargs)
 
+    @_add_lonlat
+    def ellipse(self, lon, lat, a, b, theta, nsamp=100, fill=False, **kwargs):
+        """Draw a geodesic circle centered at given position.
+
+        Parameters
+        ----------
+        lon : `float`
+            Longitude of center of circle (degrees).
+        lat : `float`
+            Latitude of center of circle (degrees).
+        a : `float`
+            Semi-major axis of ellipse (degrees).
+        b : `float`
+            Semi-minor axis of ellipse (degrees).
+        theta : `float`
+            Position angle of ellipse.  Degrees East of North.
+        nsamp : `int`, optional
+            Number of points to sample.
+        fill : `bool`, optional
+            Draw filled circle?
+        **kwargs : `dict`
+            Extra plotting kwargs.
+        """
+        geod = Geod(a=RADIUS)
+
+        # We need the radius in meters
+        a_m = RADIUS * np.deg2rad(a)
+        b_m = RADIUS * np.deg2rad(b)
+
+        az = np.linspace(360.0, 0.0, nsamp)
+        pa_offset = 90  # Position Angle is defined as degrees East of North
+
+        theta_rad = np.deg2rad(theta + pa_offset)
+        phase_rad = np.deg2rad(az) - theta_rad
+
+        rotated_x = a_m * np.cos(phase_rad)
+        rotated_y = b_m * np.sin(phase_rad)
+        x = rotated_x * np.cos(theta_rad) - rotated_y * np.sin(theta_rad)
+        y = rotated_x * np.sin(theta_rad) + rotated_y * np.cos(theta_rad)
+        dist = np.sqrt(x ** 2 + y ** 2)
+
+        lons, lats, _ = geod.fwd(
+            np.full(nsamp, lon, dtype=np.float64),
+            np.full(nsamp, lat, dtype=np.float64),
+            az,
+            dist,
+        )
+        if fill:
+            return self.fill(lons, lats, **kwargs)
+        else:
+            return self.plot(lons, lats, **kwargs)
+
     @property
     def lon_0(self):
         return self.projection.lon_0
