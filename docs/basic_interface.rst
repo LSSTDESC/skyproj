@@ -8,8 +8,8 @@ Basic SkyProj Interface
 Getting Started
 ---------------
 
-`SkyProj` is an interface linking `matplotlib <https://matplotlib.org/>`_ with `PROJ <https://proj.org/>`_ to reate good looking and interactive visualizations of astronomical map data, in particular `HealSparse <https://healsparse.readthedocs.io/en/latest/>`_ and `HEALPix <https://healpix.jpl.nasa.gov/>`_ maps.
-It has its origins in `cartosky <https://github.com/kadrlica/cartosky>`_, which was built on `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`_ and some of the features may be familiy to users of `cartopy`.
+`SkyProj` is an interface linking `matplotlib <https://matplotlib.org/>`_ with `PROJ <https://proj.org/>`_ to create good looking and interactive visualizations of astronomical map data, in particular `HealSparse <https://healsparse.readthedocs.io/en/latest/>`_ and `HEALPix <https://healpix.jpl.nasa.gov/>`_ maps.
+It has its origins in `cartosky <https://github.com/kadrlica/cartosky>`_, which was built on `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`_ and some of the features may be familiar to users of `cartopy`.
 However, it has diverged significantly as the needs of mapping the sky are somewhat different from mapping the Earth.
 
 The fundamental base class for `SkyProj` is the :code:`skyproj.Skyproj()` sky projection.
