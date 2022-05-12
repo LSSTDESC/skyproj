@@ -274,14 +274,10 @@ class SkyAxes(matplotlib.axes.Axes):
         az = np.linspace(360.0, 0.0, nsamp)
         pa_offset = 90  # Position Angle is defined as degrees East of North
 
-        theta_rad = np.deg2rad(theta + pa_offset)
-        phase_rad = np.deg2rad(az) - theta_rad
+        phase_rad = np.deg2rad(az - (theta + pa_offset))
 
-        rotated_x = a_m * np.cos(phase_rad)
-        rotated_y = b_m * np.sin(phase_rad)
-        x = rotated_x * np.cos(theta_rad) - rotated_y * np.sin(theta_rad)
-        y = rotated_x * np.sin(theta_rad) + rotated_y * np.cos(theta_rad)
-        dist = np.sqrt(x ** 2 + y ** 2)
+        denom = np.sqrt((b_m * np.cos(phase_rad))**2 + (a_m * np.sin(phase_rad))**2)
+        dist = a_m * b_m / denom
 
         lons, lats, _ = geod.fwd(
             np.full(nsamp, lon, dtype=np.float64),
