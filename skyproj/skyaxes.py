@@ -244,14 +244,14 @@ class SkyAxes(matplotlib.axes.Axes):
 
     @_add_lonlat
     def ellipse(self, lon, lat, a, b, theta, nsamp=100, fill=False, **kwargs):
-        """Draw a geodesic circle centered at given position.
+        """Draw a geodesic ellipse centered at given position.
 
         Parameters
         ----------
         lon : `float`
-            Longitude of center of circle (degrees).
+            Longitude of center of ellipse (degrees).
         lat : `float`
-            Latitude of center of circle (degrees).
+            Latitude of center of ellipse (degrees).
         a : `float`
             Semi-major axis of ellipse (degrees).
         b : `float`
@@ -261,7 +261,7 @@ class SkyAxes(matplotlib.axes.Axes):
         nsamp : `int`, optional
             Number of points to sample.
         fill : `bool`, optional
-            Draw filled circle?
+            Draw filled ellipse?
         **kwargs : `dict`
             Extra plotting kwargs.
         """
