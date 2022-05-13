@@ -242,6 +242,54 @@ class SkyAxes(matplotlib.axes.Axes):
         else:
             return self.plot(lons, lats, **kwargs)
 
+    @_add_lonlat
+    def ellipse(self, lon, lat, a, b, theta, nsamp=100, fill=False, **kwargs):
+        """Draw a geodesic ellipse centered at given position.
+
+        Parameters
+        ----------
+        lon : `float`
+            Longitude of center of ellipse (degrees).
+        lat : `float`
+            Latitude of center of ellipse (degrees).
+        a : `float`
+            Semi-major axis of ellipse (degrees).
+        b : `float`
+            Semi-minor axis of ellipse (degrees).
+        theta : `float`
+            Position angle of ellipse.  Degrees East of North.
+        nsamp : `int`, optional
+            Number of points to sample.
+        fill : `bool`, optional
+            Draw filled ellipse?
+        **kwargs : `dict`
+            Extra plotting kwargs.
+        """
+        geod = Geod(a=RADIUS)
+
+        # We need the radius in meters
+        a_m = RADIUS * np.deg2rad(a)
+        b_m = RADIUS * np.deg2rad(b)
+
+        az = np.linspace(360.0, 0.0, nsamp)
+
+        phase_rad = np.deg2rad(az - theta)
+
+        # Position Angle is defined as degrees East from North
+        denom = np.sqrt((b_m * np.cos(phase_rad))**2 + (a_m * np.sin(phase_rad))**2)
+        dist = a_m * b_m / denom
+
+        lons, lats, _ = geod.fwd(
+            np.full(nsamp, lon, dtype=np.float64),
+            np.full(nsamp, lat, dtype=np.float64),
+            az,
+            dist,
+        )
+        if fill:
+            return self.fill(lons, lats, **kwargs)
+        else:
+            return self.plot(lons, lats, **kwargs)
+
     @property
     def lon_0(self):
         return self.projection.lon_0

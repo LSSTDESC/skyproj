@@ -100,6 +100,12 @@ Similarly, circles are drawn as a connected locus of points that are all equidis
     sp.circle(40.0, -40.0, 5.0, label='Seven')
     sp.circle(-40.0, -40.0, 5.0, color='orange', label='Eight', fill=True)
 
+    # Draw one open ellipse and one rotated, filled ellipse.
+    # ellipse expects (ra, dec, r_A, r_B, theta)  [degrees]
+    # where r_A=Semi-major axis, r_B=semi-minor axis, theta=position angle.
+    sp.ellipse(60, 15, 10, 4, 0, color='green', label='Nine')
+    sp.ellipse(300, 15, 15, 2, 45, fill=True, color='red', label='Ten')
+
     # Make a legend
     sp.legend()
     plt.show()
