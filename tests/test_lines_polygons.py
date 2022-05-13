@@ -47,7 +47,7 @@ def test_lines_polygons_mcbryde(tmp_path, lon_0):
     sp.circle(-40.0, -40.0, 5.0, color='orange', label='Eight', fill=True)
 
     # Test ``ellipse``.  We can only plot one point per call
-    sp.ellipse(60, 15, 10, 1, 0, color='green', label='Nine')
+    sp.ellipse(60, 15, 10, 4, 0, color='green', label='Nine')
     sp.ellipse(300, 15, 15, 2, 45, fill=True, color='red', label='Ten')
 
     sp.legend()
