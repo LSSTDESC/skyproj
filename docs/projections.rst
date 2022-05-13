@@ -110,7 +110,7 @@ MollweideSkyproj
 The `Mollweide projection <https://en.wikipedia.org/wiki/Mollweide_projection>`_ is an equal-area pseudocylindrical projection that is popular for astronomical all-sky maps.
 Due to the ambiguity of labels at the poles, the default is to put the Right Ascension labels along the equator.
 
-The McBryde projection can be accessed with :code:`skyproj.MollweideSkyproj()` class.
+The Mollweide projection can be accessed with :code:`skyproj.MollweideSkyproj()` class.
 
 .. code-block :: python
 
@@ -178,7 +178,7 @@ GnomonicSkyproj
 The `Gnomonic projection <https://en.wikipedia.org/wiki/Gnomonic_projection>`_ is the tangent-plane map projection that displays all great circles as lines.
 It is only possible to display less than half the sphere in this projection, so is not available for full-sky mapping.
 No distortion occurs at the arbitrary tangent point, and thus this projection is used for close-in zooms of small regions.
-When reprojection small zooms, `SkyProj` will use the Gnomonic projection.
+When reprojecting small zooms, `SkyProj` will use the Gnomonic projection.
 
 The Gnomonic projection has one additional parameters beyond the defaults.
 This is :code:`lat_0`, which allows you to shift the latitude of the center of the projection as well as the longitude (with :code:`lon_0`).
