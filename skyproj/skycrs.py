@@ -34,8 +34,8 @@ class SkyCRS(CRS):
     """
     def __init__(self, name=None, radius=RADIUS, **kwargs):
         self._name = name
-        self.proj4_params = {'a': radius,
-                             'b': radius}
+        self.proj4_params = {'ellps': 'sphere',
+                             'R': radius}
         self.proj4_params.update(**kwargs)
         super().__init__(self.proj4_params)
 
@@ -132,7 +132,7 @@ class SkyCRS(CRS):
 
     @property
     def radius(self):
-        return self.proj4_params['a']
+        return self.proj4_params['R']
 
     def _as_mpl_transform(self, axes=None):
         from .transforms import SkyTransform

@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.axes
 from pyproj import Geod
 
-from .skycrs import PlateCarreeCRS, RADIUS
+from .skycrs import PlateCarreeCRS
 
 __all__ = ["SkyAxes"]
 
@@ -225,10 +225,10 @@ class SkyAxes(matplotlib.axes.Axes):
         **kwargs : `dict`
             Extra plotting kwargs.
         """
-        geod = Geod(a=RADIUS)
+        geod = Geod(a=self.projection.radius)
 
         # We need the radius in meters
-        radius_m = RADIUS*np.deg2rad(radius)
+        radius_m = self.projection.radius*np.deg2rad(radius)
 
         az = np.linspace(360.0, 0.0, nsamp)
         lons, lats, _ = geod.fwd(
@@ -265,11 +265,11 @@ class SkyAxes(matplotlib.axes.Axes):
         **kwargs : `dict`
             Extra plotting kwargs.
         """
-        geod = Geod(a=RADIUS)
+        geod = Geod(a=self.projection.radius)
 
         # We need the radius in meters
-        a_m = RADIUS * np.deg2rad(a)
-        b_m = RADIUS * np.deg2rad(b)
+        a_m = self.projection.radius * np.deg2rad(a)
+        b_m = self.projection.radius * np.deg2rad(b)
 
         az = np.linspace(360.0, 0.0, nsamp)
 
