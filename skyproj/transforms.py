@@ -3,7 +3,7 @@ from matplotlib.path import Path
 import numpy as np
 from pyproj import Geod
 
-from .skycrs import PlateCarreeCRS, RADIUS
+from .skycrs import PlateCarreeCRS
 from .utils import wrap_values
 
 __all__ = ["SkyTransform"]
@@ -43,7 +43,7 @@ class SkyTransform(matplotlib.transforms.Transform):
         # Number of geodesic sub-samples for paths.
         self._nsamp = 10
         self._nsamp_resolve = 50
-        self._geod = Geod(a=RADIUS)
+        self._geod = Geod(a=self.source_proj.radius)
 
         self._lon_0 = self.target_proj.proj4_params['lon_0']
         self._wrap = (self._lon_0 + 180.) % 360.

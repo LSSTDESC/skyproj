@@ -60,13 +60,13 @@ class _Ellipse21:
         nstep = 1000
 
         t = np.linspace(-np.pi/2., np.pi/2., nstep)
-        x = 2*self.crs.proj4_params['a']*np.sqrt(2)*np.cos(t)
-        y = self.crs.proj4_params['b']*np.sqrt(2)*np.sin(t)
+        x = 2*self.crs.radius*np.sqrt(2)*np.cos(t)
+        y = self.crs.radius*np.sqrt(2)*np.sin(t)
         proj_boundary_xy['right'] = np.column_stack((x, y))
 
         t = np.linspace(np.pi/2., 3*np.pi/2., nstep)
-        x = 2*self.crs.proj4_params['a']*np.sqrt(2)*np.cos(t)
-        y = self.crs.proj4_params['b']*np.sqrt(2)*np.sin(t)
+        x = 2*self.crs.radius*np.sqrt(2)*np.cos(t)
+        y = self.crs.radius*np.sqrt(2)*np.sin(t)
         proj_boundary_xy['left'] = np.column_stack((x, y))
 
         proj_boundary_xy['top'] = np.zeros((0, 2))
@@ -84,13 +84,13 @@ class _Circle:
         nstep = 1000
 
         t = np.linspace(-np.pi/2., np.pi/2., nstep)
-        x = 2*self.crs.proj4_params['a']*np.cos(t)
-        y = 2*self.crs.proj4_params['b']*np.sin(t)
+        x = 2*self.crs.radius*np.cos(t)
+        y = 2*self.crs.radius*np.sin(t)
         proj_boundary_xy['right'] = np.column_stack((x, y))
 
         t = np.linspace(np.pi/2., 3*np.pi/2., nstep)
-        x = 2*self.crs.proj4_params['a']*np.cos(t)
-        y = 2*self.crs.proj4_params['b']*np.sin(t)
+        x = 2*self.crs.radius*np.cos(t)
+        y = 2*self.crs.radius*np.sin(t)
         proj_boundary_xy['left'] = np.column_stack((x, y))
 
         proj_boundary_xy['top'] = np.zeros((0, 2))
