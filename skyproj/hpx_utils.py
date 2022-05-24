@@ -96,7 +96,7 @@ def hspmap_to_xy(hspmap, lon_range, lat_range, xsize=1000, aspect=1.0):
         mask = (values == 0)
     elif hspmap.is_rec_array:
         values = hspmap.get_values_pos(clon, clat, valid_mask=True)
-        mask = (values == False)
+        mask = ~values
     elif hspmap.dtype == bool:
         values = hspmap.get_values_pos(clon, clat)
         # In principle this should get us the right mask
