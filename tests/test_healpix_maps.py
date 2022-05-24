@@ -181,13 +181,13 @@ def test_healsparse_rec_array(tmp_path):
     """Test plotting a healsparse rec_array map."""
     plt.rcParams.update(plt.rcParamsDefault)
 
-    hspmap = _get_hspmap()
+    hspmap = _get_hspmap_rec_array()
 
     fig = plt.figure(1, figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
-    im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(hspmap)
+    im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(hspmap, vmin=0, vmax=1)
     sp.draw_inset_colorbar()
     fname = 'healsparse_rec_array.png'
     fig.savefig(tmp_path / fname)
