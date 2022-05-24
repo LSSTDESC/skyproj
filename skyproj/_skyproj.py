@@ -1242,8 +1242,11 @@ class _Skyproj():
                                                              xsize=xsize)
 
         if vmin is None or vmax is None:
-            # Auto-scale from visible values
-            _vmin, _vmax = np.percentile(values_raster.compressed(), (2.5, 97.5))
+            if values_raster.dtype == bool:
+                _vmin, _vmax = 0, 1
+            else:
+                # Auto-scale from visible values
+                _vmin, _vmax = np.percentile(values_raster.compressed(), (2.5, 97.5))
             if _vmin == _vmax:
                 # This will make the color scaling work decently well when we
                 # have a flat integer type map.

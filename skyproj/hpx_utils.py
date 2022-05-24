@@ -96,8 +96,15 @@ def hspmap_to_xy(hspmap, lon_range, lat_range, xsize=1000, aspect=1.0):
         mask = (values == 0)
     elif hspmap.is_rec_array:
         values = hspmap.get_values_pos(clon, clat, valid_mask=True)
-        values = np.where(values, 1, 0)
-        mask = (values == 0)
+        mask = (values == False)
+    elif hspmap.dtype == bool:
+        values = hspmap.get_values_pos(clon, clat)
+        # In principle this should get us the right mask
+        # However, bool is only True or False, it can't be None
+        # So we get all pixels are valid in the coverage map
+        # (and thus at the resolution of nside_coverage)
+        # listed as valid in the sparse map.
+        mask = ~hspmap.get_values_pos(clon, clat, valid_mask=True)
     else:
         mask = np.isclose(values, hspmap._sentinel)
 
