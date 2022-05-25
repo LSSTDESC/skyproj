@@ -89,13 +89,24 @@ def hspmap_to_xy(hspmap, lon_range, lat_range, xsize=1000, aspect=1.0):
     clat = (lat_raster[1:, 1:] + lat_raster[:-1, :-1])/2.
 
     values = hspmap.get_values_pos(clon, clat)
-    if not hspmap.is_wide_mask_map:
-        mask = np.isclose(values, hspmap._sentinel)
-    else:
+    if hspmap.is_wide_mask_map:
         # Special case wide masks.  We just display 1 where any bit
         # is defined, and 0 otherwise.
         values = np.any(values, axis=2).astype(np.int32)
         mask = (values == 0)
+    elif hspmap.is_rec_array:
+        values = hspmap.get_values_pos(clon, clat, valid_mask=True)
+        mask = ~values
+    elif hspmap.dtype == bool:
+        values = hspmap.get_values_pos(clon, clat)
+        # In principle this should get us the right mask
+        # However, bool is only True or False, it can't be None
+        # So we get all pixels are valid in the coverage map
+        # (and thus at the resolution of nside_coverage)
+        # listed as valid in the sparse map.
+        mask = ~hspmap.get_values_pos(clon, clat, valid_mask=True)
+    else:
+        mask = np.isclose(values, hspmap._sentinel)
 
     return lon_raster, lat_raster, np.ma.array(values, mask=mask)
 
