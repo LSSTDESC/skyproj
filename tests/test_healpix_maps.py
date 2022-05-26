@@ -1,4 +1,5 @@
 import os
+import pytest
 
 import numpy as np
 import healsparse as hsp
@@ -247,6 +248,7 @@ def test_healsparse_rec_array(tmp_path):
 
     hspmap = _get_hspmap_rec_array()
 
+    # Plot one component of map
     fig = plt.figure(1, figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
@@ -254,6 +256,42 @@ def test_healsparse_rec_array(tmp_path):
     im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(hspmap["A"])
     sp.draw_inset_colorbar()
     fname = 'healsparse_rec_array.png'
+    fig.savefig(tmp_path / fname)
+    err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
+    if err:
+        raise ImageComparisonFailure(err)
+
+    # Plot valid pixels of map
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    sp = skyproj.McBrydeSkyproj(ax=ax)
+    im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(hspmap, valid_mask=True)
+    sp.draw_inset_colorbar()
+    fname = 'healsparse_rec_array_valid_pixels.png'
+    fig.savefig(tmp_path / fname)
+    err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
+    if err:
+        raise ImageComparisonFailure(err)
+
+
+@pytest.mark.filterwarnings("ignore:draw_hspmap")
+def test_healsparse_rec_array_failover(tmp_path):
+    """Test plotting the healsparse map without specifying a component
+    Should get a UserWarning and a plot matching valid_mask=True.
+    """
+    plt.rcParams.update(plt.rcParamsDefault)
+
+    hspmap = _get_hspmap_rec_array()
+
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    sp = skyproj.McBrydeSkyproj(ax=ax)
+    with pytest.warns(UserWarning):
+        im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(hspmap)
+    sp.draw_inset_colorbar()
+    fname = 'healsparse_rec_array_failover_valid_pixels.png'
     fig.savefig(tmp_path / fname)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
     if err:
