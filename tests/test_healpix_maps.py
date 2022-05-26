@@ -31,40 +31,6 @@ def _get_hspmap():
     return hspmap
 
 
-def _get_hspmap_bool():
-    hspmap = hsp.HealSparseMap.make_empty(32, 4096, bool)
-    # Create a region of True
-    poly = hsp.geom.Polygon(ra=[0.0, 10.0, 10.0, 0.0], dec=[0.0, 0.0, 10.0, 10.0], value=1.0)
-    pixels = poly.get_pixels(nside=hspmap.nside_sparse)
-    hspmap[pixels] = np.full(shape=pixels.size, fill_value=True)
-    # Create a central square of False within the True region.
-    poly = hsp.geom.Polygon(ra=[5, 5.5, 5.5, 5.0], dec=[5, 5.0, 5.5, 5.5], value=3.0)
-    pixels2 = poly.get_pixels(nside=hspmap.nside_sparse)
-    hspmap[pixels2] = np.full(shape=pixels2.size, fill_value=False)
-
-    return hspmap
-
-
-def _get_hspmap_rec_array():
-    # Make a square noise field
-    np.random.seed(1234)
-
-    dtype = [("A", np.int64), ("B", np.int64)]
-    hspmap = hsp.HealSparseMap.make_empty(32, 4096, dtype=dtype, primary="A")
-    poly = hsp.geom.Polygon(ra=[0.0, 10.0, 10.0, 0.0], dec=[0.0, 0.0, 10.0, 10.0], value=1.0)
-    pixels = poly.get_pixels(nside=hspmap.nside_sparse)
-    hspmap[pixels] = np.zeros(shape=pixels.size, dtype=dtype)
-    hspmap["A"][pixels] = np.random.normal(size=pixels.size).astype(np.int64)
-    hspmap["B"][pixels] = np.random.normal(size=pixels.size).astype(np.int64)
-    # Add in a central square of fixed value.
-    poly2 = hsp.geom.Polygon(ra=[5, 5.2, 5.2, 5.0], dec=[5, 5.0, 5.2, 5.2], value=3.0)
-    pixels2 = poly2.get_pixels(nside=hspmap.nside_sparse)
-    hspmap["A"][pixels2] = np.full(shape=pixels2.size, fill_value=3)
-    hspmap["B"][pixels2] = np.full(shape=pixels2.size, fill_value=1)
-
-    return hspmap
-
-
 def test_healsparse(tmp_path):
     """Test plotting a healsparse map."""
     plt.rcParams.update(plt.rcParamsDefault)
@@ -103,32 +69,6 @@ def test_healsparse(tmp_path):
     im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(hspmap, zoom=False)
     sp.draw_inset_colorbar()
     fname = 'healsparse_three.png'
-    fig.savefig(tmp_path / fname)
-    err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
-    if err:
-        raise ImageComparisonFailure(err)
-
-
-def test_healsparse_bool(tmp_path):
-    """Test plotting a healsparse map.
-
-    Areas of the nside_coverage map that are marked as valid
-    will get displayed as "False" in the plot, even if they are not
-    filled in the nside_sparse map.
-
-    This is different than the behavior for a int 0, 1 map which can also have None.
-    """
-    plt.rcParams.update(plt.rcParamsDefault)
-
-    hspmap = _get_hspmap_bool()
-
-    fig = plt.figure(1, figsize=(8, 5))
-    fig.clf()
-    ax = fig.add_subplot(111)
-    sp = skyproj.McBrydeSkyproj(ax=ax)
-    im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(hspmap)
-    sp.draw_inset_colorbar()
-    fname = 'healsparse_bool.png'
     fig.savefig(tmp_path / fname)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
     if err:
@@ -213,25 +153,6 @@ def test_healsparse_widemask(tmp_path):
     fig.savefig(tmp_path / fname2)
     # Compare to the previoues one.
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname2, 40.0)
-    if err:
-        raise ImageComparisonFailure(err)
-
-
-def test_healsparse_rec_array(tmp_path):
-    """Test plotting a healsparse rec_array map."""
-    plt.rcParams.update(plt.rcParamsDefault)
-
-    hspmap = _get_hspmap_rec_array()
-
-    fig = plt.figure(1, figsize=(8, 5))
-    fig.clf()
-    ax = fig.add_subplot(111)
-    sp = skyproj.McBrydeSkyproj(ax=ax)
-    im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(hspmap)
-    sp.draw_inset_colorbar()
-    fname = 'healsparse_rec_array.png'
-    fig.savefig(tmp_path / fname)
-    err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
     if err:
         raise ImageComparisonFailure(err)
 
