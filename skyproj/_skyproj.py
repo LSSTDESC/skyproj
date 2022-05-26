@@ -1062,8 +1062,11 @@ class _Skyproj():
                                                              xsize=xsize)
 
         if vmin is None or vmax is None:
-            # Auto-scale from visible values
-            _vmin, _vmax = np.percentile(values_raster.compressed(), (2.5, 97.5))
+            if values_raster.dtype == bool:
+                _vmin, _vmax = 0, 1
+            else:
+                # Auto-scale from visible values
+                _vmin, _vmax = np.percentile(values_raster.compressed(), (2.5, 97.5))
             if vmin is None:
                 vmin = _vmin
             if vmax is None:
@@ -1180,7 +1183,8 @@ class _Skyproj():
         return im, lon_raster, lat_raster, values_raster
 
     def draw_hspmap(self, hspmap, zoom=True, xsize=1000, vmin=None, vmax=None,
-                    rasterized=True, lon_range=None, lat_range=None, **kwargs):
+                    rasterized=True, lon_range=None, lat_range=None, valid_mask=False,
+                    **kwargs):
         """Use pcolormesh to draw a healsparse map.
 
         Parameters
@@ -1192,15 +1196,17 @@ class _Skyproj():
         xsize : `int`, optional
             Number of rasterized pixels in the x direction.
         vmin : `float`, optional
-            Minimum value for color scale.  Defaults to 2.5th percentile.
+            Minimum value for color scale.  Defaults to 2.5th percentile, or 0 for bool.
         vmax : `float`, optional
-            Maximum value for color scale.  Defaults to 97.5th percentile.
+            Maximum value for color scale.  Defaults to 97.5th percentile, or 1 for bool.
         rasterized : `bool`, optional
             Plot with rasterized graphics.
         lon_range : `tuple` [`float`, `float`], optional
             Longitude range to plot [``lon_min``, ``lon_max``].
         lat_range : `tuple` [`float`, `float`], optional
             Latitude range to plot [``lat_min``, ``lat_max``].
+        valid_mask : `bool`, optional
+            Plot the valid pixels of the map.
         **kwargs : `dict`
             Additional args to pass to pcolormesh.
 
@@ -1239,11 +1245,15 @@ class _Skyproj():
         lon_raster, lat_raster, values_raster = hspmap_to_xy(hspmap,
                                                              lon_range,
                                                              lat_range,
-                                                             xsize=xsize)
+                                                             xsize=xsize,
+                                                             valid_mask=valid_mask)
 
         if vmin is None or vmax is None:
-            # Auto-scale from visible values
-            _vmin, _vmax = np.percentile(values_raster.compressed(), (2.5, 97.5))
+            if values_raster.dtype == bool:
+                _vmin, _vmax = 0, 1
+            else:
+                # Auto-scale from visible values
+                _vmin, _vmax = np.percentile(values_raster.compressed(), (2.5, 97.5))
             if _vmin == _vmax:
                 # This will make the color scaling work decently well when we
                 # have a flat integer type map.
