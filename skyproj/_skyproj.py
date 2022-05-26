@@ -1243,7 +1243,7 @@ class _Skyproj():
             if lat_range is None:
                 lat_range = _lat_range
 
-        if hspmap.is_rec_array:
+        if hspmap.is_rec_array and not valid_mask:
             warnings.warn(
                 """
                 draw_hspmap called with a record array HealSparseMap.  Assuming valid_mask=True.
