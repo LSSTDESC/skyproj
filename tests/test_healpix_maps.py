@@ -275,7 +275,6 @@ def test_healsparse_rec_array(tmp_path):
         raise ImageComparisonFailure(err)
 
 
-@pytest.mark.filterwarnings("ignore:draw_hspmap")
 def test_healsparse_rec_array_failover(tmp_path):
     """Test plotting the healsparse map without specifying a component
     Should get a UserWarning and a plot matching valid_mask=True.
