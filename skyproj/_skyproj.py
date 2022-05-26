@@ -1,3 +1,5 @@
+import warnings
+
 import matplotlib.pyplot as plt
 
 import numpy as np
@@ -1240,6 +1242,15 @@ class _Skyproj():
                 lon_range = _lon_range
             if lat_range is None:
                 lat_range = _lat_range
+
+        if hspmap.is_rec_array:
+            warnings.warn(
+                """
+                draw_hspmap called with a record array HealSparseMap.  Assuming valid_mask=True.
+                To instead visualize component "A" of the record array, draw_hspmap(hspmap["A"])
+                """
+            )
+            valid_mask = True
 
         # FIXME: add aspect ratio
         lon_raster, lat_raster, values_raster = hspmap_to_xy(hspmap,
