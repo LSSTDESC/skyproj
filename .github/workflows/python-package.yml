@@ -27,7 +27,7 @@ jobs:
       run: |
         export PATH="$CONDA/bin:$PATH"
         conda config --set always_yes yes --set changeps1 no
-        conda update -q conda
+        conda install -q -n base "conda!=4.13"
         conda install -q -n base mamba -c conda-forge
         conda info -a
         conda init bash
