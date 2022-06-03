@@ -268,7 +268,7 @@ def test_healsparse_rec_array(tmp_path):
     sp = skyproj.McBrydeSkyproj(ax=ax)
     im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(hspmap, valid_mask=True)
     sp.draw_inset_colorbar()
-    fname = 'healsparse_rec_array_valid_pixels.png'
+    fname = 'healsparse_valid_pixels.png'
     fig.savefig(tmp_path / fname)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
     if err:
@@ -290,7 +290,7 @@ def test_healsparse_rec_array_failover(tmp_path):
     with pytest.warns(UserWarning):
         im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(hspmap)
     sp.draw_inset_colorbar()
-    fname = 'healsparse_rec_array_failover_valid_pixels.png'
+    fname = 'healsparse_valid_pixels.png'
     fig.savefig(tmp_path / fname)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
     if err:
