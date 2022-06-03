@@ -56,7 +56,7 @@ def healpix_pixels_range(nside, pixels, wrap, nest=False):
     return lon_range, lat_range
 
 
-def hspmap_to_xy(hspmap, lon_range, lat_range, xsize=1000, aspect=1.0):
+def hspmap_to_xy(hspmap, lon_range, lat_range, xsize=1000, aspect=1.0, valid_mask=False):
     """Convert healsparse map to rasterized x/y positions and values.
 
     Parameters
@@ -71,6 +71,8 @@ def hspmap_to_xy(hspmap, lon_range, lat_range, xsize=1000, aspect=1.0):
         Number of rasterized pixels in the x direction.
     aspect : `float`, optional
         Aspect ratio for ysize.
+    valid_mask : `bool`, optional
+        Plot the valid pixels of the map.
 
     Returns
     -------
@@ -88,14 +90,16 @@ def hspmap_to_xy(hspmap, lon_range, lat_range, xsize=1000, aspect=1.0):
     clon = (lon_raster[1:, 1:] + lon_raster[:-1, :-1])/2.
     clat = (lat_raster[1:, 1:] + lat_raster[:-1, :-1])/2.
 
-    values = hspmap.get_values_pos(clon, clat)
-    if not hspmap.is_wide_mask_map:
-        mask = np.isclose(values, hspmap._sentinel)
-    else:
+    values = hspmap.get_values_pos(clon, clat, valid_mask=valid_mask)
+    if hspmap.is_wide_mask_map:
         # Special case wide masks.  We just display 1 where any bit
         # is defined, and 0 otherwise.
         values = np.any(values, axis=2).astype(np.int32)
         mask = (values == 0)
+    elif values.dtype == bool:
+        mask = values == hspmap._sentinel
+    else:
+        mask = np.isclose(values, hspmap._sentinel)
 
     return lon_raster, lat_raster, np.ma.array(values, mask=mask)
 

@@ -15,6 +15,7 @@ HealSparse Map Plots
 
 Plotting `HealSparse` maps can be performed with the :code:`draw_hspmap()` method on a :code:`skyproj.Skyproj()` subclass.
 The default setting for drawing a map is to automatically zoom in on the ra/dec range of the map to be plotted.
+The `valid_mask=True` option will plot the valid pixels (instead of the values in the pixels) in a map.
 
 .. code-block :: python
 
@@ -42,6 +43,17 @@ The default setting for drawing a map is to automatically zoom in on the ra/dec 
 .. image:: images/healsparse_one.png
    :width: 600
    :alt: HealSparse map with inset colorbar.
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    sp = skyproj.McBrydeSkyproj(ax=ax)
+    im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(hspmap, valid_mask=True)
+    sp.draw_inset_colorbar()
+    plt.show()
+
+.. image:: images/healsparse_valid_pixels.png
+   :width: 600
+   :alt: HealSparse map with inset colorbar.
+
 
 If plotting in an interactive session, one can now zoom into the map with the matplotlib zoom tool.
 Alternatively, one can specify the longitude and latitude range when drawing the map.
