@@ -133,12 +133,17 @@ class GridHelperSkyproj(GridHelperCurveLinear):
 
     def get_gridlines(self, which="major", axis="both"):
         # docstring inherited
+        try:
+            _grid_info = self._grid_info
+        except AttributeError:
+            _grid_info = self.grid_info
+
         grid_lines = []
         if axis in ["both", "x"]:
-            for gl in self._grid_info["lon"]["lines"]:
+            for gl in _grid_info["lon"]["lines"]:
                 grid_lines.extend(self._cut_grid_line_jumps(gl))
         if axis in ["both", "y"]:
-            for gl in self._grid_info["lat"]["lines"]:
+            for gl in _grid_info["lat"]["lines"]:
                 grid_lines.extend(self._cut_grid_line_jumps(gl))
         return grid_lines
 
