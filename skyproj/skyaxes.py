@@ -121,6 +121,7 @@ class SkyAxes(matplotlib.axes.Axes):
             # We need to wrap values to get the correct range
             wrap = (self.projection.lon_0 + 180.) % 360.
             with warnings.catch_warnings():
+                # Some longitude values may be nan, so we filter these expected warnings.
                 warnings.simplefilter("ignore")
                 lon_wrap = wrap_values(lonlat[:, 0], wrap)
 
