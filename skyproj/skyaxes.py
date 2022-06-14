@@ -1,10 +1,12 @@
 import functools
 import numpy as np
+import warnings
 
 import matplotlib.axes
 from pyproj import Geod
 
 from .skycrs import PlateCarreeCRS
+from .utils import wrap_values
 
 __all__ = ["SkyAxes"]
 
@@ -104,39 +106,38 @@ class SkyAxes(matplotlib.axes.Axes):
             extent = (x0, x1, y0, y1)
         else:
             # Make a ring of points and check their extent.
-            npt = 100
+            npt = 500
             x_pts = np.linspace(x0, x1, npt)
             y_pts = np.linspace(y0, y1, npt)
             x = np.concatenate((x_pts, x_pts, np.repeat(x0, npt), np.repeat(x1, npt)))
             y = np.concatenate((np.repeat(y0, npt), np.repeat(y1, npt), y_pts, y_pts))
             lonlat = self.plate_carree.transform_points(self.projection, x, y)
 
-            # We may have nans from out-of-bounds for certain projections (e.g. Mollweide):
-            if np.any(np.isnan(lonlat)):
-                if np.any(np.isnan(lonlat[0: npt, 0])):
-                    # Bottom is at the limit
-                    lonlat[0: npt, 1] = -90.0 + 1e-5
-                if np.any(np.isnan(lonlat[npt: 2*npt, 0])):
-                    # Top is at the limit
-                    lonlat[npt: 2*npt, 1] = 90.0 - 1e-5
-                if np.any(np.isnan(lonlat[2*npt: 3*npt, 1])):
-                    # Right is at the limit
-                    lonlat[2*npt: 3*npt, 0] = 180.0 - 1e-5
-                if np.any(np.isnan(lonlat[3*npt: 4*npt, 1])):
-                    # Left is at the limit
-                    lonlat[3*npt: 4*npt, 0] = -180.0 + 1e-5
+            # Check for out-of-bounds by reverse-projecting
+            xy = self.projection.transform_points(self.plate_carree, lonlat[:, 0], lonlat[:, 1])
+            bad = ((~np.isclose(xy[:, 0], x)) | (~np.isclose(xy[:, 1], y)))
+            lonlat[bad, :] = np.nan
+
+            # We need to wrap values to get the correct range
+            wrap = (self.projection.lon_0 + 180.) % 360.
+            with warnings.catch_warnings():
+                # Some longitude values may be nan, so we filter these expected warnings.
+                warnings.simplefilter("ignore")
+                lon_wrap = wrap_values(lonlat[:, 0], wrap)
+
+            if np.all(np.isnan(lon_wrap)):
+                lon0 = -180.0 + 1e-5
+                lon1 = 180.0 - 1e-5
             else:
-                # Check for out-of-bounds by reverse-projecting
-                xy = self.projection.transform_points(self.plate_carree, lonlat[:, 0], lonlat[:, 1])
-                bad = ((~np.isclose(xy[:, 0], x)) | (~np.isclose(xy[:, 1], y)))
-                lonlat[bad, :] = np.nan
+                lon0 = np.nanmin(lon_wrap)
+                lon1 = np.nanmax(lon_wrap)
 
-            # FIXME CHECK FOR WRAPPING!!!
-
-            lon0 = np.nanmin(lonlat[:, 0])
-            lon1 = np.nanmax(lonlat[:, 0])
-            lat0 = np.nanmin(lonlat[:, 1])
-            lat1 = np.nanmax(lonlat[:, 1])
+            if np.all(np.isnan(lonlat[:, 1])):
+                lat0 = -90.0 + 1e-5
+                lat1 = 90.0 - 1e-5
+            else:
+                lat0 = np.nanmin(lonlat[:, 1])
+                lat1 = np.nanmax(lonlat[:, 1])
 
             if self.xaxis_inverted():
                 extent = (lon1, lon0, lat0, lat1)

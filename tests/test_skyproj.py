@@ -1,6 +1,7 @@
 import os
 import pytest
 import numpy as np
+import healsparse as hsp
 
 import matplotlib
 matplotlib.use("Agg")
@@ -97,6 +98,62 @@ def test_skyproj_obmoll(tmp_path, lonlatplonp):
     ax = fig.add_subplot(111)
     sp = skyproj.ObliqueMollweideSkyproj(ax=ax, lon_0=lon_0, lat_p=lat_p, lon_p=lon_p)
     fname = f'{sp.projection_name}_{lon_0}_{lat_p}_{lon_p}.png'
+    fig.savefig(tmp_path / fname)
+    err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 10.0)
+    if err:
+        raise ImageComparisonFailure(err)
+
+
+@pytest.mark.parametrize("skyproj", [skyproj.Skyproj,
+                                     skyproj.McBrydeSkyproj,
+                                     skyproj.MollweideSkyproj,
+                                     skyproj.HammerSkyproj,
+                                     skyproj.EqualEarthSkyproj])
+@pytest.mark.parametrize("lon_0", [-180.0, -140.0, -100.0, -60.0, -20.0, 0.0,
+                                   20.0, 60.0, 100.0, 140.0, 180.0])
+def test_skyproj_fullsky_extent(skyproj, lon_0):
+    """Test getting the full sky extent."""
+
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    sp = skyproj(ax=ax, lon_0=lon_0)
+
+    lon1, lon0, lat0, lat1 = sp.get_extent()
+
+    # We allow some slop because of the way that clipping works
+    assert(lat0 < (-90.0 + sp._pole_clip + 0.3))
+    assert(lat0 >= -90.0)
+    assert(lat1 > (90.0 - sp._pole_clip - 0.3))
+    assert(lat1 <= 90.0)
+
+    # Cover (almost) full 360 deg?
+    assert((lon1 - lon0) > (360.0 - 1.5))
+    # And the rotated start is close to -180?
+    rot = (lon0 - lon_0 + 180.0) % 360.0 - 180.0
+    assert(rot < (-180.0 + 1.0))
+
+
+@pytest.mark.parametrize("skyproj", [skyproj.McBrydeSkyproj,
+                                     skyproj.MollweideSkyproj])
+def test_skyproj_nogap_180(tmp_path, skyproj):
+    """Test that there is no mysterious gap when lon_0=180.0"""
+    plt.rcParams.update(plt.rcParamsDefault)
+
+    testmap = hsp.HealSparseMap.make_empty(32, 256, dtype=np.int32)
+    poly = hsp.geom.Polygon(ra=[-20, 20, 20, -20], dec=[-20, -20, 20, 20], value=1)
+    pixels = poly.get_pixels(nside=testmap.nside_sparse)
+    testmap[pixels] = 1
+    poly = hsp.geom.Polygon(ra=[160, 200, 200, 160], dec=[-20, -20, 20, 20], value=1)
+    pixels = poly.get_pixels(nside=testmap.nside_sparse)
+    testmap[pixels] = 1
+
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    sp = skyproj(ax=ax, lon_0=180.0)
+    sp.draw_hspmap(testmap, zoom=False)
+    fname = f'{sp.projection_name}_gaptest.png'
     fig.savefig(tmp_path / fname)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 10.0)
     if err:
