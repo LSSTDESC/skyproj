@@ -445,13 +445,17 @@ class _Skyproj():
                                                      ha='right',
                                                      va='bottom'))
         else:
-            if self._radial_labels:
-                line_index = -1
-            else:
-                line_index = 0
             for axis_side in ['top', 'bottom']:
                 if not self._aa.axis[axis_side].major_ticklabels.get_visible():
                     continue
+
+                if self._radial_labels and axis_side == 'bottom':
+                    continue
+
+                if axis_side == 'top':
+                    line_index = -1
+                else:
+                    line_index = 0
 
                 tick_levels = grid_info['lon']['tick_levels'][axis_side]
 
