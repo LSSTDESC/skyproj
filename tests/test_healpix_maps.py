@@ -123,13 +123,7 @@ def test_healsparse(tmp_path):
 
 
 def test_healsparse_bool(tmp_path):
-    """Test plotting a healsparse map.
-
-    Areas of the nside_coverage map that are marked as valid
-    will get displayed as "False" in the plot, even if they are not
-    filled in the nside_sparse map.
-
-    This is different than the behavior for a int 0, 1 map which can also have None.
+    """Test plotting a boolean healsparse map.
     """
     plt.rcParams.update(plt.rcParamsDefault)
 
