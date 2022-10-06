@@ -103,7 +103,7 @@ class _Survey:
 
 class DESSkyproj(McBrydeSkyproj, _Survey):
     # docstring inherited
-    def __init__(self, ax=None, lon_0=0, gridlines=True,
+    def __init__(self, ax=None, lon_0=30, gridlines=True,
                  celestial=True, extent=[90, -50, -74, 10], **kwargs):
         super().__init__(ax=ax, lon_0=lon_0, gridlines=gridlines,
                          celestial=celestial, extent=extent, **kwargs)
