@@ -77,7 +77,12 @@ class _Skyproj():
 
         fig = ax.figure
         # This code does not work with the constrained_layout option
-        fig.set_constrained_layout(False)
+        try:
+            # Newer matplotlib
+            fig.set_layout_engine('none')
+        except AttributeError:
+            # Older matplotlib
+            fig.set_constrained_layout(False)
         subspec = ax.get_subplotspec()
         fig.delaxes(ax)
 

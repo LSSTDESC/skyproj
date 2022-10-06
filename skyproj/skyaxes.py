@@ -30,9 +30,9 @@ class SkyAxes(matplotlib.axes.Axes):
 
         super().__init__(*args, **kwargs)
 
-    def cla(self):
+    def clear(self):
         """Clear the current axes."""
-        result = super().cla()
+        result = super().clear()
         self.xaxis.set_visible(False)
         self.yaxis.set_visible(False)
 
