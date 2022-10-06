@@ -122,16 +122,16 @@ def test_skyproj_fullsky_extent(skyproj, lon_0):
     lon1, lon0, lat0, lat1 = sp.get_extent()
 
     # We allow some slop because of the way that clipping works
-    assert(lat0 < (-90.0 + sp._pole_clip + 0.3))
-    assert(lat0 >= -90.0)
-    assert(lat1 > (90.0 - sp._pole_clip - 0.3))
-    assert(lat1 <= 90.0)
+    assert lat0 < (-90.0 + sp._pole_clip + 0.3)
+    assert lat0 >= -90.0
+    assert lat1 > (90.0 - sp._pole_clip - 0.3)
+    assert lat1 <= 90.0
 
     # Cover (almost) full 360 deg?
-    assert((lon1 - lon0) > (360.0 - 1.5))
+    assert (lon1 - lon0) > (360.0 - 1.5)
     # And the rotated start is close to -180?
     rot = (lon0 - lon_0 + 180.0) % 360.0 - 180.0
-    assert(rot < (-180.0 + 1.0))
+    assert rot < (-180.0 + 1.0)
 
 
 @pytest.mark.parametrize("skyproj", [skyproj.McBrydeSkyproj,

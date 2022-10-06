@@ -34,7 +34,7 @@ def test_healpix_binning(tmp_path):
     # Spot-check a pixel
     pix = hp.ang2pix(hp.npix2nside(hpxmap.size), ra, dec, lonlat=True)
     test, = np.where(pix == 87864)
-    assert(hpxmap[87864] == test.size)
+    assert hpxmap[87864] == test.size
 
     fname = 'hpxbin.png'
     fig.savefig(tmp_path / fname)
