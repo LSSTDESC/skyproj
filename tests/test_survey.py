@@ -16,7 +16,8 @@ ROOT = os.path.abspath(os.path.dirname(__file__))
 @pytest.mark.parametrize("survey_tuple", [(skyproj.DESSkyproj, "DES"),
                                           (skyproj.BlissSkyproj, "BLISS"),
                                           (skyproj.MaglitesSkyproj, "MagLiTeS"),
-                                          (skyproj.DecalsSkyproj, "DECaLS")])
+                                          (skyproj.DecalsSkyproj, "DECaLS"),
+                                          (skyproj.DESAlbersSkyproj, "DESAlbers")])
 def test_survey_outlines(tmp_path, survey_tuple):
     """Test drawing survey outlines."""
     plt.rcParams.update(plt.rcParamsDefault)
@@ -28,7 +29,7 @@ def test_survey_outlines(tmp_path, survey_tuple):
     fig.clf()
     ax = fig.add_subplot(111)
     sp = survey(ax=ax)
-    if name == 'DES':
+    if name == 'DES' or name == 'DESAlbers':
         sp.draw_des(label=name)
     elif name == 'BLISS':
         sp.draw_bliss(label=name)
