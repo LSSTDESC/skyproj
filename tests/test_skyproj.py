@@ -19,7 +19,8 @@ ROOT = os.path.abspath(os.path.dirname(__file__))
                                      skyproj.McBrydeSkyproj,
                                      skyproj.MollweideSkyproj,
                                      skyproj.HammerSkyproj,
-                                     skyproj.EqualEarthSkyproj])
+                                     skyproj.EqualEarthSkyproj,
+                                     skyproj.AlbersSkyproj])
 @pytest.mark.parametrize("lon_0", [0.0, -100.0, 100.0, 180.0])
 def test_skyproj_basic(tmp_path, skyproj, lon_0):
     """Test full sky maps."""
@@ -42,7 +43,8 @@ def test_skyproj_basic(tmp_path, skyproj, lon_0):
                                      skyproj.MollweideSkyproj,
                                      skyproj.HammerSkyproj,
                                      skyproj.EqualEarthSkyproj,
-                                     skyproj.LaeaSkyproj])
+                                     skyproj.LaeaSkyproj,
+                                     skyproj.AlbersSkyproj])
 def test_skyproj_zoom(tmp_path, skyproj):
     plt.rcParams.update(plt.rcParamsDefault)
 
@@ -98,6 +100,26 @@ def test_skyproj_obmoll(tmp_path, lonlatplonp):
     ax = fig.add_subplot(111)
     sp = skyproj.ObliqueMollweideSkyproj(ax=ax, lon_0=lon_0, lat_p=lat_p, lon_p=lon_p)
     fname = f'{sp.projection_name}_{lon_0}_{lat_p}_{lon_p}.png'
+    fig.savefig(tmp_path / fname)
+    err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 10.0)
+    if err:
+        raise ImageComparisonFailure(err)
+
+
+@pytest.mark.parametrize("lat1lat2", [(15.0, 45.0),
+                                      (-20.0, 15.0),
+                                      (-15.0, -45.0)])
+def test_skyproj_albers(tmp_path, lat1lat2):
+    """Test Albers Equal Area."""
+    plt.rcParams.update(plt.rcParamsDefault)
+
+    lat_1, lat_2 = lat1lat2
+
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    sp = skyproj.AlbersSkyproj(ax=ax, lat_1=lat_1, lat_2=lat_2)
+    fname = f'{sp.projection_name}_{lat_1}_{lat_2}.png'
     fig.savefig(tmp_path / fname)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 10.0)
     if err:

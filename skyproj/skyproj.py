@@ -4,7 +4,7 @@ from ._skyproj import _Skyproj
 
 __all__ = ['Skyproj', 'McBrydeSkyproj', 'LaeaSkyproj', 'MollweideSkyproj',
            'HammerSkyproj', 'EqualEarthSkyproj', 'GnomonicSkyproj',
-           'ObliqueMollweideSkyproj']
+           'ObliqueMollweideSkyproj', 'AlbersSkyproj']
 
 
 class _Stadium:
@@ -242,3 +242,26 @@ class GnomonicSkyproj(_Skyproj, _Circle):
         cos_lat = np.cos(np.deg2rad(lat_0))
         return [lon_0 - 0.5/cos_lat, lon_0 + 0.5/cos_lat,
                 lat_0 - 0.5, lat_0 + 0.5]
+
+
+class AlbersSkyproj(_Skyproj, _Stadium):
+    """Albers Equal Area Projection.
+
+    Parameters
+    ----------
+    lon_0 : `float`, optional
+        Central longitude of the projection.
+    lat_1 : `float`, optional
+        First standard parallel.
+    lat_2 : `float`, optional
+        Second standard parallel.
+    **kwargs : `dict`, optional
+        Additional kwargs for `skyproj._Skyproj`.
+    """
+    # Albers Equal Area
+    def __init__(self, **kwargs):
+        super().__init__(projection_name='aea', **kwargs)
+
+    @property
+    def _default_xy_labels(self):
+        return ("", "")
