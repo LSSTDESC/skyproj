@@ -210,7 +210,7 @@ Support for Oblique Mollweide in `SkyProj` is experimental, and may not yield at
 The Oblique Mollweide projection has two additional parameters beyond the defaults.
 These are :code:`lon_p` and :code:`lat_p`, the longitude and latitude of the North Pole in the unrotated coordinate system.
 
-The Oblique Mollweide projection can be accessed with :code:`skyproj.ObliqueMollweideSkyproj()` class.
+The Oblique Mollweide projection can be accessed with the :code:`skyproj.ObliqueMollweideSkyproj()` class.
 
 .. code-block :: python
 
@@ -224,3 +224,30 @@ The Oblique Mollweide projection can be accessed with :code:`skyproj.ObliqueMoll
 .. image:: images/ObliqueMollweideSkyproj.png
    :width: 600
    :alt: ObliqueMollweideSkyproj
+
+
+AlbersSkyproj
+-------------
+
+The `Albers Equal Area projection <https://proj.org/operations/projections/aea.html>`_ is a conic, equal area projection that provides minimum distortion between two (configurable) parallels, at the expense of large distortion away from these parallels.
+The Albers Equal Area projection does not provide very attractive maps over the full sky because of the distortions, but it does work for areas as large as the Dark Energy Survey footprint.
+
+The Albers Equal Area projection has two additional parameters beyond the defaults.
+These are :code:`lat_1` and :code:`lat_2`, the latitude of the two parallels to define the projection.
+These absolute values of these parallels must not be equal.
+
+The Albers Equal Area projection can be accessed with the :code:`skyproj.AlbersSkyproj()` class.
+
+.. code-block :: python
+
+    import matplotlib.pyplot as plt
+    import skyproj
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    sp = skyproj.AlbersSkyproj(ax=ax, lat_1=15.0, lat_2=45.0)
+    sp.tissot_indicatrices()
+    plt.show()
+
+.. image:: images/AlbersSkyproj_with_indicatrix.png
+   :width: 600
+   :alt: AlbersSkyproj

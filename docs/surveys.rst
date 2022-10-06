@@ -14,7 +14,7 @@ DESSkyproj
 ----------
 
 The :code:`skyproj.DESSkyproj()` projection sets the projection for plotting the survey outline of the `Dark Energy Survey <https://www.darkenergysurvey.org/>`_ (DES).
-The default for DES uses the :code:`skyproj.McBrydeSkyproj()` centered at 0 degrees longitude.
+The default for DES uses the :code:`skyproj.McBrydeSkyproj()` centered at +30 degrees longitude.
 The outline of DES can be accessed with :code:`draw_des()`.
 
 .. code-block :: python
@@ -25,12 +25,38 @@ The outline of DES can be accessed with :code:`draw_des()`.
     fig, ax = plt.subplots(figsize=(8, 5))
     sp = skyproj.DESSkyproj(ax=ax)
     sp.draw_des(label='DES')
+    sp.tissot_indicatrices(radius=2.5, num_lon=18, num_lat=10, color='blue', alpha=0.3)
     sp.legend()
     plt.show()
 
-.. image:: images/DES_survey.png
+.. image:: images/DES_survey_with_indicatrices.png
    :width: 600
-   :alt: DES Survey projection and survey outline.
+   :alt: DES Survey projection and survey outline with Tissot indicatrices.
+
+
+DESAlbersSkyproj
+----------------
+
+The :code:`skyproj.DESAlbersSkyproj()` projection sets the projection for plotting the survey outline of the DES using an Albers Equal Area projection.
+The default for DES (Albers) uses the :code:`skyproj.AlbersSkyproj()` centered at +30 degrees longitude, with standard parallels at -15 degrees and -50 degrees latitude.
+
+The outline of DES can be accessed with :code:`draw_des()`.
+
+.. code-block :: python
+
+    import matplotlib.pyplot as plt
+    import skyproj
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    sp = skyproj.DESAlbersSkyproj(ax=ax)
+    sp.draw_des(label='DESAlbers')
+    sp.tissot_indicatrices(radius=2.5, num_lon=18, num_lat=10, color='blue', alpha=0.3)
+    sp.legend()
+    plt.show()
+
+.. image:: images/DESAlbers_survey_with_indicatrices.png
+   :width: 600
+   :alt: DES Survey projection and survey outline, Albers Equal Area projection, with Tissot indicatrices.
 
 
 BlissSkyproj
