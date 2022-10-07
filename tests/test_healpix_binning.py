@@ -32,7 +32,7 @@ def test_healpix_binning(tmp_path):
     hpxmap, im, lon_raster, lat_raster, values_raster = sp.draw_hpxbin(ra, dec)
 
     # Spot-check a pixel
-    pix = hpg.angle_to_pixel(hpg.npixel_to_nside(hpxmap.size), ra, dec)
+    pix = hpg.angle_to_pixel(hpg.npixel_to_nside(hpxmap.size), ra, dec, nest=False)
     test, = np.where(pix == 87864)
     assert hpxmap[87864] == test.size
 
