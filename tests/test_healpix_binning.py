@@ -1,7 +1,7 @@
 import os
 
 import numpy as np
-import healpy as hp
+import hpgeom as hpg
 
 import matplotlib
 matplotlib.use("Agg")
@@ -32,7 +32,7 @@ def test_healpix_binning(tmp_path):
     hpxmap, im, lon_raster, lat_raster, values_raster = sp.draw_hpxbin(ra, dec)
 
     # Spot-check a pixel
-    pix = hp.ang2pix(hp.npix2nside(hpxmap.size), ra, dec, lonlat=True)
+    pix = hpg.angle_to_pixel(hpg.npixel_to_nside(hpxmap.size), ra, dec)
     test, = np.where(pix == 87864)
     assert hpxmap[87864] == test.size
 
