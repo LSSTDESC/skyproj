@@ -3,7 +3,7 @@ import warnings
 import matplotlib.pyplot as plt
 
 import numpy as np
-import healpy as hp
+import hpgeom as hpg
 
 import mpl_toolkits.axisartist as axisartist
 import mpl_toolkits.axisartist.angle_helper as angle_helper
@@ -643,20 +643,19 @@ class _Skyproj():
             lon %= 360.0
         coord_string = 'lon=%.6f, lat=%.6f' % (lon, lat)
         if np.isnan(lon) or np.isnan(lat):
-            val = hp.UNSEEN
+            val = hpg.UNSEEN
         elif self._redraw_dict['hspmap'] is not None:
             val = self._redraw_dict['hspmap'].get_values_pos(lon, lat)
         elif self._redraw_dict['hpxmap'] is not None:
-            pix = hp.ang2pix(self._redraw_dict['nside'],
-                             lon,
-                             lat,
-                             lonlat=True,
-                             nest=self._redraw_dict['nest'])
+            pix = hpg.angle_to_pixel(self._redraw_dict['nside'],
+                                     lon,
+                                     lat,
+                                     nest=self._redraw_dict['nest'])
             val = self._redraw_dict['hpxmap'][pix]
         else:
             return coord_string
 
-        if np.isclose(val, hp.UNSEEN):
+        if np.isclose(val, hpg.UNSEEN):
             coord_string += ', val=UNSEEN'
         else:
             coord_string += ', val=%f' % (val)
@@ -1046,8 +1045,8 @@ class _Skyproj():
         values_raster : `np.ma.MaskedArray`
             Masked array of rasterized values.
         """
-        nside = hp.npix2nside(hpxmap.size)
-        pixels, = np.where(hpxmap != hp.UNSEEN)
+        nside = hpg.npixel_to_nside(hpxmap.size)
+        pixels, = np.where(hpxmap != hpg.UNSEEN)
 
         if lon_range is None or lat_range is None:
             if zoom:
