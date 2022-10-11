@@ -43,6 +43,19 @@ class SkyAxes(matplotlib.axes.Axes):
 
         return result
 
+    def cla(self):
+        """Clear the current axes (deprecated in mpl 3.6)."""
+        result = super().cla()
+        self.xaxis.set_visible(False)
+        self.yaxis.set_visible(False)
+
+        self.set_frame_on(False)
+
+        # Always equal aspect ratio.
+        self.set_aspect('equal')
+
+        return result
+
     def set_extent(self, extent, lonlat=True):
         """Set the extent of the axes.
 
