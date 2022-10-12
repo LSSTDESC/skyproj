@@ -157,9 +157,18 @@ class SkyCRS(CRS):
         return (SkyTransform(self) + axes.transData)
 
     def _as_mpl_axes(self):
+        import matplotlib
         from .skyaxes import SkyAxes
 
-        return SkyAxes, {'sky_crs': self}
+        axes = SkyAxes
+
+        # Support for old matplotlib.
+        version_parts = matplotlib.__version__.split('.')
+        if int(version_parts[0]) <= 3 and int(version_parts[1]) < 6:
+            # Monkey-patch in the old cla.
+            axes.cla = axes.cla_mplpre36
+
+        return axes, {'sky_crs': self}
 
 
 class PlateCarreeCRS(SkyCRS):

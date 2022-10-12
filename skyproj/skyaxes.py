@@ -43,7 +43,7 @@ class SkyAxes(matplotlib.axes.Axes):
 
         return result
 
-    def cla(self):
+    def cla_mplpre36(self):
         """Clear the current axes (deprecated in mpl 3.6)."""
         result = super().cla()
         self.xaxis.set_visible(False)
