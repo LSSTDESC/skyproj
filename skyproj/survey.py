@@ -2,7 +2,7 @@ from .skyproj import McBrydeSkyproj, LaeaSkyproj, AlbersSkyproj
 from .utils import get_datafile  # fix this
 
 __all__ = ['DESSkyproj', 'BlissSkyproj', 'MaglitesSkyproj',
-           'DecalsSkyproj', 'DESAlbersSkyproj']
+           'DecalsSkyproj', 'DESMcBrydeSkyproj', 'DESAlbersSkyproj']
 
 
 class _Survey:
