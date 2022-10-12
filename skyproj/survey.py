@@ -1,8 +1,8 @@
-from .skyproj import McBrydeSkyproj, LaeaSkyproj
+from .skyproj import McBrydeSkyproj, LaeaSkyproj, AlbersSkyproj
 from .utils import get_datafile  # fix this
 
 __all__ = ['DESSkyproj', 'BlissSkyproj', 'MaglitesSkyproj',
-           'DecalsSkyproj']
+           'DecalsSkyproj', 'DESAlbersSkyproj']
 
 
 class _Survey:
@@ -101,12 +101,27 @@ class _Survey:
                                    **kwargs)
 
 
-class DESSkyproj(McBrydeSkyproj, _Survey):
+class DESMcBrydeSkyproj(McBrydeSkyproj, _Survey):
     # docstring inherited
-    def __init__(self, ax=None, lon_0=0, gridlines=True,
+    def __init__(self, ax=None, lon_0=30, gridlines=True,
                  celestial=True, extent=[90, -50, -74, 10], **kwargs):
         super().__init__(ax=ax, lon_0=lon_0, gridlines=gridlines,
                          celestial=celestial, extent=extent, **kwargs)
+
+
+DESSkyproj = DESMcBrydeSkyproj
+
+
+class DESAlbersSkyproj(AlbersSkyproj, _Survey):
+    # docstring inherited
+    def __init__(self, ax=None, lon_0=30.0, lat_1=-15.0, lat_2=-50.0, gridlines=True,
+                 celestial=True, extent=[80, -40, -80, 10], **kwargs):
+        super().__init__(ax=ax, lon_0=lon_0, lat_1=lat_1, lat_2=lat_2, gridlines=gridlines,
+                         celestial=celestial, extent=extent, **kwargs)
+
+    @property
+    def _default_xy_labels(self):
+        return ("Right Ascension", "Declination")
 
 
 class BlissSkyproj(McBrydeSkyproj, _Survey):

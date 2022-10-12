@@ -44,6 +44,8 @@ The `valid_mask=True` option will plot the valid pixels (instead of the values i
    :width: 600
    :alt: HealSparse map with inset colorbar.
 
+.. code-block :: python
+
     fig, ax = plt.subplots(figsize=(8, 5))
     sp = skyproj.McBrydeSkyproj(ax=ax)
     im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(hspmap, valid_mask=True)

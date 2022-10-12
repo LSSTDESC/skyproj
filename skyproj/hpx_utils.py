@@ -1,5 +1,5 @@
 import numpy as np
-import healpy as hp
+import hpgeom as hpg
 
 from .utils import wrap_values
 
@@ -28,9 +28,9 @@ def healpix_pixels_range(nside, pixels, wrap, nest=False):
     lat_range : `tuple` [`float`, `float`]
         Latitude range of pixels (min, max)
     """
-    lon, lat = hp.pix2ang(nside, pixels, nest=nest, lonlat=True)
+    lon, lat = hpg.pixel_to_angle(nside, pixels, nest=nest)
 
-    eps = hp.max_pixrad(nside, degrees=True)
+    eps = hpg.max_pixel_radius(nside)
 
     lat_range = (np.clip(np.min(lat) - eps, -90.0 + 1e-5, None),
                  np.clip(np.max(lat) + eps, None, 90.0 - 1e-5))
@@ -136,10 +136,10 @@ def hpxmap_to_xy(hpxmap, lon_range, lat_range, nest=False, xsize=1000, aspect=1.
     clon = (lon_raster[1:, 1:] + lon_raster[:-1, :-1])/2.
     clat = (lat_raster[1:, 1:] + lat_raster[:-1, :-1])/2.
 
-    pix_raster = hp.ang2pix(hp.npix2nside(hpxmap.size), clon, clat, nest=nest, lonlat=True)
+    pix_raster = hpg.angle_to_pixel(hpg.npixel_to_nside(hpxmap.size), clon, clat, nest=nest)
     values = hpxmap[pix_raster]
 
-    mask = np.isclose(values, hp.UNSEEN)
+    mask = np.isclose(values, hpg.UNSEEN)
 
     return lon_raster, lat_raster, np.ma.array(values, mask=mask)
 
@@ -187,7 +187,7 @@ def healpix_to_xy(nside, pixels, values, lon_range, lat_range,
     clon = (lon_raster[1:, 1:] + lon_raster[:-1, :-1])/2.
     clat = (lat_raster[1:, 1:] + lat_raster[:-1, :-1])/2.
 
-    pix_raster = hp.ang2pix(nside, clon, clat, nest=nest, lonlat=True)
+    pix_raster = hpg.angle_to_pixel(nside, clon, clat, nest=nest)
 
     st = np.argsort(pixels)
     sub1 = np.searchsorted(pixels, pix_raster, sorter=st)
@@ -228,19 +228,19 @@ def healpix_bin(lon, lat, C=None, nside=256, nest=False):
     hpxmap : `np.ndarray`
         Healsparse map of counts.
     """
-    pix = hp.ang2pix(nside, lon, lat, lonlat=True, nest=nest)
+    pix = hpg.angle_to_pixel(nside, lon, lat, nest=nest)
 
-    count = np.zeros(hp.nside2npix(nside), dtype=np.int32)
+    count = np.zeros(hpg.nside_to_npixel(nside), dtype=np.int32)
     np.add.at(count, pix, 1)
     good = count > 0
 
     if C is not None:
-        hpxmap = np.zeros(hp.nside2npix(nside))
+        hpxmap = np.zeros(hpg.nside_to_npixel(nside))
         np.add.at(hpxmap, pix, C)
         hpxmap[good] /= count[good]
     else:
         hpxmap = count.astype(np.float64)
 
-    hpxmap[~good] = hp.UNSEEN
+    hpxmap[~good] = hpg.UNSEEN
 
     return hpxmap

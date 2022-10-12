@@ -3,7 +3,7 @@ import warnings
 import matplotlib.pyplot as plt
 
 import numpy as np
-import healpy as hp
+import hpgeom as hpg
 
 import mpl_toolkits.axisartist as axisartist
 import mpl_toolkits.axisartist.angle_helper as angle_helper
@@ -77,7 +77,12 @@ class _Skyproj():
 
         fig = ax.figure
         # This code does not work with the constrained_layout option
-        fig.set_constrained_layout(False)
+        try:
+            # Newer matplotlib
+            fig.set_layout_engine('none')
+        except AttributeError:
+            # Older matplotlib
+            fig.set_constrained_layout(False)
         subspec = ax.get_subplotspec()
         fig.delaxes(ax)
 
@@ -440,13 +445,17 @@ class _Skyproj():
                                                      ha='right',
                                                      va='bottom'))
         else:
-            if self._radial_labels:
-                line_index = -1
-            else:
-                line_index = 0
             for axis_side in ['top', 'bottom']:
                 if not self._aa.axis[axis_side].major_ticklabels.get_visible():
                     continue
+
+                if self._radial_labels and axis_side == 'bottom':
+                    continue
+
+                if axis_side == 'top':
+                    line_index = -1
+                else:
+                    line_index = 0
 
                 tick_levels = grid_info['lon']['tick_levels'][axis_side]
 
@@ -634,20 +643,19 @@ class _Skyproj():
             lon %= 360.0
         coord_string = 'lon=%.6f, lat=%.6f' % (lon, lat)
         if np.isnan(lon) or np.isnan(lat):
-            val = hp.UNSEEN
+            val = hpg.UNSEEN
         elif self._redraw_dict['hspmap'] is not None:
             val = self._redraw_dict['hspmap'].get_values_pos(lon, lat)
         elif self._redraw_dict['hpxmap'] is not None:
-            pix = hp.ang2pix(self._redraw_dict['nside'],
-                             lon,
-                             lat,
-                             lonlat=True,
-                             nest=self._redraw_dict['nest'])
+            pix = hpg.angle_to_pixel(self._redraw_dict['nside'],
+                                     lon,
+                                     lat,
+                                     nest=self._redraw_dict['nest'])
             val = self._redraw_dict['hpxmap'][pix]
         else:
             return coord_string
 
-        if np.isclose(val, hp.UNSEEN):
+        if np.isclose(val, hpg.UNSEEN):
             coord_string += ', val=UNSEEN'
         else:
             coord_string += ', val=%f' % (val)
@@ -1037,8 +1045,8 @@ class _Skyproj():
         values_raster : `np.ma.MaskedArray`
             Masked array of rasterized values.
         """
-        nside = hp.npix2nside(hpxmap.size)
-        pixels, = np.where(hpxmap != hp.UNSEEN)
+        nside = hpg.npixel_to_nside(hpxmap.size)
+        pixels, = np.where(hpxmap != hpg.UNSEEN)
 
         if lon_range is None or lat_range is None:
             if zoom:

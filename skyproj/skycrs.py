@@ -9,7 +9,7 @@ from .utils import wrap_values
 
 __all__ = ["SkyCRS", "PlateCarreeCRS", "McBrydeThomasFlatPolarQuarticCRS", "MollweideCRS",
            "HammerCRS", "EqualEarthCRS", "LambertAzimuthalEqualAreaCRS", "GnomonicCRS",
-           "ObliqueMollweideCRS", "get_crs", "get_available_crs"]
+           "ObliqueMollweideCRS", "AlbersEqualAreaCRS", "get_crs", "get_available_crs"]
 
 
 RADIUS = 1.0
@@ -127,6 +127,20 @@ class SkyCRS(CRS):
             return None
 
     @property
+    def lat_1(self):
+        if 'lat_1' in self.proj4_params:
+            return self.proj4_params['lat_1']
+        else:
+            return None
+
+    @property
+    def lat_2(self):
+        if 'lat_2' in self.proj4_params:
+            return self.proj4_params['lat_2']
+        else:
+            return None
+
+    @property
     def name(self):
         return self._name
 
@@ -143,9 +157,18 @@ class SkyCRS(CRS):
         return (SkyTransform(self) + axes.transData)
 
     def _as_mpl_axes(self):
+        import matplotlib
         from .skyaxes import SkyAxes
 
-        return SkyAxes, {'sky_crs': self}
+        axes = SkyAxes
+
+        # Support for old matplotlib.
+        version_parts = matplotlib.__version__.split('.')
+        if int(version_parts[0]) <= 3 and int(version_parts[1]) < 6:
+            # Monkey-patch in the old cla.
+            axes.cla = axes.cla_mplpre36
+
+        return axes, {'sky_crs': self}
 
 
 class PlateCarreeCRS(SkyCRS):
@@ -343,6 +366,34 @@ class GnomonicCRS(SkyCRS):
         super().__init__(name=name, radius=radius, **proj4_params)
 
 
+class AlbersEqualAreaCRS(SkyCRS):
+    """Albers Equal Area CRS.
+
+    Parameters
+    ----------
+    name : `str`, optional
+        Name of projection CRS. Must be ``aea``.
+    lon_0 : `float`, optional
+        Central longitude of projection.
+    lat_1 : `float`, optional
+        First standard parallel.
+    lat_2 : `float`, optional
+        Second standard parallel.
+    radius : `float`, optional
+        Radius of projected sphere.
+    **kwargs : `dict`, optional
+        Additional kwargs for PROJ4 parameters.
+    """
+    def __init__(self, name='aea', lon_0=0.0, lat_1=15.0, lat_2=45.0, radius=RADIUS, **kwargs):
+        proj4_params = {'proj': 'aea',
+                        'lon_0': lon_0,
+                        'lat_1': lat_1,
+                        'lat_2': lat_2}
+        proj4_params = {**proj4_params, **kwargs}
+
+        super().__init__(name=name, radius=radius, **proj4_params)
+
+
 _crss = {
     'hammer': ('Hammer', HammerCRS),
     'mbtfpq': ('McBryde-Thomas Flat Polar Quartic', McBrydeThomasFlatPolarQuarticCRS),
@@ -351,7 +402,8 @@ _crss = {
     'laea': ('Lambert Azimuthal Equal Area', LambertAzimuthalEqualAreaCRS),
     'moll': ('Mollweide', MollweideCRS),
     'obmoll': ('Oblique Mollweide', ObliqueMollweideCRS),
-    'gnom': ('Gnomonic', GnomonicCRS)
+    'gnom': ('Gnomonic', GnomonicCRS),
+    'aea': ('Albers Equal Area', AlbersEqualAreaCRS),
 }
 
 

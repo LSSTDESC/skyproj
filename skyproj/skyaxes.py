@@ -30,8 +30,21 @@ class SkyAxes(matplotlib.axes.Axes):
 
         super().__init__(*args, **kwargs)
 
-    def cla(self):
+    def clear(self):
         """Clear the current axes."""
+        result = super().clear()
+        self.xaxis.set_visible(False)
+        self.yaxis.set_visible(False)
+
+        self.set_frame_on(False)
+
+        # Always equal aspect ratio.
+        self.set_aspect('equal')
+
+        return result
+
+    def cla_mplpre36(self):
+        """Clear the current axes (deprecated in mpl 3.6)."""
         result = super().cla()
         self.xaxis.set_visible(False)
         self.yaxis.set_visible(False)
