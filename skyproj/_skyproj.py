@@ -1087,7 +1087,15 @@ class _Skyproj():
                                          lat_raster[:-1, :-1][~values_raster.mask])
             self.set_extent(extent)
 
-        im = self.pcolormesh(lon_raster, lat_raster, values_raster, vmin=vmin, vmax=vmax, **kwargs)
+        im = self.pcolormesh(
+            lon_raster,
+            lat_raster,
+            values_raster,
+            vmin=vmin,
+            vmax=vmax,
+            rasterized=rasterized,
+            **kwargs,
+        )
         self._ax._sci(im)
 
         # Link up callbacks
@@ -1187,7 +1195,15 @@ class _Skyproj():
                                          lat_raster[:-1, :-1][~values_raster.mask])
             self.set_extent(extent)
 
-        im = self.pcolormesh(lon_raster, lat_raster, values_raster, vmin=vmin, vmax=vmax, **kwargs)
+        im = self.pcolormesh(
+            lon_raster,
+            lat_raster,
+            values_raster,
+            vmin=vmin,
+            vmax=vmax,
+            rasterized=rasterized,
+            **kwargs,
+        )
         self._ax._sci(im)
 
         return im, lon_raster, lat_raster, values_raster
@@ -1289,7 +1305,15 @@ class _Skyproj():
                                          lat_raster[:-1, :-1][~values_raster.mask])
             self.set_extent(extent)
 
-        im = self.pcolormesh(lon_raster, lat_raster, values_raster, vmin=vmin, vmax=vmax, **kwargs)
+        im = self.pcolormesh(
+            lon_raster,
+            lat_raster,
+            values_raster,
+            vmin=vmin,
+            vmax=vmax,
+            rasterized=rasterized,
+            **kwargs,
+        )
 
         self._ax._sci(im)
 
