@@ -180,3 +180,34 @@ def test_skyproj_nogap_180(tmp_path, skyproj):
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 10.0)
     if err:
         raise ImageComparisonFailure(err)
+
+
+def test_skyproj_override_sizes(tmp_path):
+    """Test overriding the label/width sizes."""
+    plt.rcParams.update(plt.rcParamsDefault)
+
+    rc_override_dict = {'xtick.labelsize': 20,
+                        'ytick.labelsize': 4,
+                        'axes.linewidth': 5}
+
+    # Full image
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    _ = skyproj.McBrydeSkyproj(ax=ax, rc_override_dict=rc_override_dict)
+    fname = 'skyproj_full_override_sizes.png'
+    fig.savefig(tmp_path / fname)
+    err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 10.0)
+    if err:
+        raise ImageComparisonFailure(err)
+
+    # And confirm that the changes do not carry over to another plot.
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    _ = skyproj.McBrydeSkyproj(ax=ax)
+    fname = 'mbtfpq_full_0.0.png'
+    fig.savefig(tmp_path / fname)
+    err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 10.0)
+    if err:
+        raise ImageComparisonFailure(err)
