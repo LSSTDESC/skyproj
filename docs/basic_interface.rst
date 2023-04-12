@@ -189,6 +189,7 @@ For more details on plotting :code:`HealSparse` and :code:`HEALPix` maps, see :r
 
 .. code-block :: python
 
+    import matplotlib.pyplot as plt
     import numpy as np
     import healsparse as hsp
     import skyproj
@@ -231,3 +232,36 @@ There is currently experimental support for reprojecting on the current displaye
 Performing the reprojection may be slow, and there are some cases where it can go awry.
 When the zoom is below 1 degree across the reprojection will use a Gnomonic (tangent-plane) projection which has sufficiently small distortion at all locations.
 
+
+Plotting Customization
+----------------------
+
+Much of the plotting functionality is decided by `SkyProj` itself.
+However, there is a lot of customization available.
+The fonts, font sizes, tick label sizes, etc, are all determined by the :code:`matplotlib` RC parameter dictionary.
+A few of these in particular should be highlighted:
+
+* :code:`xticks.labelsize`: Sets the label size for the x (longitude) ticks on the plot.
+* :code:`yticks.labelsize`: Sets the label size for the y (latitude) ticks on the plot.
+* :code:`axes.linewidth`: Sets the width of the boundary of the full plot.
+* :code:`axes.labelsize`: Sets the size of the x/y (lon/lat) labels; this will default to 16 unless specifically overridden with an :code:`rc_override_dict`.
+
+These values (and any others) can be overridden at the time of map instantiation with a temporary dictionary, like so:
+
+.. code-block :: python
+
+    import matplotlib.pyplot as plt
+    import skyproj
+
+    # These values are comically exagerated for effect.
+    rc_override_dict = {'xtick.labelsize': 20,
+                        'ytick.labelsize': 4,
+                        'axes.linewidth': 5}
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    sp = skyproj.McBrydeSkyproj(ax=ax, rc_override_dict=rc_override_dict)
+    plt.show()
+
+.. image:: images/skyproj_full_override_sizes.png
+   :width: 600
+   :alt: McBrydeSkyproj with comically exagerated label size overrides.
