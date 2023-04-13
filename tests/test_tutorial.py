@@ -49,7 +49,7 @@ def _notebook_run(nbfile):
     return nb, errors
 
 
-@pytest.mark.skipif(nbformat is None, "nbformat not installed.")
+@pytest.mark.skipif(nbformat is None, reason="nbformat not installed.")
 @pytest.mark.parametrize("nbfile", ["tutorial_baseclass.ipynb",
                                     "tutorial_surveys.ipynb",
                                     "tutorial_healsparse.ipynb"])
