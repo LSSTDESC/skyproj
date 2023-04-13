@@ -244,7 +244,7 @@ A few of these in particular should be highlighted:
 * :code:`xticks.labelsize`: Sets the label size for the x (longitude) ticks on the plot.
 * :code:`yticks.labelsize`: Sets the label size for the y (latitude) ticks on the plot.
 * :code:`axes.linewidth`: Sets the width of the boundary of the full plot.
-* :code:`axes.labelsize`: Sets the size of the x/y (lon/lat) labels; this will default to 16 unless specifically overridden with an :code:`rc_override_dict`.
+* :code:`axes.labelsize`: Sets the size of the x/y (lon/lat) labels; this will default to 16 unless specifically overridden with an :code:`rcparams`.
 
 These values (and any others) can be overridden at the time of map instantiation with a temporary dictionary, like so:
 
@@ -254,12 +254,12 @@ These values (and any others) can be overridden at the time of map instantiation
     import skyproj
 
     # These values are comically exaggerated for effect.
-    rc_override_dict = {'xtick.labelsize': 20,
-                        'ytick.labelsize': 4,
-                        'axes.linewidth': 5}
+    rcparams = {'xtick.labelsize': 20,
+                'ytick.labelsize': 4,
+                'axes.linewidth': 5}
 
     fig, ax = plt.subplots(figsize=(8, 5))
-    sp = skyproj.McBrydeSkyproj(ax=ax, rc_override_dict=rc_override_dict)
+    sp = skyproj.McBrydeSkyproj(ax=ax, rcparams=rcparams)
     plt.show()
 
 .. image:: images/skyproj_full_override_sizes.png

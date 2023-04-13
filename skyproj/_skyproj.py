@@ -44,7 +44,7 @@ class _Skyproj():
     galactic : `bool`, optional
         Plotting in Galactic coordinates?  Recommendation for Galactic plots
         is to have longitude_ticks set to ``symmetric`` and celestial = True.
-    rc_override_dict : `dict`, optional
+    rcparams : `dict`, optional
         Dictionary of matplotlib rc parameters to override.  In particular, the code will
         use ``xtick.labelsize`` and ``ytick.labelsize`` for the x and y tick labels, and
         ``axes.linewidth`` for the map boundary.
@@ -53,7 +53,7 @@ class _Skyproj():
     """
     def __init__(self, ax=None, projection_name='cyl', lon_0=0, gridlines=True, celestial=True,
                  extent=None, longitude_ticks='positive', autorescale=True, galactic=False,
-                 rc_override_dict={}, **kwargs):
+                 rcparams={}, **kwargs):
         self._redraw_dict = {'hpxmap': None,
                              'hspmap': None,
                              'im': None,
@@ -131,10 +131,10 @@ class _Skyproj():
         self._boundary_lines = None
         self._boundary_labels = []
 
-        if "axes.labelsize" not in rc_override_dict:
-            rc_override_dict["axes.labelsize"] = 16
+        if "axes.labelsize" not in rcparams:
+            rcparams["axes.labelsize"] = 16
 
-        with plt.rc_context(rc_override_dict):
+        with plt.rc_context(rcparams):
             self._initialize_axes(extent, extent_xy=extent_xy)
 
             # Set up callbacks on axis zoom.
