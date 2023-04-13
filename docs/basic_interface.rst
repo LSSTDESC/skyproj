@@ -253,7 +253,7 @@ These values (and any others) can be overridden at the time of map instantiation
     import matplotlib.pyplot as plt
     import skyproj
 
-    # These values are comically exagerated for effect.
+    # These values are comically exaggerated for effect.
     rc_override_dict = {'xtick.labelsize': 20,
                         'ytick.labelsize': 4,
                         'axes.linewidth': 5}
@@ -264,4 +264,4 @@ These values (and any others) can be overridden at the time of map instantiation
 
 .. image:: images/skyproj_full_override_sizes.png
    :width: 600
-   :alt: McBrydeSkyproj with comically exagerated label size overrides.
+   :alt: McBrydeSkyproj with comically exaggerated label size overrides.
