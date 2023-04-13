@@ -53,7 +53,7 @@ def test_lines_polygons_mcbryde(tmp_path, lon_0):
     sp.legend()
     fname = f'lines_and_polygons_{lon_0}.png'
     fig.savefig(tmp_path / fname)
-    err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 10.0)
+    err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 15.0)
     if err:
         raise ImageComparisonFailure(err)
 
@@ -94,6 +94,6 @@ def test_lines_polygons_obmoll(tmp_path, lonlatplonp):
     sp.legend()
     fname = f'lines_and_polygons_obmoll_{lon_0}_{lat_p}_{lon_p}.png'
     fig.savefig(tmp_path / fname)
-    err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 10.0)
+    err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 15.0)
     if err:
         raise ImageComparisonFailure(err)

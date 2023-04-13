@@ -9,7 +9,10 @@ import pytest
 import subprocess
 import tempfile
 
-import nbformat
+try:
+    import nbformat
+except ImportError:
+    nbformat = None
 
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
@@ -46,6 +49,7 @@ def _notebook_run(nbfile):
     return nb, errors
 
 
+@pytest.mark.skipif(nbformat is None, reason="nbformat not installed.")
 @pytest.mark.parametrize("nbfile", ["tutorial_baseclass.ipynb",
                                     "tutorial_surveys.ipynb",
                                     "tutorial_healsparse.ipynb"])

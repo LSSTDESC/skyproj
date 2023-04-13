@@ -44,11 +44,16 @@ class _Skyproj():
     galactic : `bool`, optional
         Plotting in Galactic coordinates?  Recommendation for Galactic plots
         is to have longitude_ticks set to ``symmetric`` and celestial = True.
+    rcparams : `dict`, optional
+        Dictionary of matplotlib rc parameters to override.  In particular, the code will
+        use ``xtick.labelsize`` and ``ytick.labelsize`` for the x and y tick labels, and
+        ``axes.linewidth`` for the map boundary.
     **kwargs : `dict`, optional
         Additional arguments to send to cartosky/proj4 projection CRS initialization.
     """
     def __init__(self, ax=None, projection_name='cyl', lon_0=0, gridlines=True, celestial=True,
-                 extent=None, longitude_ticks='positive', autorescale=True, galactic=False, **kwargs):
+                 extent=None, longitude_ticks='positive', autorescale=True, galactic=False,
+                 rcparams={}, **kwargs):
         self._redraw_dict = {'hpxmap': None,
                              'hspmap': None,
                              'im': None,
@@ -126,20 +131,24 @@ class _Skyproj():
         self._boundary_lines = None
         self._boundary_labels = []
 
-        self._initialize_axes(extent, extent_xy=extent_xy)
+        if "axes.labelsize" not in rcparams:
+            rcparams["axes.labelsize"] = 16
 
-        # Set up callbacks on axis zoom.
-        self._add_change_axis_callbacks()
+        with plt.rc_context(rcparams):
+            self._initialize_axes(extent, extent_xy=extent_xy)
 
-        # Set up callback on figure resize.
-        self._frc = self.ax.figure.canvas.mpl_connect('resize_event', self._change_size)
-        self._dc = self.ax.figure.canvas.mpl_connect('draw_event', self._draw_callback)
-        self._initial_extent_xy = [0]*4
+            # Set up callbacks on axis zoom.
+            self._add_change_axis_callbacks()
 
-        # Set up reproject callback.
-        self._rpc = self.ax.figure.canvas.mpl_connect('key_press_event', self._keypress_callback)
+            # Set up callback on figure resize.
+            self._frc = self.ax.figure.canvas.mpl_connect('resize_event', self._change_size)
+            self._dc = self.ax.figure.canvas.mpl_connect('draw_event', self._draw_callback)
+            self._initial_extent_xy = [0]*4
 
-        self._draw_aa_bounds_and_labels()
+            # Set up reproject callback.
+            self._rpc = self.ax.figure.canvas.mpl_connect('key_press_event', self._keypress_callback)
+
+            self._draw_aa_bounds_and_labels()
 
     def proj(self, lon, lat):
         """Apply forward projection to a set of lon/lat positions.
@@ -364,6 +373,7 @@ class _Skyproj():
                     continue
 
                 label = self._tick_formatter2(axis_side, factor, [lat_level])[0]
+
                 boundary_labels.append(self._ax.text(lat_line_x[0],
                                                      lat_line_y[0],
                                                      label,
@@ -436,6 +446,7 @@ class _Skyproj():
                 prev_x = x[i]
 
                 label = self._tick_formatter1('top', factor, [levels[i]])[0]
+
                 boundary_labels.append(self._ax.text(x[i],
                                                      y[i],
                                                      label,
@@ -611,8 +622,8 @@ class _Skyproj():
         self._aa.axis['bottom'].major_ticklabels.set_visible(True)
         self._aa.axis['top'].major_ticklabels.set_visible(True)
 
-        self.set_xlabel(self._default_xy_labels[0], size=16)
-        self.set_ylabel(self._default_xy_labels[1], size=16)
+        self.set_xlabel(self._default_xy_labels[0])
+        self.set_ylabel(self._default_xy_labels[1])
 
         fig.sca(self._ax)
 

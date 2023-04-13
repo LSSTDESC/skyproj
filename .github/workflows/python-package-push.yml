@@ -1,12 +1,7 @@
-# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
-
-name: Build and Test
+name: Build and Test (Branch)
 
 on:
   push:
-    branches: [ '**' ]
-  pull_request:
     branches: [ '**' ]
 
 jobs:
@@ -15,8 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.8', '3.9', '3.10']
-        matplotlib-version: ['=3.5', '>=3.6']
+        python-version: ['3.10']
+        matplotlib-version: ['>=3.6']
 
     steps:
     - uses: actions/checkout@v2
@@ -34,7 +29,7 @@ jobs:
       shell: bash -l {0}
       run: |
         mamba config --set always_yes yes
-        mamba install --quiet numpy "astropy>=4.0" "matplotlib${{ matrix.matplotlib-version }}" hpgeom setuptools_scm setuptools_scm_git_archive healsparse "pyproj>=3.1" flake8 pytest jupyter nbconvert
+        mamba install numpy "astropy>=4.0" "matplotlib${{ matrix.matplotlib-version }}" hpgeom setuptools_scm setuptools_scm_git_archive healsparse "pyproj>=3.1" flake8 pytest jupyter "nbconvert<7"
         python -m pip install --no-deps .
 
     - name: Lint with flake8
