@@ -441,7 +441,7 @@ class _Skyproj():
             for i in ok:
                 if prev_x is not None:
                     # Check if too close to last label.
-                    if abs(x[i] - prev_x)/delta_x < 0.05:
+                    if abs(x[i] - prev_x)/delta_x < 0.1:
                         continue
                 prev_x = x[i]
 
@@ -495,7 +495,7 @@ class _Skyproj():
 
                     if prev_x is not None:
                         # check if too close to last label.
-                        if abs(lon_line_x[index] - prev_x)/delta_x < 0.05:
+                        if abs(lon_line_x[index] - prev_x)/delta_x < 0.1:
                             continue
 
                     prev_x = lon_line_x[index]
