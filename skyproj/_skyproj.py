@@ -173,7 +173,7 @@ class _Skyproj():
         lat = np.atleast_1d(lat)
         out = ((lat < (-90.0 + self._pole_clip))
                | (lat > (90.0 - self._pole_clip)))
-        proj_xy = self.crs.transform_points(PlateCarreeCRS(), lon, lat)
+        proj_xy = self.crs.transform_points(PlateCarreeCRS(celestial=self.do_celestial), lon, lat)
         # FIXME I don't like this, look at the get_extent code instead/as well?
         proj_xy[..., 1][out] = np.nan
         return proj_xy[..., 0], proj_xy[..., 1]
@@ -199,7 +199,7 @@ class _Skyproj():
         """
         x = np.atleast_1d(x)
         y = np.atleast_1d(y)
-        proj_lonlat = PlateCarreeCRS().transform_points(self.crs, x, y)
+        proj_lonlat = PlateCarreeCRS(celestial=self.do_celestial).transform_points(self.crs, x, y)
         return proj_lonlat[..., 0], proj_lonlat[..., 1]
 
     def _initialize_axes(self, extent, extent_xy=None):
@@ -589,7 +589,7 @@ class _Skyproj():
             lon = np.atleast_1d(lon)
             lat = np.atleast_1d(lat)
             lon[np.isclose(lon, self._wrap)] = self._wrap - 1e-10
-            proj_xy = self.crs.transform_points(PlateCarreeCRS(), lon, lat)
+            proj_xy = self.crs.transform_points(PlateCarreeCRS(celestial=self.do_celestial), lon, lat)
             return proj_xy[..., 0], proj_xy[..., 1]
 
         if self.crs.name == 'cyl':
@@ -604,7 +604,7 @@ class _Skyproj():
             grid_locator2=grid_locator2,
             tick_formatter1=self._tick_formatter1,
             tick_formatter2=self._tick_formatter2,
-            celestial=self.do_celestial,
+            # celestial=self.do_celestial,
             equatorial_labels=self._equatorial_labels,
             delta_cut=delta_cut
         )

@@ -29,11 +29,14 @@ class SkyCRS(CRS):
         Name of projection CRS type.
     radius : `float`, optional
         Radius of projected sphere.
+    celestial : `bool`, optional
+        Is this a celestial projection (reverse longitude).
     **kwargs : `dict`, optional
         Additional kwargs for PROJ4 parameters.
     """
-    def __init__(self, name=None, radius=RADIUS, **kwargs):
+    def __init__(self, name=None, radius=RADIUS, celestial=True, **kwargs):
         self._name = name
+        self._celestial = celestial
         self.proj4_params = {'ellps': 'sphere',
                              'R': radius}
         self.proj4_params.update(**kwargs)
@@ -92,6 +95,8 @@ class SkyCRS(CRS):
             if isinstance(src_crs, PlateCarreeCRS):
                 # We need to wrap to [-180, 180)
                 x = wrap_values(x)
+                if src_crs._celestial:
+                    x *= -1
             try:
                 transformer = Transformer.from_crs(src_crs, self, always_xy=True)
                 result[:, 0], result[:, 1] = transformer.transform(x, y, None, errcheck=False)
