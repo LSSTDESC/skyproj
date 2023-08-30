@@ -261,21 +261,7 @@ class _Skyproj():
             n_grid_lon, n_grid_lat = self._compute_n_grid_from_extent(extent)
 
             self._update_grid_locators(n_grid_lon, n_grid_lat)
-            """
-            if self._wrap == 180.0 and not self._full_circle:
-                include_last_lon = True
-            else:
-                include_last_lon = False
 
-            self._grid_helper.grid_finder.grid_locator1 = angle_helper.LocatorD(
-                n_grid_lon,
-                include_last=include_last_lon,
-            )
-            self._grid_helper.grid_finder.grid_locator2 = angle_helper.LocatorD(
-                n_grid_lat,
-                include_last=True,
-            )
-            """
         self._draw_aa_bounds_and_labels()
 
     def _compute_n_grid_from_extent(self, extent):
@@ -785,6 +771,8 @@ class _Skyproj():
             return
 
         extent = ax.get_extent(lonlat=True)
+
+        
 
         gone_home = False
         if np.all(np.isclose(ax.get_extent(lonlat=False), self._initial_extent_xy)):
