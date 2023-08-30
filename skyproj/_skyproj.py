@@ -48,12 +48,17 @@ class _Skyproj():
         Dictionary of matplotlib rc parameters to override.  In particular, the code will
         use ``xtick.labelsize`` and ``ytick.labelsize`` for the x and y tick labels, and
         ``axes.linewidth`` for the map boundary.
+    n_grid_lon : `int`, optional
+        Number of gridlines to use in the longitude direction
+        (default is axis_ratio * n_grid_lat).
+    n_grid_lat : `int`, optional
+        Number of gridlines to use in the latitude direction (default is 6).
     **kwargs : `dict`, optional
         Additional arguments to send to cartosky/proj4 projection CRS initialization.
     """
     def __init__(self, ax=None, projection_name='cyl', lon_0=0, gridlines=True, celestial=True,
                  extent=None, longitude_ticks='positive', autorescale=True, galactic=False,
-                 rcparams={}, **kwargs):
+                 rcparams={}, n_grid_lon=None, n_grid_lat=None, **kwargs):
         self._redraw_dict = {'hpxmap': None,
                              'hspmap': None,
                              'im': None,
@@ -76,6 +81,9 @@ class _Skyproj():
             self._longitude_ticks = longitude_ticks
         else:
             raise ValueError("longitude_ticks must be 'positive' or 'symmetric'.")
+
+        self._n_grid_lon = n_grid_lon
+        self._n_grid_lat = n_grid_lat
 
         if ax is None:
             ax = plt.gca()
@@ -578,8 +586,16 @@ class _Skyproj():
             include_last_lon = True
         else:
             include_last_lon = False
-        grid_locator1 = angle_helper.LocatorD(10, include_last=include_last_lon)
-        grid_locator2 = angle_helper.LocatorD(6, include_last=True)
+
+        n_grid_lat = self._n_grid_lat if self._n_grid_lat is not None else 6
+        if self._n_grid_lon is None:
+            ratio = np.clip((extent[1] - extent[0])/(extent[3] - extent[2]), 1./3., 5./3.)
+            n_grid_lon = int(np.ceil(ratio * n_grid_lat))
+        else:
+            n_grid_lon = self._n_grid_lon
+
+        grid_locator1 = angle_helper.LocatorD(n_grid_lon, include_last=include_last_lon)
+        grid_locator2 = angle_helper.LocatorD(n_grid_lat, include_last=True)
 
         # We always want the formatting to be wrapped at 180 (-180 to 180)
         self._tick_formatter1 = WrappedFormatterDMS(180.0, self._longitude_ticks)
