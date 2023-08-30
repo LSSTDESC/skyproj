@@ -257,7 +257,79 @@ class _Skyproj():
         self._set_axes_limits(extent, invert=self.do_celestial)
         self._extent_xy = self._ax.get_extent(lonlat=False)
 
+        if self._n_grid_lon is None or self._n_grid_lat is None:
+            n_grid_lon, n_grid_lat = self._compute_n_grid_from_extent(extent)
+
+            self._update_grid_locators(n_grid_lon, n_grid_lat)
+            """
+            if self._wrap == 180.0 and not self._full_circle:
+                include_last_lon = True
+            else:
+                include_last_lon = False
+
+            self._grid_helper.grid_finder.grid_locator1 = angle_helper.LocatorD(
+                n_grid_lon,
+                include_last=include_last_lon,
+            )
+            self._grid_helper.grid_finder.grid_locator2 = angle_helper.LocatorD(
+                n_grid_lat,
+                include_last=True,
+            )
+            """
         self._draw_aa_bounds_and_labels()
+
+    def _compute_n_grid_from_extent(self, extent):
+        """Compute the number of grid lines from the extent.
+
+        This will respect values that were set at initialization time.
+
+        Parameters
+        ----------
+        extent : array-like
+            Extent as [lon_min, lon_max, lat_min, lat_max].
+
+        Returns
+        -------
+        n_grid_lon : `int`
+            Number of gridlines in the longitude direction.
+        n_grid_lat : `int`
+            Number of gridlines in the latitude direction.
+        """
+        n_grid_lat = self._n_grid_lat if self._n_grid_lat is not None else 6
+        if self._n_grid_lon is None:
+            latscale = np.cos(np.deg2rad(np.mean(extent[2:])))
+            ratio = np.clip(np.abs(extent[1] - extent[0])*latscale/(extent[3] - extent[2]), 1./3., 5./3.)
+            n_grid_lon = int(np.ceil(ratio * n_grid_lat))
+        else:
+            n_grid_lon = self._n_grid_lon
+
+        return n_grid_lon, n_grid_lat
+
+    def _update_grid_locators(self, n_grid_lon, n_grid_lat):
+        """Update the grid locators.
+
+        Parameters
+        ----------
+        n_grid_lon : `int`
+            Number of gridlines in the longitude direction.
+        n_grid_lat : `int`
+            Number of gridlines in the latitude direction.
+        """
+        if self._wrap == 180.0 and not self._full_circle:
+            include_last_lon = True
+        else:
+            include_last_lon = False
+
+        if n_grid_lon != self._grid_helper.grid_finder.grid_locator1.nbins:
+            self._grid_helper.grid_finder.grid_locator1 = angle_helper.LocatorD(
+                n_grid_lon,
+                include_last=include_last_lon,
+            )
+        if n_grid_lat != self._grid_helper.grid_finder.grid_locator2.nbins:
+            self._grid_helper.grid_finder.grid_locator2 = angle_helper.LocatorD(
+                n_grid_lat,
+                include_last=True,
+            )
 
     def _draw_aa_bounds_and_labels(self):
         """Set the axisartist bounds and labels."""
@@ -587,12 +659,7 @@ class _Skyproj():
         else:
             include_last_lon = False
 
-        n_grid_lat = self._n_grid_lat if self._n_grid_lat is not None else 6
-        if self._n_grid_lon is None:
-            ratio = np.clip((extent[1] - extent[0])/(extent[3] - extent[2]), 1./3., 5./3.)
-            n_grid_lon = int(np.ceil(ratio * n_grid_lat))
-        else:
-            n_grid_lon = self._n_grid_lon
+        n_grid_lon, n_grid_lat = self._compute_n_grid_from_extent(extent)
 
         grid_locator1 = angle_helper.LocatorD(n_grid_lon, include_last=include_last_lon)
         grid_locator2 = angle_helper.LocatorD(n_grid_lat, include_last=True)
