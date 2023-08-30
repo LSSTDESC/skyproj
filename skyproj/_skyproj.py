@@ -772,8 +772,6 @@ class _Skyproj():
 
         extent = ax.get_extent(lonlat=True)
 
-        
-
         gone_home = False
         if np.all(np.isclose(ax.get_extent(lonlat=False), self._initial_extent_xy)):
             gone_home = True
@@ -801,6 +799,13 @@ class _Skyproj():
         else:
             lon_range = [min(extent[0], extent[1]), max(extent[0], extent[1])]
             lat_range = [extent[2], extent[3]]
+
+        if self._n_grid_lon is None or self._n_grid_lat is None:
+            n_grid_lon, n_grid_lat = self._compute_n_grid_from_extent(
+                [lon_range[0], lon_range[1], lat_range[0], lat_range[1]]
+            )
+
+            self._update_grid_locators(n_grid_lon, n_grid_lat)
 
         if self._redraw_dict['hpxmap'] is not None:
             lon_raster, lat_raster, values_raster = hpxmap_to_xy(self._redraw_dict['hpxmap'],
