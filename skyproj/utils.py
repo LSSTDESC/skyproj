@@ -150,4 +150,3 @@ def get_autoscale_vmin_vmax(values, vmin_in, vmax_in):
     vmax = vmax_in if vmax_in is not None else _vmax
 
     return vmin, vmax
-
