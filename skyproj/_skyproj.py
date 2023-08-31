@@ -14,7 +14,7 @@ from matplotlib.colors import Normalize
 from .skycrs import get_crs, PlateCarreeCRS, GnomonicCRS
 from .hpx_utils import healpix_pixels_range, hspmap_to_xy, hpxmap_to_xy, healpix_to_xy, healpix_bin
 from .mpl_utils import ExtremeFinderWrapped, WrappedFormatterDMS, GridHelperSkyproj
-from .utils import wrap_values, _get_boundary_poly_xy
+from .utils import wrap_values, _get_boundary_poly_xy, get_autoscale_vmin_vmax
 
 
 class _Skyproj():
@@ -827,15 +827,7 @@ class _Skyproj():
         if self._autorescale:
             # Recompute scaling
             try:
-                if values_raster.dtype == bool:
-                    vmin, vmax = 0, 1
-                else:
-                    vmin, vmax = np.percentile(values_raster.compressed(), (2.5, 97.5))
-                if vmin == vmax:
-                    # This will make the color scaling work decently well when we
-                    # have a flat integer type map.
-                    vmin -= 0.1
-                    vmax += 0.1
+                vmin, vmax = get_autoscale_vmin_vmax(values_raster.compressed(), None, None)
 
                 self._redraw_dict['vmin'] = vmin
                 self._redraw_dict['vmax'] = vmax
@@ -1168,20 +1160,7 @@ class _Skyproj():
                                                              xsize=xsize)
 
         if vmin is None or vmax is None:
-            if values_raster.dtype == bool:
-                _vmin, _vmax = 0, 1
-            else:
-                # Auto-scale from visible values
-                _vmin, _vmax = np.percentile(values_raster.compressed(), (2.5, 97.5))
-            if _vmin == _vmax:
-                # This will make the color scaling work decently well when we
-                # have a flat integer type map.
-                _vmin -= 0.1
-                _vmax += 0.1
-            if vmin is None:
-                vmin = _vmin
-            if vmax is None:
-                vmax = _vmax
+            vmin, vmax = get_autoscale_vmin_vmax(values_raster.compressed(), vmin, vmax)
 
         if zoom:
             extent = self.compute_extent(lon_raster[:-1, :-1][~values_raster.mask],
@@ -1284,20 +1263,7 @@ class _Skyproj():
         )
 
         if vmin is None or vmax is None:
-            # Auto-scale from visible values
-            if values_raster.dtype == bool:
-                _vmin, _vmax = 0, 1
-            else:
-                _vmin, _vmax = np.percentile(values_raster.compressed(), (2.5, 97.5))
-            if _vmin == _vmax:
-                # This will make the color scaling work decently well when we
-                # have a flat integer type map.
-                _vmin -= 0.1
-                _vmax += 0.1
-            if vmin is None:
-                vmin = _vmin
-            if vmax is None:
-                vmax = _vmax
+            vmin, vmax = get_autoscale_vmin_vmax(values_raster.compressed(), vmin, vmax)
 
         if zoom:
             extent = self.compute_extent(lon_raster[:-1, :-1][~values_raster.mask],
@@ -1393,20 +1359,7 @@ class _Skyproj():
                                                              valid_mask=valid_mask)
 
         if vmin is None or vmax is None:
-            if values_raster.dtype == bool:
-                _vmin, _vmax = 0, 1
-            else:
-                # Auto-scale from visible values
-                _vmin, _vmax = np.percentile(values_raster.compressed(), (2.5, 97.5))
-            if _vmin == _vmax:
-                # This will make the color scaling work decently well when we
-                # have a flat integer type map.
-                _vmin -= 0.1
-                _vmax += 0.1
-            if vmin is None:
-                vmin = _vmin
-            if vmax is None:
-                vmax = _vmax
+            vmin, vmax = get_autoscale_vmin_vmax(values_raster.compressed(), vmin, vmax)
 
         if zoom:
             # Watch for masked array here...
