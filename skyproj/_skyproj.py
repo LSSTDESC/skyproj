@@ -827,7 +827,16 @@ class _Skyproj():
         if self._autorescale:
             # Recompute scaling
             try:
-                vmin, vmax = np.percentile(values_raster.compressed(), (2.5, 97.5))
+                if values_raster.dtype == bool:
+                    vmin, vmax = 0, 1
+                else:
+                    vmin, vmax = np.percentile(values_raster.compressed(), (2.5, 97.5))
+                if vmin == vmax:
+                    # This will make the color scaling work decently well when we
+                    # have a flat integer type map.
+                    vmin -= 0.1
+                    vmax += 0.1
+
                 self._redraw_dict['vmin'] = vmin
                 self._redraw_dict['vmax'] = vmax
 
@@ -1164,6 +1173,11 @@ class _Skyproj():
             else:
                 # Auto-scale from visible values
                 _vmin, _vmax = np.percentile(values_raster.compressed(), (2.5, 97.5))
+            if _vmin == _vmax:
+                # This will make the color scaling work decently well when we
+                # have a flat integer type map.
+                _vmin -= 0.1
+                _vmax += 0.1
             if vmin is None:
                 vmin = _vmin
             if vmax is None:
@@ -1271,7 +1285,15 @@ class _Skyproj():
 
         if vmin is None or vmax is None:
             # Auto-scale from visible values
-            _vmin, _vmax = np.percentile(values_raster.compressed(), (2.5, 97.5))
+            if values_raster.dtype == bool:
+                _vmin, _vmax = 0, 1
+            else:
+                _vmin, _vmax = np.percentile(values_raster.compressed(), (2.5, 97.5))
+            if _vmin == _vmax:
+                # This will make the color scaling work decently well when we
+                # have a flat integer type map.
+                _vmin -= 0.1
+                _vmax += 0.1
             if vmin is None:
                 vmin = _vmin
             if vmax is None:
