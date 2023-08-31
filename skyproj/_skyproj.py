@@ -14,7 +14,7 @@ from matplotlib.colors import Normalize
 from .skycrs import get_crs, PlateCarreeCRS, GnomonicCRS
 from .hpx_utils import healpix_pixels_range, hspmap_to_xy, hpxmap_to_xy, healpix_to_xy, healpix_bin
 from .mpl_utils import ExtremeFinderWrapped, WrappedFormatterDMS, GridHelperSkyproj
-from .utils import wrap_values, _get_boundary_poly_xy
+from .utils import wrap_values, _get_boundary_poly_xy, get_autoscale_vmin_vmax
 
 
 class _Skyproj():
@@ -48,12 +48,17 @@ class _Skyproj():
         Dictionary of matplotlib rc parameters to override.  In particular, the code will
         use ``xtick.labelsize`` and ``ytick.labelsize`` for the x and y tick labels, and
         ``axes.linewidth`` for the map boundary.
+    n_grid_lon : `int`, optional
+        Number of gridlines to use in the longitude direction
+        (default is axis_ratio * n_grid_lat).
+    n_grid_lat : `int`, optional
+        Number of gridlines to use in the latitude direction (default is 6).
     **kwargs : `dict`, optional
         Additional arguments to send to cartosky/proj4 projection CRS initialization.
     """
     def __init__(self, ax=None, projection_name='cyl', lon_0=0, gridlines=True, celestial=True,
                  extent=None, longitude_ticks='positive', autorescale=True, galactic=False,
-                 rcparams={}, **kwargs):
+                 rcparams={}, n_grid_lon=None, n_grid_lat=None, **kwargs):
         self._redraw_dict = {'hpxmap': None,
                              'hspmap': None,
                              'im': None,
@@ -76,6 +81,9 @@ class _Skyproj():
             self._longitude_ticks = longitude_ticks
         else:
             raise ValueError("longitude_ticks must be 'positive' or 'symmetric'.")
+
+        self._n_grid_lon = n_grid_lon
+        self._n_grid_lat = n_grid_lat
 
         if ax is None:
             ax = plt.gca()
@@ -249,7 +257,65 @@ class _Skyproj():
         self._set_axes_limits(extent, invert=self.do_celestial)
         self._extent_xy = self._ax.get_extent(lonlat=False)
 
+        if self._n_grid_lon is None or self._n_grid_lat is None:
+            n_grid_lon, n_grid_lat = self._compute_n_grid_from_extent(extent)
+
+            self._update_grid_locators(n_grid_lon, n_grid_lat)
+
         self._draw_aa_bounds_and_labels()
+
+    def _compute_n_grid_from_extent(self, extent):
+        """Compute the number of grid lines from the extent.
+
+        This will respect values that were set at initialization time.
+
+        Parameters
+        ----------
+        extent : array-like
+            Extent as [lon_min, lon_max, lat_min, lat_max].
+
+        Returns
+        -------
+        n_grid_lon : `int`
+            Number of gridlines in the longitude direction.
+        n_grid_lat : `int`
+            Number of gridlines in the latitude direction.
+        """
+        n_grid_lat = self._n_grid_lat if self._n_grid_lat is not None else 6
+        if self._n_grid_lon is None:
+            latscale = np.cos(np.deg2rad(np.mean(extent[2:])))
+            ratio = np.clip(np.abs(extent[1] - extent[0])*latscale/(extent[3] - extent[2]), 1./3., 5./3.)
+            n_grid_lon = int(np.ceil(ratio * n_grid_lat))
+        else:
+            n_grid_lon = self._n_grid_lon
+
+        return n_grid_lon, n_grid_lat
+
+    def _update_grid_locators(self, n_grid_lon, n_grid_lat):
+        """Update the grid locators.
+
+        Parameters
+        ----------
+        n_grid_lon : `int`
+            Number of gridlines in the longitude direction.
+        n_grid_lat : `int`
+            Number of gridlines in the latitude direction.
+        """
+        if self._wrap == 180.0 and not self._full_circle:
+            include_last_lon = True
+        else:
+            include_last_lon = False
+
+        if n_grid_lon != self._grid_helper.grid_finder.grid_locator1.nbins:
+            self._grid_helper.grid_finder.grid_locator1 = angle_helper.LocatorD(
+                n_grid_lon,
+                include_last=include_last_lon,
+            )
+        if n_grid_lat != self._grid_helper.grid_finder.grid_locator2.nbins:
+            self._grid_helper.grid_finder.grid_locator2 = angle_helper.LocatorD(
+                n_grid_lat,
+                include_last=True,
+            )
 
     def _draw_aa_bounds_and_labels(self):
         """Set the axisartist bounds and labels."""
@@ -441,7 +507,7 @@ class _Skyproj():
             for i in ok:
                 if prev_x is not None:
                     # Check if too close to last label.
-                    if abs(x[i] - prev_x)/delta_x < 0.05:
+                    if abs(x[i] - prev_x)/delta_x < 0.1:
                         continue
                 prev_x = x[i]
 
@@ -495,7 +561,7 @@ class _Skyproj():
 
                     if prev_x is not None:
                         # check if too close to last label.
-                        if abs(lon_line_x[index] - prev_x)/delta_x < 0.05:
+                        if abs(lon_line_x[index] - prev_x)/delta_x < 0.1:
                             continue
 
                     prev_x = lon_line_x[index]
@@ -578,8 +644,11 @@ class _Skyproj():
             include_last_lon = True
         else:
             include_last_lon = False
-        grid_locator1 = angle_helper.LocatorD(10, include_last=include_last_lon)
-        grid_locator2 = angle_helper.LocatorD(6, include_last=True)
+
+        n_grid_lon, n_grid_lat = self._compute_n_grid_from_extent(extent)
+
+        grid_locator1 = angle_helper.LocatorD(n_grid_lon, include_last=include_last_lon)
+        grid_locator2 = angle_helper.LocatorD(n_grid_lat, include_last=True)
 
         # We always want the formatting to be wrapped at 180 (-180 to 180)
         self._tick_formatter1 = WrappedFormatterDMS(180.0, self._longitude_ticks)
@@ -731,6 +800,13 @@ class _Skyproj():
             lon_range = [min(extent[0], extent[1]), max(extent[0], extent[1])]
             lat_range = [extent[2], extent[3]]
 
+        if self._n_grid_lon is None or self._n_grid_lat is None:
+            n_grid_lon, n_grid_lat = self._compute_n_grid_from_extent(
+                [lon_range[0], lon_range[1], lat_range[0], lat_range[1]]
+            )
+
+            self._update_grid_locators(n_grid_lon, n_grid_lat)
+
         if self._redraw_dict['hpxmap'] is not None:
             lon_raster, lat_raster, values_raster = hpxmap_to_xy(self._redraw_dict['hpxmap'],
                                                                  lon_range,
@@ -751,7 +827,8 @@ class _Skyproj():
         if self._autorescale:
             # Recompute scaling
             try:
-                vmin, vmax = np.percentile(values_raster.compressed(), (2.5, 97.5))
+                vmin, vmax = get_autoscale_vmin_vmax(values_raster.compressed(), None, None)
+
                 self._redraw_dict['vmin'] = vmin
                 self._redraw_dict['vmax'] = vmax
 
@@ -1083,15 +1160,7 @@ class _Skyproj():
                                                              xsize=xsize)
 
         if vmin is None or vmax is None:
-            if values_raster.dtype == bool:
-                _vmin, _vmax = 0, 1
-            else:
-                # Auto-scale from visible values
-                _vmin, _vmax = np.percentile(values_raster.compressed(), (2.5, 97.5))
-            if vmin is None:
-                vmin = _vmin
-            if vmax is None:
-                vmax = _vmax
+            vmin, vmax = get_autoscale_vmin_vmax(values_raster.compressed(), vmin, vmax)
 
         if zoom:
             extent = self.compute_extent(lon_raster[:-1, :-1][~values_raster.mask],
@@ -1194,12 +1263,7 @@ class _Skyproj():
         )
 
         if vmin is None or vmax is None:
-            # Auto-scale from visible values
-            _vmin, _vmax = np.percentile(values_raster.compressed(), (2.5, 97.5))
-            if vmin is None:
-                vmin = _vmin
-            if vmax is None:
-                vmax = _vmax
+            vmin, vmax = get_autoscale_vmin_vmax(values_raster.compressed(), vmin, vmax)
 
         if zoom:
             extent = self.compute_extent(lon_raster[:-1, :-1][~values_raster.mask],
@@ -1295,20 +1359,7 @@ class _Skyproj():
                                                              valid_mask=valid_mask)
 
         if vmin is None or vmax is None:
-            if values_raster.dtype == bool:
-                _vmin, _vmax = 0, 1
-            else:
-                # Auto-scale from visible values
-                _vmin, _vmax = np.percentile(values_raster.compressed(), (2.5, 97.5))
-            if _vmin == _vmax:
-                # This will make the color scaling work decently well when we
-                # have a flat integer type map.
-                _vmin -= 0.1
-                _vmax += 0.1
-            if vmin is None:
-                vmin = _vmin
-            if vmax is None:
-                vmax = _vmax
+            vmin, vmax = get_autoscale_vmin_vmax(values_raster.compressed(), vmin, vmax)
 
         if zoom:
             # Watch for masked array here...

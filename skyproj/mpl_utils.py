@@ -212,7 +212,7 @@ class GridHelperSkyproj(GridHelperCurveLinear):
 
                 if ctr > 0 and lon_or_lat == 'lon':
                     # Check if this is too close to the last label.
-                    if abs(xy[0] - prev_xy[0])/delta_x < 0.05:
+                    if abs(xy[0] - prev_xy[0])/delta_x < 0.1:
                         continue
                 prev_xy = xy
                 yield xy, angle_normal, angle_tangent, l

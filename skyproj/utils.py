@@ -8,6 +8,10 @@ import numpy as np
 __all__ = ["get_datadir", "get_datafile", "wrap_values"]
 
 
+AUTOSCALE_PERCENTILE_LOW = 2.5
+AUTOSCALE_PERCENTILE_HIGH = 97.5
+
+
 def get_datadir():
     from os.path import abspath, dirname, join
     return join(dirname(abspath(__file__)), 'data')
@@ -113,3 +117,36 @@ def _get_boundary_poly_xy(bounds_xy, extent_xy, proj, proj_inverse):
     bounds_xy_clipped_sides.append(_generate_side('bottom'))
 
     return np.concatenate(bounds_xy_clipped_sides)
+
+
+def get_autoscale_vmin_vmax(values, vmin_in, vmax_in):
+    """Get the autoscale vmin/vmax.
+
+    Parameters
+    ----------
+    values : `np.ndarray`
+        Array of values.
+    vmin_in : `float` or `None`
+        Input vmin (will not be overridden if set.)
+    vmax_in : `float` or `None`
+        Output vmin (will not be overridden if set.)
+
+    Returns
+    -------
+    vmin, vmax : `float`
+        Output vmin/vmax.
+    """
+    if values.dtype == bool:
+        _vmin, _vmax = 0, 1
+    else:
+        _vmin, _vmax = np.percentile(values, (AUTOSCALE_PERCENTILE_LOW, AUTOSCALE_PERCENTILE_HIGH))
+    if _vmin == _vmax:
+        # This will make the color scaling work decently well when we
+        # have a flat integer type map.
+        _vmin -= 0.1
+        _vmax += 0.1
+
+    vmin = vmin_in if vmin_in is not None else _vmin
+    vmax = vmax_in if vmax_in is not None else _vmax
+
+    return vmin, vmax

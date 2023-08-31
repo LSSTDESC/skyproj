@@ -104,9 +104,11 @@ class _Survey:
 class DESMcBrydeSkyproj(McBrydeSkyproj, _Survey):
     # docstring inherited
     def __init__(self, ax=None, lon_0=30, gridlines=True,
-                 celestial=True, extent=[90, -50, -74, 10], **kwargs):
+                 celestial=True, extent=[90, -50, -74, 10],
+                 n_grid_lon=10, n_grid_lat=6, **kwargs):
         super().__init__(ax=ax, lon_0=lon_0, gridlines=gridlines,
-                         celestial=celestial, extent=extent, **kwargs)
+                         celestial=celestial, extent=extent,
+                         n_grid_lon=n_grid_lon, n_grid_lat=n_grid_lat, **kwargs)
 
 
 DESSkyproj = DESMcBrydeSkyproj
@@ -115,9 +117,11 @@ DESSkyproj = DESMcBrydeSkyproj
 class DESAlbersSkyproj(AlbersSkyproj, _Survey):
     # docstring inherited
     def __init__(self, ax=None, lon_0=30.0, lat_1=-15.0, lat_2=-50.0, gridlines=True,
-                 celestial=True, extent=[80, -40, -80, 10], **kwargs):
+                 celestial=True, extent=[80, -40, -80, 10],
+                 n_grid_lon=10, n_grid_lat=6, **kwargs):
         super().__init__(ax=ax, lon_0=lon_0, lat_1=lat_1, lat_2=lat_2, gridlines=gridlines,
-                         celestial=celestial, extent=extent, **kwargs)
+                         celestial=celestial, extent=extent,
+                         n_grid_lon=n_grid_lon, n_grid_lat=n_grid_lat, **kwargs)
 
     @property
     def _default_xy_labels(self):
@@ -127,22 +131,28 @@ class DESAlbersSkyproj(AlbersSkyproj, _Survey):
 class BlissSkyproj(McBrydeSkyproj, _Survey):
     # docstring inherited
     def __init__(self, ax=None, lon_0=100, gridlines=True,
-                 celestial=True, extent=[-60, 250, -55, 0], **kwargs):
+                 celestial=True, extent=[-60, 250, -55, 0],
+                 n_grid_lon=10, n_grid_lat=6, **kwargs):
         super().__init__(ax=ax, lon_0=lon_0, gridlines=gridlines,
-                         celestial=celestial, extent=extent, **kwargs)
+                         celestial=celestial, extent=extent,
+                         n_grid_lon=n_grid_lon, n_grid_lat=n_grid_lat, **kwargs)
 
 
 class MaglitesSkyproj(LaeaSkyproj, _Survey):
     # docstring inherited
     def __init__(self, ax=None, lon_0=0, lat_0=-90, gridlines=True,
-                 celestial=True, extent=[-150, 70, -85, -50], **kwargs):
+                 celestial=True, extent=[-150, 70, -85, -50],
+                 n_grid_lon=10, n_grid_lat=6, **kwargs):
         super().__init__(ax=ax, lon_0=lon_0, lat_0=lat_0,
-                         gridlines=gridlines, celestial=celestial, extent=extent, **kwargs)
+                         gridlines=gridlines, celestial=celestial, extent=extent,
+                         n_grid_lon=n_grid_lon, n_grid_lat=n_grid_lat, **kwargs)
 
 
 class DecalsSkyproj(McBrydeSkyproj, _Survey):
     # docstring inherited
     def __init__(self, ax=None, lon_0=105.0, gridlines=True,
-                 celestial=True, extent=[180, -180, -30, 40], **kwargs):
+                 celestial=True, extent=[180, -180, -30, 40],
+                 n_grid_lon=10, n_grid_lat=6, **kwargs):
         super().__init__(ax=ax, lon_0=lon_0, gridlines=gridlines,
-                         celestial=celestial, extent=extent, **kwargs)
+                         celestial=celestial, extent=extent,
+                         n_grid_lon=n_grid_lon, n_grid_lat=n_grid_lat, **kwargs)
