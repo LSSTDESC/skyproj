@@ -14,7 +14,7 @@ from matplotlib.colors import Normalize
 from .skycrs import get_crs, PlateCarreeCRS, GnomonicCRS
 from .hpx_utils import healpix_pixels_range, hspmap_to_xy, hpxmap_to_xy, healpix_to_xy, healpix_bin
 from .mpl_utils import ExtremeFinderWrapped, WrappedFormatterDMS, GridHelperSkyproj
-from .utils import wrap_values, _get_boundary_poly_xy, get_autoscale_vmin_vmax
+from .utils import wrap_values, _get_boundary_poly_xy, get_autoscale_vmin_vmax, MIN_TICK_DELTA
 
 
 class _Skyproj():
@@ -507,7 +507,7 @@ class _Skyproj():
             for i in ok:
                 if prev_x is not None:
                     # Check if too close to last label.
-                    if abs(x[i] - prev_x)/delta_x < 0.1:
+                    if abs(x[i] - prev_x)/delta_x < MIN_TICK_DELTA:
                         continue
                 prev_x = x[i]
 
@@ -561,7 +561,7 @@ class _Skyproj():
 
                     if prev_x is not None:
                         # check if too close to last label.
-                        if abs(lon_line_x[index] - prev_x)/delta_x < 0.1:
+                        if abs(lon_line_x[index] - prev_x)/delta_x < MIN_TICK_DELTA:
                             continue
 
                     prev_x = lon_line_x[index]

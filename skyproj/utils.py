@@ -11,6 +11,8 @@ __all__ = ["get_datadir", "get_datafile", "wrap_values"]
 AUTOSCALE_PERCENTILE_LOW = 2.5
 AUTOSCALE_PERCENTILE_HIGH = 97.5
 
+MIN_TICK_DELTA = 0.1
+
 
 def get_datadir():
     from os.path import abspath, dirname, join

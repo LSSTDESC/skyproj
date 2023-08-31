@@ -5,7 +5,7 @@ from mpl_toolkits.axisartist.grid_finder import ExtremeFinderSimple
 import mpl_toolkits.axisartist.angle_helper as angle_helper
 from mpl_toolkits.axisartist.grid_helper_curvelinear import GridHelperCurveLinear
 
-from .utils import wrap_values
+from .utils import wrap_values, MIN_TICK_DELTA
 
 import matplotlib
 if version.parse(matplotlib.__version__) >= version.parse('3.5'):
@@ -212,7 +212,7 @@ class GridHelperSkyproj(GridHelperCurveLinear):
 
                 if ctr > 0 and lon_or_lat == 'lon':
                     # Check if this is too close to the last label.
-                    if abs(xy[0] - prev_xy[0])/delta_x < 0.1:
+                    if abs(xy[0] - prev_xy[0])/delta_x < MIN_TICK_DELTA:
                         continue
                 prev_xy = xy
                 yield xy, angle_normal, angle_tangent, l
