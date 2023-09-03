@@ -118,10 +118,11 @@ class DESAlbersSkyproj(AlbersSkyproj, _Survey):
     # docstring inherited
     def __init__(self, ax=None, lon_0=30.0, lat_1=-15.0, lat_2=-50.0, gridlines=True,
                  celestial=True, extent=[80, -40, -80, 10],
-                 n_grid_lon=10, n_grid_lat=6, **kwargs):
+                 n_grid_lon=10, n_grid_lat=6, min_tick_delta=0.05, **kwargs):
         super().__init__(ax=ax, lon_0=lon_0, lat_1=lat_1, lat_2=lat_2, gridlines=gridlines,
                          celestial=celestial, extent=extent,
-                         n_grid_lon=n_grid_lon, n_grid_lat=n_grid_lat, **kwargs)
+                         n_grid_lon=n_grid_lon, n_grid_lat=n_grid_lat, min_tick_delta=min_tick_delta,
+                         **kwargs)
 
     @property
     def _default_xy_labels(self):
