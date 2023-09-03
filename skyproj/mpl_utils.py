@@ -5,7 +5,7 @@ from mpl_toolkits.axisartist.grid_finder import ExtremeFinderSimple
 import mpl_toolkits.axisartist.angle_helper as angle_helper
 from mpl_toolkits.axisartist.grid_helper_curvelinear import GridHelperCurveLinear
 
-from .utils import wrap_values, MIN_TICK_DELTA
+from .utils import wrap_values
 
 import matplotlib
 if version.parse(matplotlib.__version__) >= version.parse('3.5'):
@@ -121,13 +121,19 @@ class GridHelperSkyproj(GridHelperCurveLinear):
         Longitude labels are marked on the equator instead of edges.
     delta_cut : `float`, optional
         Gridline step (degrees) to signify a jump around a wrapped edge.
+    min_tick_delta : `float`, optional
+        Minimum relative spacing between longitude tick labels (relative to width
+        of axis). Smaller values yield closer tick labels (and potential for clashes)
+        and larger values yield further tick labels.
     **kwargs : `dict`, optional
         Additional kwargs for ``GridHelperCurveLinear``.
     """
-    def __init__(self, *args, celestial=True, equatorial_labels=False, delta_cut=80.0, **kwargs):
+    def __init__(self, *args, celestial=True, equatorial_labels=False, delta_cut=80.0,
+                 min_tick_delta=0.1, **kwargs):
         self._celestial = celestial
         self._equatorial_labels = equatorial_labels
         self._delta_cut = delta_cut
+        self._min_tick_delta = min_tick_delta
 
         super().__init__(*args, **kwargs)
 
@@ -212,7 +218,7 @@ class GridHelperSkyproj(GridHelperCurveLinear):
 
                 if ctr > 0 and lon_or_lat == 'lon':
                     # Check if this is too close to the last label.
-                    if abs(xy[0] - prev_xy[0])/delta_x < MIN_TICK_DELTA:
+                    if abs(xy[0] - prev_xy[0])/delta_x < self._min_tick_delta:
                         continue
                 prev_xy = xy
                 yield xy, angle_normal, angle_tangent, l

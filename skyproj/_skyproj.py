@@ -14,7 +14,7 @@ from matplotlib.colors import Normalize
 from .skycrs import get_crs, PlateCarreeCRS, GnomonicCRS
 from .hpx_utils import healpix_pixels_range, hspmap_to_xy, hpxmap_to_xy, healpix_to_xy, healpix_bin
 from .mpl_utils import ExtremeFinderWrapped, WrappedFormatterDMS, GridHelperSkyproj
-from .utils import wrap_values, _get_boundary_poly_xy, get_autoscale_vmin_vmax, MIN_TICK_DELTA
+from .utils import wrap_values, _get_boundary_poly_xy, get_autoscale_vmin_vmax
 
 
 class _Skyproj():
@@ -53,12 +53,16 @@ class _Skyproj():
         (default is axis_ratio * n_grid_lat).
     n_grid_lat : `int`, optional
         Number of gridlines to use in the latitude direction (default is 6).
+    min_tick_delta : `float`, optional
+        Minimum relative spacing between longitude tick labels (relative to width
+        of axis). Smaller values yield closer tick labels (and potential for clashes)
+        and larger values yield further tick labels.
     **kwargs : `dict`, optional
         Additional arguments to send to cartosky/proj4 projection CRS initialization.
     """
     def __init__(self, ax=None, projection_name='cyl', lon_0=0, gridlines=True, celestial=True,
                  extent=None, longitude_ticks='positive', autorescale=True, galactic=False,
-                 rcparams={}, n_grid_lon=None, n_grid_lat=None, **kwargs):
+                 rcparams={}, n_grid_lon=None, n_grid_lat=None, min_tick_delta=0.1, **kwargs):
         self._redraw_dict = {'hpxmap': None,
                              'hspmap': None,
                              'im': None,
@@ -84,6 +88,7 @@ class _Skyproj():
 
         self._n_grid_lon = n_grid_lon
         self._n_grid_lat = n_grid_lat
+        self._min_tick_delta = min_tick_delta
 
         if ax is None:
             ax = plt.gca()
@@ -507,7 +512,7 @@ class _Skyproj():
             for i in ok:
                 if prev_x is not None:
                     # Check if too close to last label.
-                    if abs(x[i] - prev_x)/delta_x < MIN_TICK_DELTA:
+                    if abs(x[i] - prev_x)/delta_x < self._min_tick_delta:
                         continue
                 prev_x = x[i]
 
@@ -561,7 +566,7 @@ class _Skyproj():
 
                     if prev_x is not None:
                         # check if too close to last label.
-                        if abs(lon_line_x[index] - prev_x)/delta_x < MIN_TICK_DELTA:
+                        if abs(lon_line_x[index] - prev_x)/delta_x < self._min_tick_delta:
                             continue
 
                     prev_x = lon_line_x[index]
@@ -675,7 +680,8 @@ class _Skyproj():
             tick_formatter2=self._tick_formatter2,
             celestial=self.do_celestial,
             equatorial_labels=self._equatorial_labels,
-            delta_cut=delta_cut
+            delta_cut=delta_cut,
+            min_tick_delta=self._min_tick_delta,
         )
 
         self._grid_helper = grid_helper
