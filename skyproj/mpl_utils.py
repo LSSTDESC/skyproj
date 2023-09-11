@@ -121,13 +121,19 @@ class GridHelperSkyproj(GridHelperCurveLinear):
         Longitude labels are marked on the equator instead of edges.
     delta_cut : `float`, optional
         Gridline step (degrees) to signify a jump around a wrapped edge.
+    min_lon_ticklabel_delta : `float`, optional
+        Minimum relative spacing between longitude tick labels (relative to width
+        of axis). Smaller values yield closer tick labels (and potential for clashes)
+        and larger values yield more spacing between tick labels.
     **kwargs : `dict`, optional
         Additional kwargs for ``GridHelperCurveLinear``.
     """
-    def __init__(self, *args, celestial=True, equatorial_labels=False, delta_cut=80.0, **kwargs):
+    def __init__(self, *args, celestial=True, equatorial_labels=False, delta_cut=80.0,
+                 min_lon_ticklabel_delta=0.1, **kwargs):
         self._celestial = celestial
         self._equatorial_labels = equatorial_labels
         self._delta_cut = delta_cut
+        self._min_lon_ticklabel_delta = min_lon_ticklabel_delta
 
         super().__init__(*args, **kwargs)
 
@@ -212,7 +218,7 @@ class GridHelperSkyproj(GridHelperCurveLinear):
 
                 if ctr > 0 and lon_or_lat == 'lon':
                     # Check if this is too close to the last label.
-                    if abs(xy[0] - prev_xy[0])/delta_x < 0.1:
+                    if abs(xy[0] - prev_xy[0])/delta_x < self._min_lon_ticklabel_delta:
                         continue
                 prev_xy = xy
                 yield xy, angle_normal, angle_tangent, l

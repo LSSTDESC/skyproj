@@ -265,3 +265,15 @@ These values (and any others) can be overridden at the time of map instantiation
 .. image:: images/skyproj_full_override_sizes.png
    :width: 600
    :alt: McBrydeSkyproj with comically exaggerated label size overrides.
+
+There are additional `SkyProj` specific customization options that are not controlled via the :code:`matplotlib` RC parameter dictionary.
+These include the number of grid lines in the longitude and latitude direction, as well as minimum spacing between latitude tick labels to help prevent label clashes.
+These options are controlled at initialization time via keyword parameters, and include:
+
+* :code:`longitude_ticks`: Label longitude ticks from 0 to 360 degrees (``positive``) or from -180 to 180 degrees (``symmetric``).
+* :code:`n_grid_lon`: The number of grid lines to use in the longitude direction (x in rectangular-style projections).
+  The default is the axis ratio of the plot multiplied by the number of latitude grid lines.
+* :code:`n_grid_lat`: The number of grid lines to use in the latitude direction (y in rectangular-style projections).
+  The default is 6 lines.
+* :code:`min_lon_ticklabel_delta`: The minimum relative spacing between longitude tick labels (relative to the width of the axis).
+  Smaller values yield closer tick labels (and the potential for clashes), and larger valus yield more spacing between tick labels.
