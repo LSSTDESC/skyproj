@@ -17,9 +17,9 @@ sys.path.insert(0, os.path.abspath('..'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'healsparse'
-copyright = '2019, Eli Rykoff and Javier Sanchez (LSST Dark Energy Science Collaboration)'
-author = 'Eli Rykoff and Javier Sanchez'
+project = 'skyproj'
+copyright = '2023, Eli Rykoff (LSST Dark Energy Science Collaboration)'
+author = 'Eli Rykoff'
 
 
 # -- General configuration ---------------------------------------------------
@@ -58,7 +58,7 @@ html_static_path = []
 import inspect
 from os.path import relpath, dirname
 
-import healsparse # for the relpath below
+import skyproj # for the relpath below
 
 def linkcode_resolve(domain, info):
     """
@@ -103,9 +103,9 @@ def linkcode_resolve(domain, info):
     else:
         linespec = ""
 
-    fn = relpath(fn, start=dirname(healsparse.__file__))
+    fn = relpath(fn, start=dirname(skyproj.__file__))
 
     # Could use version,release declared above here but for now we
     # just link to the latest code on the master branch.
-    github = 'https://github.com/LSSTDESC/healsparse'
-    return '%s/blob/master/healsparse/%s%s' % (github, fn, linespec)
+    github = 'https://github.com/LSSTDESC/skyproj'
+    return '%s/blob/main/skyproj/%s%s' % (github, fn, linespec)
