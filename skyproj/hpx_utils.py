@@ -99,7 +99,7 @@ def hspmap_to_xy(hspmap, lon_range, lat_range, xsize=1000, aspect=1.0, valid_mas
     elif values.dtype == bool:
         mask = values == hspmap._sentinel
     else:
-        mask = np.isclose(values, hspmap._sentinel)
+        mask = (np.isclose(values, hspmap._sentinel) | np.isnan(values))
 
     return lon_raster, lat_raster, np.ma.array(values, mask=mask)
 
@@ -139,7 +139,7 @@ def hpxmap_to_xy(hpxmap, lon_range, lat_range, nest=False, xsize=1000, aspect=1.
     pix_raster = hpg.angle_to_pixel(hpg.npixel_to_nside(hpxmap.size), clon, clat, nest=nest)
     values = hpxmap[pix_raster]
 
-    mask = np.isclose(values, hpg.UNSEEN)
+    mask = (np.isclose(values, hpg.UNSEEN) | np.isnan(values))
 
     return lon_raster, lat_raster, np.ma.array(values, mask=mask)
 
