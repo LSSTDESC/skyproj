@@ -1,3 +1,4 @@
+
 """
 Random utilities
 """
@@ -139,7 +140,7 @@ def get_autoscale_vmin_vmax(values, vmin_in, vmax_in):
     if values.dtype == bool:
         _vmin, _vmax = 0, 1
     else:
-        _vmin, _vmax = np.percentile(values, (AUTOSCALE_PERCENTILE_LOW, AUTOSCALE_PERCENTILE_HIGH))
+        _vmin, _vmax = np.nanpercentile(values, (AUTOSCALE_PERCENTILE_LOW, AUTOSCALE_PERCENTILE_HIGH))
     if _vmin == _vmax:
         # This will make the color scaling work decently well when we
         # have a flat integer type map.

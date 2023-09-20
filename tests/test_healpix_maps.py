@@ -122,6 +122,27 @@ def test_healsparse(tmp_path):
         raise ImageComparisonFailure(err)
 
 
+def test_healsparse_nanval(tmp_path):
+    """Test plotting a healsparse map that has a nan value."""
+    plt.rcParams.update(plt.rcParamsDefault)
+
+    hspmap = _get_hspmap()
+
+    hspmap[hspmap.valid_pixels[0]] = np.nan
+
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    sp = skyproj.McBrydeSkyproj(ax=ax)
+    im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(hspmap)
+    sp.draw_inset_colorbar()
+    fname = 'healsparse_one.png'
+    fig.savefig(tmp_path / fname)
+    err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
+    if err:
+        raise ImageComparisonFailure(err)
+
+
 def test_healsparse_rasterize(tmp_path):
     """Test plotting a healsparse map with and without rasterization."""
     plt.rcParams.update(plt.rcParamsDefault)
