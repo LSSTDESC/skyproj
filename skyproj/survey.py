@@ -86,7 +86,7 @@ class _Survey:
                     vmin=None, vmax=None,
                     rasterized=True, lon_range=None, lat_range=None, **kwargs):
         # docstring inherited
-        return super().draw_hpxmap(lon,
+        return super().draw_hpxbin(lon,
                                    lat,
                                    C=C,
                                    nside=nside,
@@ -101,7 +101,7 @@ class _Survey:
                                    **kwargs)
 
 
-class DESMcBrydeSkyproj(McBrydeSkyproj, _Survey):
+class DESMcBrydeSkyproj(_Survey, McBrydeSkyproj):
     # docstring inherited
     def __init__(self, ax=None, lon_0=30, gridlines=True,
                  celestial=True, extent=[90, -50, -74, 10],
@@ -114,7 +114,7 @@ class DESMcBrydeSkyproj(McBrydeSkyproj, _Survey):
 DESSkyproj = DESMcBrydeSkyproj
 
 
-class DESAlbersSkyproj(AlbersSkyproj, _Survey):
+class DESAlbersSkyproj(_Survey, AlbersSkyproj):
     # docstring inherited
     def __init__(self, ax=None, lon_0=30.0, lat_1=-15.0, lat_2=-50.0, gridlines=True,
                  celestial=True, extent=[80, -40, -80, 10],
@@ -129,7 +129,7 @@ class DESAlbersSkyproj(AlbersSkyproj, _Survey):
         return ("Right Ascension", "Declination")
 
 
-class BlissSkyproj(McBrydeSkyproj, _Survey):
+class BlissSkyproj(_Survey, McBrydeSkyproj):
     # docstring inherited
     def __init__(self, ax=None, lon_0=100, gridlines=True,
                  celestial=True, extent=[-60, 250, -55, 0],
@@ -139,7 +139,7 @@ class BlissSkyproj(McBrydeSkyproj, _Survey):
                          n_grid_lon=n_grid_lon, n_grid_lat=n_grid_lat, **kwargs)
 
 
-class MaglitesSkyproj(LaeaSkyproj, _Survey):
+class MaglitesSkyproj(_Survey, LaeaSkyproj):
     # docstring inherited
     def __init__(self, ax=None, lon_0=0, lat_0=-90, gridlines=True,
                  celestial=True, extent=[-150, 70, -85, -50],
@@ -149,7 +149,7 @@ class MaglitesSkyproj(LaeaSkyproj, _Survey):
                          n_grid_lon=n_grid_lon, n_grid_lat=n_grid_lat, **kwargs)
 
 
-class DecalsSkyproj(McBrydeSkyproj, _Survey):
+class DecalsSkyproj(_Survey, McBrydeSkyproj):
     # docstring inherited
     def __init__(self, ax=None, lon_0=105.0, gridlines=True,
                  celestial=True, extent=[180, -180, -30, 40],
