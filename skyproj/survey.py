@@ -1,6 +1,8 @@
 from .skyproj import McBrydeSkyproj, LaeaSkyproj, AlbersSkyproj
 from .utils import get_datafile  # fix this
 
+from ._docstrings import skyproj_init_parameters, skyproj_kwargs_par
+
 __all__ = ['DESSkyproj', 'BlissSkyproj', 'MaglitesSkyproj',
            'DecalsSkyproj', 'DESMcBrydeSkyproj', 'DESAlbersSkyproj']
 
@@ -102,27 +104,89 @@ class _Survey:
 
 
 class DESMcBrydeSkyproj(_Survey, McBrydeSkyproj):
-    # docstring inherited
-    def __init__(self, ax=None, lon_0=30, gridlines=True,
-                 celestial=True, extent=[90, -50, -74, 10],
-                 n_grid_lon=10, n_grid_lat=6, **kwargs):
-        super().__init__(ax=ax, lon_0=lon_0, gridlines=gridlines,
-                         celestial=celestial, extent=extent,
-                         n_grid_lon=n_grid_lon, n_grid_lat=n_grid_lat, **kwargs)
+    __doc__ = skyproj_init_parameters(
+        "A projection for the DES Survey using a McBryde-Thomas Flat Polar Quartic projection.",
+    )
+    __doc__ += skyproj_kwargs_par
+
+    def __init__(
+        self,
+        ax=None,
+        lon_0=30.0,
+        gridlines=True,
+        celestial=True,
+        extent=[90, -50, -74, 10],
+        longitude_ticks='positive',
+        autorescale=True,
+        galactic=False,
+        rcparams={},
+        n_grid_lon=10,
+        n_grid_lat=6,
+        min_lon_ticklabel_delta=0.1,
+        **kwargs,
+    ):
+        super().__init__(
+            ax=ax,
+            lon_0=lon_0,
+            gridlines=gridlines,
+            celestial=celestial,
+            extent=extent,
+            longitude_ticks=longitude_ticks,
+            autorescale=autorescale,
+            galactic=galactic,
+            rcparams=rcparams,
+            n_grid_lon=n_grid_lon,
+            n_grid_lat=n_grid_lat,
+            min_lon_ticklabel_delta=min_lon_ticklabel_delta,
+            **kwargs,
+        )
 
 
 DESSkyproj = DESMcBrydeSkyproj
 
 
 class DESAlbersSkyproj(_Survey, AlbersSkyproj):
-    # docstring inherited
-    def __init__(self, ax=None, lon_0=30.0, lat_1=-15.0, lat_2=-50.0, gridlines=True,
-                 celestial=True, extent=[80, -40, -80, 10],
-                 n_grid_lon=10, n_grid_lat=6, min_tick_delta=0.05, **kwargs):
-        super().__init__(ax=ax, lon_0=lon_0, lat_1=lat_1, lat_2=lat_2, gridlines=gridlines,
-                         celestial=celestial, extent=extent,
-                         n_grid_lon=n_grid_lon, n_grid_lat=n_grid_lat, min_tick_delta=min_tick_delta,
-                         **kwargs)
+    __doc__ = skyproj_init_parameters(
+        "A projection for the DES Survey using an Albers Equal Area projection.",
+        include_lon_0=False,
+    )
+    __doc__ += skyproj_kwargs_par
+
+    def __init__(
+        self,
+        ax=None,
+        gridlines=True,
+        celestial=True,
+        extent=[80, -40, -80, 10],
+        longitude_ticks='positive',
+        autorescale=True,
+        galactic=False,
+        rcparams={},
+        n_grid_lon=10,
+        n_grid_lat=6,
+        min_lon_ticklabel_delta=0.1,
+        lon_0=30.0,
+        lat_1=-15.0,
+        lat_2=-50.0,
+        **kwargs,
+    ):
+        super().__init__(
+            ax=ax,
+            gridlines=gridlines,
+            celestial=celestial,
+            extent=extent,
+            longitude_ticks=longitude_ticks,
+            autorescale=autorescale,
+            galactic=galactic,
+            rcparams=rcparams,
+            n_grid_lon=n_grid_lon,
+            n_grid_lat=n_grid_lat,
+            min_lon_ticklabel_delta=min_lon_ticklabel_delta,
+            lon_0=lon_0,
+            lat_1=lat_1,
+            lat_2=lat_2,
+            **kwargs,
+        )
 
     @property
     def _default_xy_labels(self):
@@ -130,30 +194,122 @@ class DESAlbersSkyproj(_Survey, AlbersSkyproj):
 
 
 class BlissSkyproj(_Survey, McBrydeSkyproj):
-    # docstring inherited
-    def __init__(self, ax=None, lon_0=100, gridlines=True,
-                 celestial=True, extent=[-60, 250, -55, 0],
-                 n_grid_lon=10, n_grid_lat=6, **kwargs):
-        super().__init__(ax=ax, lon_0=lon_0, gridlines=gridlines,
-                         celestial=celestial, extent=extent,
-                         n_grid_lon=n_grid_lon, n_grid_lat=n_grid_lat, **kwargs)
+    __doc__ = skyproj_init_parameters(
+        "A projection for the BLISS Survey using a McBryde-Thomas Flat Polar Quartic projection.",
+        include_lon_0=False,
+    )
+    __doc__ += skyproj_kwargs_par
+
+    def __init__(
+        self,
+        ax=None,
+        lon_0=100.0,
+        gridlines=True,
+        celestial=True,
+        extent=[-60, 250, -55, 0],
+        longitude_ticks='positive',
+        autorescale=True,
+        galactic=False,
+        rcparams={},
+        n_grid_lon=10,
+        n_grid_lat=6,
+        min_lon_ticklabel_delta=0.1,
+        **kwargs,
+    ):
+        super().__init__(
+            ax=ax,
+            lon_0=lon_0,
+            gridlines=gridlines,
+            celestial=celestial,
+            extent=extent,
+            longitude_ticks=longitude_ticks,
+            autorescale=autorescale,
+            galactic=galactic,
+            rcparams=rcparams,
+            n_grid_lon=n_grid_lon,
+            n_grid_lat=n_grid_lat,
+            min_lon_ticklabel_delta=min_lon_ticklabel_delta,
+            **kwargs,
+        )
 
 
 class MaglitesSkyproj(_Survey, LaeaSkyproj):
-    # docstring inherited
-    def __init__(self, ax=None, lon_0=0, lat_0=-90, gridlines=True,
-                 celestial=True, extent=[-150, 70, -85, -50],
-                 n_grid_lon=10, n_grid_lat=6, **kwargs):
-        super().__init__(ax=ax, lon_0=lon_0, lat_0=lat_0,
-                         gridlines=gridlines, celestial=celestial, extent=extent,
-                         n_grid_lon=n_grid_lon, n_grid_lat=n_grid_lat, **kwargs)
+    __doc__ = skyproj_init_parameters(
+        "A projection for the MagLiteS Survey using a Lambert Azimuthal Equal Area projection.",
+        include_lon_0=False,
+    )
+    __doc__ += skyproj_kwargs_par
+
+    def __init__(
+        self,
+        ax=None,
+        gridlines=True,
+        celestial=True,
+        extent=[-150, 70, -85, -50],
+        longitude_ticks='positive',
+        autorescale=True,
+        galactic=False,
+        rcparams={},
+        n_grid_lon=10,
+        n_grid_lat=6,
+        min_lon_ticklabel_delta=0.1,
+        lon_0=0.0,
+        lat_0=-90.0,
+        **kwargs,
+    ):
+        super().__init__(
+            ax=ax,
+            gridlines=gridlines,
+            celestial=celestial,
+            extent=extent,
+            longitude_ticks=longitude_ticks,
+            autorescale=autorescale,
+            galactic=galactic,
+            rcparams=rcparams,
+            n_grid_lon=n_grid_lon,
+            n_grid_lat=n_grid_lat,
+            min_lon_ticklabel_delta=min_lon_ticklabel_delta,
+            lon_0=lon_0,
+            lat_0=lat_0,
+            **kwargs,
+        )
 
 
 class DecalsSkyproj(_Survey, McBrydeSkyproj):
-    # docstring inherited
-    def __init__(self, ax=None, lon_0=105.0, gridlines=True,
-                 celestial=True, extent=[180, -180, -30, 40],
-                 n_grid_lon=10, n_grid_lat=6, **kwargs):
-        super().__init__(ax=ax, lon_0=lon_0, gridlines=gridlines,
-                         celestial=celestial, extent=extent,
-                         n_grid_lon=n_grid_lon, n_grid_lat=n_grid_lat, **kwargs)
+    __doc__ = skyproj_init_parameters(
+        "A projection for the DECaLS Survey using a McBryde-Thomas Flat Polar Quartic projection.",
+        include_lon_0=False,
+    )
+    __doc__ += skyproj_kwargs_par
+
+    def __init__(
+        self,
+        ax=None,
+        lon_0=105.0,
+        gridlines=True,
+        celestial=True,
+        extent=[180, -180, -30, 40],
+        longitude_ticks='positive',
+        autorescale=True,
+        galactic=False,
+        rcparams={},
+        n_grid_lon=10,
+        n_grid_lat=6,
+        min_lon_ticklabel_delta=0.1,
+        **kwargs,
+    ):
+        super().__init__(
+            ax=ax,
+            lon_0=lon_0,
+            gridlines=gridlines,
+            celestial=celestial,
+            extent=extent,
+            longitude_ticks=longitude_ticks,
+            autorescale=autorescale,
+            galactic=galactic,
+            rcparams=rcparams,
+            n_grid_lon=n_grid_lon,
+            n_grid_lat=n_grid_lat,
+            min_lon_ticklabel_delta=min_lon_ticklabel_delta,
+            **kwargs,
+        )

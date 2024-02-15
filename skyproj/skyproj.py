@@ -2,6 +2,9 @@ import numpy as np
 
 from ._skyproj import _Skyproj
 
+from ._docstrings import skyproj_init_parameters, skyproj_kwargs_par
+
+
 __all__ = ['Skyproj', 'McBrydeSkyproj', 'LaeaSkyproj', 'MollweideSkyproj',
            'HammerSkyproj', 'EqualEarthSkyproj', 'GnomonicSkyproj',
            'ObliqueMollweideSkyproj', 'AlbersSkyproj']
@@ -102,27 +105,134 @@ class _Circle:
 # The default skyproj is a cylindrical Plate Carree projection.
 
 class Skyproj(_Skyproj, _Stadium):
-    # docstring inherited
+    __doc__ = (skyproj_init_parameters("A Plate Carree cylindrical projection Skyproj map.")
+               + skyproj_kwargs_par)
+
     # Plate Carree
-    def __init__(self, **kwargs):
-        super().__init__(projection_name='cyl', **kwargs)
+    def __init__(
+        self,
+        ax=None,
+        lon_0=0.0,
+        gridlines=True,
+        celestial=True,
+        extent=None,
+        longitude_ticks='positive',
+        autorescale=True,
+        galactic=False,
+        rcparams={},
+        n_grid_lon=None,
+        n_grid_lat=None,
+        min_lon_ticklabel_delta=0.1,
+        **kwargs,
+    ):
+        super().__init__(
+            ax=ax,
+            projection_name='cyl',
+            lon_0=lon_0,
+            gridlines=gridlines,
+            celestial=celestial,
+            extent=extent,
+            longitude_ticks=longitude_ticks,
+            autorescale=autorescale,
+            galactic=galactic,
+            rcparams=rcparams,
+            n_grid_lon=n_grid_lon,
+            n_grid_lat=n_grid_lat,
+            min_lon_ticklabel_delta=min_lon_ticklabel_delta,
+            **kwargs,
+        )
 
 
 # The following skyprojs include the equal-area projections that are tested
 # and known to work.
 
 class McBrydeSkyproj(_Skyproj, _Stadium):
-    # docstring inherited
+    __doc__ = (skyproj_init_parameters("A McBryde-Thomas Flat Polar Quartic projection Skyproj map.")
+               + skyproj_kwargs_par)
+
     # McBryde-Thomas Flat Polar Quartic
-    def __init__(self, **kwargs):
-        super().__init__(projection_name='mbtfpq', **kwargs)
+    def __init__(
+        self,
+        ax=None,
+        lon_0=0.0,
+        gridlines=True,
+        celestial=True,
+        extent=None,
+        longitude_ticks='positive',
+        autorescale=True,
+        galactic=False,
+        rcparams={},
+        n_grid_lon=None,
+        n_grid_lat=None,
+        min_lon_ticklabel_delta=0.1,
+        **kwargs,
+    ):
+        super().__init__(
+            ax=ax,
+            projection_name='mbtfpq',
+            lon_0=lon_0,
+            gridlines=gridlines,
+            celestial=celestial,
+            extent=extent,
+            longitude_ticks=longitude_ticks,
+            autorescale=autorescale,
+            galactic=galactic,
+            rcparams=rcparams,
+            n_grid_lon=n_grid_lon,
+            n_grid_lat=n_grid_lat,
+            min_lon_ticklabel_delta=min_lon_ticklabel_delta,
+            **kwargs,
+        )
 
 
 class LaeaSkyproj(_Skyproj, _Circle):
-    # docstring inherited
+    __doc__ = (skyproj_init_parameters("A Lambert Azimuthal Equal Area projection Skyproj map.")
+               + skyproj_kwargs_par)
+    __doc__ = skyproj_init_parameters(
+        "A Lambert Azimuthal Equal Area projection Skyproj map.",
+        include_lon_0=False,
+    )
+    __doc__ += """
+lon_0 : `float`, optional
+    Central longitude of the LAEA projection.
+lat_0 : `float`, optional
+    Central latitude of the LAEA projection."""
+
     # Lambert Azimuthal Equal Area
-    def __init__(self, **kwargs):
-        super().__init__(projection_name='laea', **kwargs)
+    def __init__(
+        self,
+        ax=None,
+        gridlines=True,
+        celestial=True,
+        extent=None,
+        longitude_ticks='positive',
+        autorescale=True,
+        galactic=False,
+        rcparams={},
+        n_grid_lon=None,
+        n_grid_lat=None,
+        min_lon_ticklabel_delta=0.1,
+        lon_0=0.0,
+        lat_0=0.0,
+        **kwargs,
+    ):
+        super().__init__(
+            ax=ax,
+            projection_name='laea',
+            gridlines=gridlines,
+            celestial=celestial,
+            extent=extent,
+            longitude_ticks=longitude_ticks,
+            autorescale=autorescale,
+            galactic=galactic,
+            rcparams=rcparams,
+            n_grid_lon=n_grid_lon,
+            n_grid_lat=n_grid_lat,
+            min_lon_ticklabel_delta=min_lon_ticklabel_delta,
+            lon_0=lon_0,
+            lat_0=lat_0,
+            **kwargs,
+        )
 
     @property
     def _full_circle(self):
@@ -159,10 +269,42 @@ class LaeaSkyproj(_Skyproj, _Circle):
 
 
 class MollweideSkyproj(_Skyproj, _Ellipse21):
-    # docstring inherited
+    __doc__ = (skyproj_init_parameters("A Mollweide projection Skyproj map.")
+               + skyproj_kwargs_par)
+
     # Mollweide
-    def __init__(self, **kwargs):
-        super().__init__(projection_name='moll', **kwargs)
+    def __init__(
+        self,
+        ax=None,
+        lon_0=0.0,
+        gridlines=True,
+        celestial=True,
+        extent=None,
+        longitude_ticks='positive',
+        autorescale=True,
+        galactic=False,
+        rcparams={},
+        n_grid_lon=None,
+        n_grid_lat=None,
+        min_lon_ticklabel_delta=0.1,
+        **kwargs,
+    ):
+        super().__init__(
+            ax=ax,
+            projection_name='moll',
+            lon_0=lon_0,
+            gridlines=gridlines,
+            celestial=celestial,
+            extent=extent,
+            longitude_ticks=longitude_ticks,
+            autorescale=autorescale,
+            galactic=galactic,
+            rcparams=rcparams,
+            n_grid_lon=n_grid_lon,
+            n_grid_lat=n_grid_lat,
+            min_lon_ticklabel_delta=min_lon_ticklabel_delta,
+            **kwargs,
+        )
 
     @property
     def _pole_clip(self):
@@ -174,10 +316,42 @@ class MollweideSkyproj(_Skyproj, _Ellipse21):
 
 
 class HammerSkyproj(_Skyproj, _Ellipse21):
-    # docstring inherited
+    __doc__ = (skyproj_init_parameters("A Hammer-Aitoff projection Skyproj map.")
+               + skyproj_kwargs_par)
+
     # Hammer-Aitoff
-    def __init__(self, **kwargs):
-        super().__init__(projection_name='hammer', **kwargs)
+    def __init__(
+        self,
+        ax=None,
+        lon_0=0.0,
+        gridlines=True,
+        celestial=True,
+        extent=None,
+        longitude_ticks='positive',
+        autorescale=True,
+        galactic=False,
+        rcparams={},
+        n_grid_lon=None,
+        n_grid_lat=None,
+        min_lon_ticklabel_delta=0.1,
+        **kwargs,
+    ):
+        super().__init__(
+            ax=ax,
+            projection_name='hammer',
+            lon_0=lon_0,
+            gridlines=gridlines,
+            celestial=celestial,
+            extent=extent,
+            longitude_ticks=longitude_ticks,
+            autorescale=autorescale,
+            galactic=galactic,
+            rcparams=rcparams,
+            n_grid_lon=n_grid_lon,
+            n_grid_lat=n_grid_lat,
+            min_lon_ticklabel_delta=min_lon_ticklabel_delta,
+            **kwargs,
+        )
 
     @property
     def _equatorial_labels(self):
@@ -185,29 +359,92 @@ class HammerSkyproj(_Skyproj, _Ellipse21):
 
 
 class EqualEarthSkyproj(_Skyproj, _Stadium):
-    # docstring inherited
+    __doc__ = (skyproj_init_parameters("An Equal Earth projection Skyproj map.")
+               + skyproj_kwargs_par)
+
     # Equal Earth
-    def __init__(self, **kwargs):
-        super().__init__(projection_name='eqearth', **kwargs)
+    def __init__(
+        self,
+        ax=None,
+        lon_0=0.0,
+        gridlines=True,
+        celestial=True,
+        extent=None,
+        longitude_ticks='positive',
+        autorescale=True,
+        galactic=False,
+        rcparams={},
+        n_grid_lon=None,
+        n_grid_lat=None,
+        min_lon_ticklabel_delta=0.1,
+        **kwargs,
+    ):
+        super().__init__(
+            ax=ax,
+            projection_name='eqearth',
+            lon_0=lon_0,
+            gridlines=gridlines,
+            celestial=celestial,
+            extent=extent,
+            longitude_ticks=longitude_ticks,
+            autorescale=autorescale,
+            galactic=galactic,
+            rcparams=rcparams,
+            n_grid_lon=n_grid_lon,
+            n_grid_lat=n_grid_lat,
+            min_lon_ticklabel_delta=min_lon_ticklabel_delta,
+            **kwargs,
+        )
 
 
 class ObliqueMollweideSkyproj(_Skyproj, _Ellipse21):
-    """Oblique Mollweide Projection.
+    __doc__ = skyproj_init_parameters("An Oblique Mollweide projection Skyproj map.", include_lon_0=False)
+    __doc__ += """
+lon_0 : `float`, optional
+    Central longitude of the underlying Mollweide projection.
+lat_p : `float`, optional
+    Latitude of the North Pole of the unrotated coordinate system.
+lon_p : `float`, optional
+    Longitude of the North Pole of the unrotated coordinate system."""
+    __doc__ += skyproj_kwargs_par
 
-    Parameters
-    ----------
-    lon_0 : `float`, optional
-        Central longitude of the underlying Mollweide projection.
-    lat_p : `float`, optional
-        Latitude of the North Pole of the unrotated coordinate system.
-    lon_p : `float`, optional
-        Longitude of the North Pole of the unrotated coordinate system.
-    **kwargs : `dict`, optional
-        Additional kwargs for `skyproj._Skyproj`.
-    """
     # Oblique Mollweide
-    def __init__(self, **kwargs):
-        super().__init__(projection_name='obmoll', **kwargs)
+    def __init__(
+        self,
+        ax=None,
+        gridlines=True,
+        celestial=True,
+        extent=None,
+        longitude_ticks='positive',
+        autorescale=True,
+        galactic=False,
+        rcparams={},
+        n_grid_lon=None,
+        n_grid_lat=None,
+        min_lon_ticklabel_delta=0.1,
+        lon_0=0.0,
+        lat_p=90.0,
+        lon_p=0.0,
+        **kwargs,
+    ):
+        super().__init__(
+            ax=ax,
+            projection_name='obmoll',
+            gridlines=gridlines,
+            celestial=celestial,
+            extent=extent,
+            longitude_ticks=longitude_ticks,
+            autorescale=autorescale,
+            galactic=galactic,
+            rcparams=rcparams,
+            n_grid_lon=n_grid_lon,
+            n_grid_lat=n_grid_lat,
+            min_lon_ticklabel_delta=min_lon_ticklabel_delta,
+            lon_0=lon_0,
+            lat_p=lat_p,
+            lon_p=lon_p,
+            **kwargs,
+        )
 
     @property
     def _pole_clip(self):
@@ -230,10 +467,52 @@ class ObliqueMollweideSkyproj(_Skyproj, _Ellipse21):
 # is not available for full-sky plots.  It is only for small
 # zoomed regions
 class GnomonicSkyproj(_Skyproj, _Circle):
-    # docstring inherited
+    __doc__ = skyproj_init_parameters("""A Gnomonic (tangent plane) projection Skyproj map.
+
+This projection is not equal area and is not available for full sky plots.
+It should only be used for small zoomed regions.""", include_lon_0=False)
+    __doc__ += """
+lon_0 : `float`, optional
+    Central longitude of the Gnomonic projection.
+lat_0 : `float`, optional
+    Central latitude of the Gnomonic projection."""
+    __doc__ += skyproj_kwargs_par
+
     # Gnomonic
-    def __init__(self, **kwargs):
-        super().__init__(projection_name='gnom', **kwargs)
+    def __init__(
+        self,
+        ax=None,
+        gridlines=True,
+        celestial=True,
+        extent=None,
+        longitude_ticks='positive',
+        autorescale=True,
+        galactic=False,
+        rcparams={},
+        n_grid_lon=None,
+        n_grid_lat=None,
+        min_lon_ticklabel_delta=0.1,
+        lon_0=0,
+        lat_0=0,
+        **kwargs,
+    ):
+        super().__init__(
+            ax=ax,
+            projection_name='gnom',
+            gridlines=gridlines,
+            celestial=celestial,
+            extent=extent,
+            longitude_ticks=longitude_ticks,
+            autorescale=autorescale,
+            galactic=galactic,
+            rcparams=rcparams,
+            n_grid_lon=n_grid_lon,
+            n_grid_lat=n_grid_lat,
+            min_lon_ticklabel_delta=min_lon_ticklabel_delta,
+            lon_0=lon_0,
+            lat_0=lat_0,
+            **kwargs,
+        )
 
     @property
     def _full_sky_extent_initial(self):
@@ -245,22 +524,53 @@ class GnomonicSkyproj(_Skyproj, _Circle):
 
 
 class AlbersSkyproj(_Skyproj, _Stadium):
-    """Albers Equal Area Projection.
+    __doc__ = skyproj_init_parameters("An Albers Equal Area Skyproj map.", include_lon_0=False)
+    __doc__ += """
+lon_0 : `float`, optional
+    Central longitude of the projection.
+lat_1 : `float`, optional
+    First standard parallel of the projection.
+lat_2 : `float`, optional
+    Second standard parallel of the projection."""
+    __doc__ += skyproj_kwargs_par
 
-    Parameters
-    ----------
-    lon_0 : `float`, optional
-        Central longitude of the projection.
-    lat_1 : `float`, optional
-        First standard parallel.
-    lat_2 : `float`, optional
-        Second standard parallel.
-    **kwargs : `dict`, optional
-        Additional kwargs for `skyproj._Skyproj`.
-    """
     # Albers Equal Area
-    def __init__(self, **kwargs):
-        super().__init__(projection_name='aea', **kwargs)
+    def __init__(
+        self,
+        ax=None,
+        gridlines=True,
+        celestial=True,
+        extent=None,
+        longitude_ticks='positive',
+        autorescale=True,
+        galactic=False,
+        rcparams={},
+        n_grid_lon=None,
+        n_grid_lat=None,
+        min_lon_ticklabel_delta=0.1,
+        lon_0=0,
+        lat_1=15.0,
+        lat_2=45.0,
+        **kwargs,
+    ):
+        super().__init__(
+            ax=ax,
+            projection_name='aea',
+            gridlines=gridlines,
+            celestial=celestial,
+            extent=extent,
+            longitude_ticks=longitude_ticks,
+            autorescale=autorescale,
+            galactic=galactic,
+            rcparams=rcparams,
+            n_grid_lon=n_grid_lon,
+            n_grid_lat=n_grid_lat,
+            min_lon_ticklabel_delta=min_lon_ticklabel_delta,
+            lon_0=lon_0,
+            lat_1=lat_1,
+            lat_2=lat_2,
+            **kwargs,
+        )
 
     @property
     def _default_xy_labels(self):

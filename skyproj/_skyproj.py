@@ -16,54 +16,32 @@ from .hpx_utils import healpix_pixels_range, hspmap_to_xy, hpxmap_to_xy, healpix
 from .mpl_utils import ExtremeFinderWrapped, WrappedFormatterDMS, GridHelperSkyproj
 from .utils import wrap_values, _get_boundary_poly_xy, get_autoscale_vmin_vmax
 
+from ._docstrings import skyproj_init_parameters, skyproj_kwargs_par
+
 
 class _Skyproj():
-    """Base class for creating Skyproj objects.
+    __doc__ = skyproj_init_parameters(
+        "Base class for creating Skyproj objects.",
+        include_projection_name=True,
+    ) + skyproj_kwargs_par
 
-    Parameters
-    ----------
-    ax : `matplotlib.axes.Axes`, optional
-        Axis object to replace with a skyproj axis
-    projection_name : `str`, optional
-        Valid proj4/cartosky projection name.
-    lon_0 : `float`, optional
-        Central longitude of projection.
-    gridlines : `bool`, optional
-        Draw gridlines?
-    celestial : `bool`, optional
-        Do celestial plotting (e.g. invert longitude axis).
-    extent : iterable, optional
-        Default exent of the map, [lon_min, lon_max, lat_min, lat_max].
-        Note that lon_min, lon_max can be specified in any order, the
-        orientation of the map is set by ``celestial``.
-    longitude_ticks : `str`, optional
-        Label longitude ticks from 0 to 360 degrees (``positive``) or
-        from -180 to 180 degrees (``symmetric``).
-    autorescale : `bool`, optional
-        Automatically rescale color bars when zoomed?
-    galactic : `bool`, optional
-        Plotting in Galactic coordinates?  Recommendation for Galactic plots
-        is to have longitude_ticks set to ``symmetric`` and celestial = True.
-    rcparams : `dict`, optional
-        Dictionary of matplotlib rc parameters to override.  In particular, the code will
-        use ``xtick.labelsize`` and ``ytick.labelsize`` for the x and y tick labels, and
-        ``axes.linewidth`` for the map boundary.
-    n_grid_lon : `int`, optional
-        Number of gridlines to use in the longitude direction
-        (default is axis_ratio * n_grid_lat).
-    n_grid_lat : `int`, optional
-        Number of gridlines to use in the latitude direction (default is 6).
-    min_lon_ticklabel_delta : `float`, optional
-        Minimum relative spacing between longitude tick labels (relative to width
-        of axis). Smaller values yield closer tick labels (and potential for clashes)
-        and larger values yield further tick labels.
-    **kwargs : `dict`, optional
-        Additional arguments to send to cartosky/proj4 projection CRS initialization.
-    """
-    def __init__(self, ax=None, projection_name='cyl', lon_0=0, gridlines=True, celestial=True,
-                 extent=None, longitude_ticks='positive', autorescale=True, galactic=False,
-                 rcparams={}, n_grid_lon=None, n_grid_lat=None, min_lon_ticklabel_delta=0.1,
-                 **kwargs):
+    def __init__(
+        self,
+        ax=None,
+        projection_name='cyl',
+        lon_0=0.0,
+        gridlines=True,
+        celestial=True,
+        extent=None,
+        longitude_ticks='positive',
+        autorescale=True,
+        galactic=False,
+        rcparams={},
+        n_grid_lon=None,
+        n_grid_lat=None,
+        min_lon_ticklabel_delta=0.1,
+        **kwargs,
+    ):
         self._redraw_dict = {'hpxmap': None,
                              'hspmap': None,
                              'im': None,
