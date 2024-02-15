@@ -119,6 +119,7 @@ class DESMcBrydeSkyproj(_Survey, McBrydeSkyproj):
     def __init__(
         self,
         ax=None,
+        *,
         lon_0=30.0,
         gridlines=True,
         celestial=True,
@@ -162,6 +163,7 @@ class DESAlbersSkyproj(_Survey, AlbersSkyproj):
     def __init__(
         self,
         ax=None,
+        *,
         gridlines=True,
         celestial=True,
         extent=[80, -40, -80, 10],
@@ -210,6 +212,7 @@ class BlissSkyproj(_Survey, McBrydeSkyproj):
     def __init__(
         self,
         ax=None,
+        *,
         lon_0=100.0,
         gridlines=True,
         celestial=True,
@@ -250,6 +253,7 @@ class MaglitesSkyproj(_Survey, LaeaSkyproj):
     def __init__(
         self,
         ax=None,
+        *,
         gridlines=True,
         celestial=True,
         extent=[-150, 70, -85, -50],
@@ -292,6 +296,7 @@ class DecalsSkyproj(_Survey, McBrydeSkyproj):
     def __init__(
         self,
         ax=None,
+        *,
         lon_0=105.0,
         gridlines=True,
         celestial=True,

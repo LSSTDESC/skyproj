@@ -112,6 +112,7 @@ class Skyproj(_Skyproj, _Stadium):
     def __init__(
         self,
         ax=None,
+        *,
         lon_0=0.0,
         gridlines=True,
         celestial=True,
@@ -154,6 +155,7 @@ class McBrydeSkyproj(_Skyproj, _Stadium):
     def __init__(
         self,
         ax=None,
+        *,
         lon_0=0.0,
         gridlines=True,
         celestial=True,
@@ -202,6 +204,7 @@ lat_0 : `float`, optional
     def __init__(
         self,
         ax=None,
+        *,
         gridlines=True,
         celestial=True,
         extent=None,
@@ -276,6 +279,7 @@ class MollweideSkyproj(_Skyproj, _Ellipse21):
     def __init__(
         self,
         ax=None,
+        *,
         lon_0=0.0,
         gridlines=True,
         celestial=True,
@@ -323,6 +327,7 @@ class HammerSkyproj(_Skyproj, _Ellipse21):
     def __init__(
         self,
         ax=None,
+        *,
         lon_0=0.0,
         gridlines=True,
         celestial=True,
@@ -366,6 +371,7 @@ class EqualEarthSkyproj(_Skyproj, _Stadium):
     def __init__(
         self,
         ax=None,
+        *,
         lon_0=0.0,
         gridlines=True,
         celestial=True,
@@ -412,6 +418,7 @@ lon_p : `float`, optional
     def __init__(
         self,
         ax=None,
+        *,
         gridlines=True,
         celestial=True,
         extent=None,
@@ -482,6 +489,7 @@ lat_0 : `float`, optional
     def __init__(
         self,
         ax=None,
+        *,
         gridlines=True,
         celestial=True,
         extent=None,
@@ -538,6 +546,7 @@ lat_2 : `float`, optional
     def __init__(
         self,
         ax=None,
+        *,
         gridlines=True,
         celestial=True,
         extent=None,

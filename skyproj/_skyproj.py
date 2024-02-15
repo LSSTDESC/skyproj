@@ -35,6 +35,7 @@ class _Skyproj():
     def __init__(
         self,
         ax=None,
+        *,
         projection_name='cyl',
         lon_0=0.0,
         gridlines=True,
