@@ -221,6 +221,27 @@ def test_healsparse_bool(tmp_path):
         raise ImageComparisonFailure(err)
 
 
+def test_healsparse_empty(tmp_path):
+    """Test plotting an empty map.
+    """
+    # This simply checks that the plot can be made to
+    # avoid the empty autoscale bug.
+    plt.rcParams.update(plt.rcParamsDefault)
+
+    hspmap = hsp.HealSparseMap.make_empty(32, 4096, np.float32)
+
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    sp = skyproj.McBrydeSkyproj(ax=ax)
+    _ = sp.draw_hspmap(
+        hspmap,
+        lon_range=[10, 20],
+        lat_range=[10, 20],
+        zoom=False,
+    )
+
+
 def test_healpix(tmp_path):
     """Test plotting a healpix map."""
     plt.rcParams.update(plt.rcParamsDefault)
