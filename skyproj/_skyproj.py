@@ -17,6 +17,13 @@ from .mpl_utils import ExtremeFinderWrapped, WrappedFormatterDMS, GridHelperSkyp
 from .utils import wrap_values, _get_boundary_poly_xy, get_autoscale_vmin_vmax
 
 from ._docstrings import skyproj_init_parameters, skyproj_kwargs_par
+from ._docstrings import (
+    add_func_docstr,
+    draw_hpxmap_docstr,
+    draw_hpxpix_docstr,
+    draw_hspmap_docstr,
+    draw_hpxbin_docstr,
+)
 
 
 class _Skyproj():
@@ -1079,45 +1086,10 @@ class _Skyproj():
             # Only add the label to the first polygon plotting.
             kwargs.pop('label', None)
 
+    @add_func_docstr(draw_hpxmap_docstr)
     def draw_hpxmap(self, hpxmap, nest=False, zoom=True, xsize=1000, vmin=None, vmax=None,
                     rasterized=True, lon_range=None, lat_range=None, **kwargs):
-        """Use pcolormesh to draw a healpix map.
 
-        Parameters
-        ----------
-        hpxmap : `np.ndarray`
-            Healpix map to plot, with length 12*nside*nside and UNSEEN for
-            illegal values.
-        nest : `bool`, optional
-            Map in nest ordering?
-        zoom : `bool`, optional
-            Optimally zoom in projection to computed map.
-        xsize : `int`, optional
-            Number of rasterized pixels in the x direction.
-        vmin : `float`, optional
-            Minimum value for color scale.  Defaults to 2.5th percentile.
-        vmax : `float`, optional
-            Maximum value for color scale.  Defaults to 97.5th percentile.
-        rasterized : `bool`, optional
-            Plot with rasterized graphics.
-        lon_range : `tuple` [`float`, `float`], optional
-            Longitude range to plot [``lon_min``, ``lon_max``].
-        lat_range : `tuple` [`float`, `float`], optional
-            Latitude range to plot [``lat_min``, ``lat_max``].
-        **kwargs : `dict`
-            Additional args to pass to pcolormesh.
-
-        Returns
-        -------
-        im : `matplotlib.collections.QuadMesh`
-            Image that was displayed
-        lon_raster : `np.ndarray`
-            2D array of rasterized longitude values.
-        lat_raster : `np.ndarray`
-            2D array of rasterized latitude values.
-        values_raster : `np.ma.MaskedArray`
-            Masked array of rasterized values.
-        """
         nside = hpg.npixel_to_nside(hpxmap.size)
         pixels, = np.where(hpxmap != hpg.UNSEEN)
 
@@ -1177,49 +1149,10 @@ class _Skyproj():
 
         return im, lon_raster, lat_raster, values_raster
 
+    @add_func_docstr(draw_hpxpix_docstr)
     def draw_hpxpix(self, nside, pixels, values, nest=False, zoom=True, xsize=1000,
                     vmin=None, vmax=None,
                     rasterized=True, lon_range=None, lat_range=None, **kwargs):
-        """Use pcolormesh to draw a healpix map made of pixels and values.
-
-        Parameters
-        ----------
-        nside : `int`
-            Healpix nside of pixels to plot.
-        pixels : `np.ndarray`
-            Array of pixels to plot.
-        values : `np.ndarray`
-            Array of values associated with pixels.
-        nest : `bool`, optional
-            Map in nest ordering?
-        zoom : `bool`, optional
-            Optimally zoom in projection to computed map.
-        xsize : `int`, optional
-            Number of rasterized pixels in the x direction.
-        vmin : `float`, optional
-            Minimum value for color scale.  Defaults to 2.5th percentile.
-        vmax : `float`, optional
-            Maximum value for color scale.  Defaults to 97.5th percentile.
-        rasterized : `bool`, optional
-            Plot with rasterized graphics.
-        lon_range : `tuple` [`float`, `float`], optional
-            Longitude range to plot [``lon_min``, ``lon_max``].
-        lat_range : `tuple` [`float`, `float`], optional
-            Latitude range to plot [``lat_min``, ``lat_max``].
-        **kwargs : `dict`
-            Additional args to pass to pcolormesh.
-
-        Returns
-        -------
-        im : `matplotlib.collections.QuadMesh`
-            Image that was displayed
-        lon_raster : `np.ndarray`
-            2D array of rasterized longitude values.
-        lat_raster : `np.ndarray`
-            2D array of rasterized latitude values.
-        values_raster : `np.ma.MaskedArray`
-            Masked array of rasterized values.
-        """
         if lon_range is None or lat_range is None:
             if zoom:
                 _lon_range, _lat_range = healpix_pixels_range(nside,
@@ -1268,45 +1201,10 @@ class _Skyproj():
 
         return im, lon_raster, lat_raster, values_raster
 
+    @add_func_docstr(draw_hspmap_docstr)
     def draw_hspmap(self, hspmap, zoom=True, xsize=1000, vmin=None, vmax=None,
                     rasterized=True, lon_range=None, lat_range=None, valid_mask=False,
                     **kwargs):
-        """Use pcolormesh to draw a healsparse map.
-
-        Parameters
-        ----------
-        hspmap : `healsparse.HealSparseMap`
-            Healsparse map to plot.
-        zoom : `bool`, optional
-            Optimally zoom in projection to computed map.
-        xsize : `int`, optional
-            Number of rasterized pixels in the x direction.
-        vmin : `float`, optional
-            Minimum value for color scale.  Defaults to 2.5th percentile, or 0 for bool.
-        vmax : `float`, optional
-            Maximum value for color scale.  Defaults to 97.5th percentile, or 1 for bool.
-        rasterized : `bool`, optional
-            Plot with rasterized graphics.
-        lon_range : `tuple` [`float`, `float`], optional
-            Longitude range to plot [``lon_min``, ``lon_max``].
-        lat_range : `tuple` [`float`, `float`], optional
-            Latitude range to plot [``lat_min``, ``lat_max``].
-        valid_mask : `bool`, optional
-            Plot the valid pixels of the map.
-        **kwargs : `dict`
-            Additional args to pass to pcolormesh.
-
-        Returns
-        -------
-        im : `matplotlib.collections.QuadMesh`
-            Image that was displayed
-        lon_raster : `np.ndarray`
-            2D array of rasterized longitude values.
-        lat_raster : `np.ndarray`
-            2D array of rasterized latitude values.
-        values_raster : `np.ma.MaskedArray`
-            Masked array of rasterized values.
-        """
         self._hspmap = hspmap
         self._hpxmap = None
 
@@ -1377,57 +1275,10 @@ class _Skyproj():
 
         return im, lon_raster, lat_raster, values_raster
 
+    @add_func_docstr(draw_hpxbin_docstr)
     def draw_hpxbin(self, lon, lat, C=None, nside=256, nest=False, zoom=True, xsize=1000,
                     vmin=None, vmax=None,
                     rasterized=True, lon_range=None, lat_range=None, **kwargs):
-        """Create a healpix histogram of counts in lon, lat.
-
-        Related to ``hexbin`` from matplotlib.
-
-        If ``C`` array is specified then the mean is taken from the C values.
-
-        Parameters
-        ----------
-        lon : `np.ndarray`
-            Array of longitude values.
-        lat : `np.ndarray`
-            Array of latitude values.
-        C : `np.ndarray`, optional
-            Array of values to average in each pixel.
-        nside : `int`, optional
-            Healpix nside resolution.
-        nest : `bool`, optional
-            Compute map in nest ordering?
-        zoom : `bool`, optional
-            Optimally zoom in projection to computed map.
-        xsize : `int`, optional
-            Number of rasterized pixels in the x direction.
-        vmin : `float`, optional
-            Minimum value for color scale.  Defaults to 2.5th percentile.
-        vmax : `float`, optional
-            Maximum value for color scale.  Defaults to 97.5th percentile.
-        rasterized : `bool`, optional
-            Plot with rasterized graphics.
-        lon_range : `tuple` [`float`, `float`], optional
-            Longitude range to plot [``lon_min``, ``lon_max``].
-        lat_range : `tuple` [`float`, `float`], optional
-            Latitude range to plot [``lat_min``, ``lat_max``].
-        **kwargs : `dict`
-            Additional args to pass to pcolormesh.
-
-        Returns
-        -------
-        hpxmap : `np.ndarray`
-            Computed healpix map.
-        im : `matplotlib.collections.QuadMesh`
-            Image that was displayed.
-        lon_raster : `np.ndarray`
-            2D array of rasterized longitude values.
-        lat_raster : `np.ndarray`
-            2D array of rasterized latitude values.
-        values_raster : `np.ma.MaskedArray`
-            Masked array of rasterized values.
-        """
         hpxmap = healpix_bin(lon, lat, C=C, nside=nside, nest=nest)
 
         im, lon_raster, lat_raster, values_raster = self.draw_hpxmap(

@@ -1,3 +1,10 @@
+def add_func_docstr(docstring):
+    def _doc(func):
+        func.__doc__ = docstring
+        return func
+    return _doc
+
+
 def skyproj_init_parameters(intro_string, include_projection_name=False, include_lon_0=True):
     par_str = intro_string
 
@@ -58,15 +65,7 @@ skyproj_kwargs_par = """
 """
 
 
-draw_hpxmap_docstr = """Use pcolormesh to draw a healpix map.
-
-Parameters
-----------
-hpxmap : `np.ndarray`
-    Healpix map to plot, with length 12*nside*nside and UNSEEN for
-    illegal values.
-nest : `bool`, optional
-    Map in nest ordering?
+draw_map_common_pars = """
 zoom : `bool`, optional
     Optimally zoom in projection to computed map.
 xsize : `int`, optional
@@ -82,7 +81,10 @@ lon_range : `tuple` [`float`, `float`], optional
 lat_range : `tuple` [`float`, `float`], optional
     Latitude range to plot [``lat_min``, ``lat_max``].
 **kwargs : `dict`
-    Additional args to pass to pcolormesh.
+    Additional args to pass to pcolormesh."""
+
+
+draw_map_returns = """
 
 Returns
 -------
@@ -95,3 +97,49 @@ lat_raster : `np.ndarray`
 values_raster : `np.ma.MaskedArray`
     Masked array of rasterized values.
 """
+
+draw_hpxmap_docstr = """Use pcolormesh to draw a healpix map.
+
+Parameters
+----------
+hpxmap : `np.ndarray`
+    Healpix map to plot, with length 12*nside*nside and UNSEEN for
+    illegal values.
+nest : `bool`, optional
+    Map in nest ordering?""" + draw_map_common_pars + draw_map_returns
+
+
+draw_hpxpix_docstr = """Use pcolormesh to draw a healpix map made of pixels and values.
+
+Parameters
+----------
+nside : `int`
+    Healpix nside of pixels to plot.
+pixels : `np.ndarray`
+    Array of pixels to plot.
+values : `np.ndarray`
+    Array of values associated with pixels.""" + draw_map_common_pars + draw_map_returns
+
+
+draw_hspmap_docstr = """Use pcolormesh to draw a healsparse map.
+
+Parameters
+----------
+hspmap : `healsparse.HealSparseMap`
+    Healsparse map to plot.""" + draw_map_common_pars + draw_map_returns
+
+
+draw_hpxbin_docstr = """Create a healpix histogram of counts in lon, lat.
+
+Related to ``hexbin`` from matplotlib.
+
+If ``C`` array is specified then the mean is taken from the C values.
+
+Parameters
+----------
+lon : `np.ndarray`
+    Array of longitude values.
+lat : `np.ndarray`
+    Array of latitude values.
+C : `np.ndarray`, optional
+    Array of values to average in each pixel.""" + draw_map_common_pars + draw_map_returns

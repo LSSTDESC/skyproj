@@ -2,6 +2,13 @@ from .skyproj import McBrydeSkyproj, LaeaSkyproj, AlbersSkyproj
 from .utils import get_datafile  # fix this
 
 from ._docstrings import skyproj_init_parameters, skyproj_kwargs_par
+from ._docstrings import (
+    add_func_docstr,
+    draw_hpxmap_docstr,
+    draw_hpxpix_docstr,
+    draw_hspmap_docstr,
+    draw_hpxbin_docstr,
+)
 
 __all__ = ['DESSkyproj', 'BlissSkyproj', 'MaglitesSkyproj',
            'DecalsSkyproj', 'DESMcBrydeSkyproj', 'DESAlbersSkyproj']
@@ -40,9 +47,9 @@ class _Survey:
         return self.draw_polygon_file(filename, edgecolor=edgecolor, lw=lw, **kwargs)
 
     # Override zoom default for survey maps to keep the default fixed.
+    @add_func_docstr(draw_hpxmap_docstr)
     def draw_hpxmap(self, hpxmap, nest=False, zoom=False, xsize=1000, vmin=None, vmax=None,
                     rasterized=True, lon_range=None, lat_range=None, **kwargs):
-        # docstring inherited
         return super().draw_hpxmap(hpxmap,
                                    nest=nest,
                                    zoom=zoom,
@@ -54,10 +61,10 @@ class _Survey:
                                    lat_range=lat_range,
                                    **kwargs)
 
+    @add_func_docstr(draw_hpxpix_docstr)
     def draw_hpxpix(self, nside, pixels, values, nest=False, zoom=False, xsize=1000,
                     vmin=None, vmax=None,
                     rasterized=True, lon_range=None, lat_range=None, **kwargs):
-        # docstring inherited
         return super().draw_hpxpix(nside,
                                    pixels,
                                    values,
@@ -71,9 +78,9 @@ class _Survey:
                                    lat_range=lat_range,
                                    **kwargs)
 
+    @add_func_docstr(draw_hspmap_docstr)
     def draw_hspmap(self, hspmap, zoom=False, xsize=1000, vmin=None, vmax=None,
                     rasterized=True, lon_range=None, lat_range=None, **kwargs):
-        # docstring inherited
         return super().draw_hspmap(hspmap,
                                    zoom=zoom,
                                    xsize=xsize,
@@ -84,10 +91,10 @@ class _Survey:
                                    lat_range=lat_range,
                                    **kwargs)
 
+    @add_func_docstr(draw_hpxbin_docstr)
     def draw_hpxbin(self, lon, lat, C=None, nside=256, nest=False, zoom=False, xsize=1000,
                     vmin=None, vmax=None,
                     rasterized=True, lon_range=None, lat_range=None, **kwargs):
-        # docstring inherited
         return super().draw_hpxbin(lon,
                                    lat,
                                    C=C,
