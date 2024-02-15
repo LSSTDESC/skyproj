@@ -22,7 +22,7 @@ def test_healpix_binning(tmp_path):
     np.random.seed(1234)
 
     ra = np.random.uniform(low=30.0, high=40.0, size=10000)
-    dec = np.random.uniform(low=45.0, high=55.0, size=10000)
+    dec = np.random.uniform(low=-55.0, high=-45.0, size=10000)
     C = np.random.uniform(low=0.0, high=10.0, size=10000)
 
     fig = plt.figure(1, figsize=(8, 5))
@@ -33,8 +33,8 @@ def test_healpix_binning(tmp_path):
 
     # Spot-check a pixel
     pix = hpg.angle_to_pixel(hpg.npixel_to_nside(hpxmap.size), ra, dec, nest=False)
-    test, = np.where(pix == 87864)
-    assert hpxmap[87864] == test.size
+    test, = np.where(pix == 671795)
+    assert hpxmap[671795] == test.size
 
     fname = 'hpxbin.png'
     fig.savefig(tmp_path / fname)
@@ -50,4 +50,16 @@ def test_healpix_binning(tmp_path):
     hpxmap, im, lon_raster, lat_raster, values_raster = sp.draw_hpxbin(ra, dec, C=C)
 
     # Spot-check the pixel
-    np.testing.assert_approx_equal(hpxmap[87864], np.mean(C[test]))
+    np.testing.assert_approx_equal(hpxmap[671795], np.mean(C[test]))
+
+    # And do with a survey
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    sp = skyproj.DESSkyproj(ax=ax)
+    hpxmap, im, lon_raster, lat_raster, values_raster = sp.draw_hpxbin(ra, dec)
+    fname = 'hpxbin_two.png'
+    fig.savefig(tmp_path / fname)
+    err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
+    if err:
+        raise ImageComparisonFailure(err)

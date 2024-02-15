@@ -121,6 +121,18 @@ def test_healsparse(tmp_path):
     if err:
         raise ImageComparisonFailure(err)
 
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    sp = skyproj.DESSkyproj(ax=ax)
+    im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(hspmap)
+    sp.draw_inset_colorbar()
+    fname = 'healsparse_four.png'
+    fig.savefig(tmp_path / fname)
+    err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
+    if err:
+        raise ImageComparisonFailure(err)
+
 
 def test_healsparse_nanval(tmp_path):
     """Test plotting a healsparse map that has a nan value."""
@@ -237,6 +249,18 @@ def test_healpix(tmp_path):
                    cmap=plt.colormaps['rainbow'])
     sp.draw_colorbar()
     fname = 'healsparse_two.png'
+    fig.savefig(tmp_path / fname)
+    err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
+    if err:
+        raise ImageComparisonFailure(err)
+
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    sp = skyproj.DESSkyproj(ax=ax)
+    sp.draw_hpxmap(hpxmap, nest=True)
+    sp.draw_inset_colorbar()
+    fname = 'healsparse_four.png'
     fig.savefig(tmp_path / fname)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
     if err:
@@ -413,6 +437,18 @@ def test_hpxpix(tmp_path):
                    cmap=plt.colormaps['rainbow'])
     sp.draw_colorbar()
     fname = 'healsparse_two.png'
+    fig.savefig(tmp_path / fname)
+    err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
+    if err:
+        raise ImageComparisonFailure(err)
+
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    sp = skyproj.DESSkyproj(ax=ax)
+    sp.draw_hpxpix(hspmap.nside_sparse, pixels, values, nest=True)
+    sp.draw_inset_colorbar()
+    fname = 'healsparse_four.png'
     fig.savefig(tmp_path / fname)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
     if err:
