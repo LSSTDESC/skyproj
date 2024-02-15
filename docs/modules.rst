@@ -8,33 +8,33 @@ skyproj
 -------
 .. automodule:: skyproj.skyproj
     :members:
-    :special-members:
+    :inherited-members:
     :show-inheritance:
 
 Skyproj
 -------
 .. automodule:: skyproj.Skyproj
     :members:
-    :special-members:
+    :inherited-members:
     :show-inheritance:
 
 Survey
 ------
 .. automodule:: skyproj.survey
     :members:
-    :special-members:
+    :inherited-members:
     :show-inheritance:
 
 SkyAxes
 -------
 .. automodule:: skyproj.SkyAxes
     :members:
-    :special-members:
+    :inherited-members:
     :show-inheritance:
 
 SkyCRS
 ------
 .. automodule:: skyproj.SkyCRS
     :members:
-    :special-members:
+    :inherited-members:
     :show-inheritance:
