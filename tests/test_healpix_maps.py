@@ -167,7 +167,7 @@ def test_healsparse_rasterize(tmp_path):
     sp = skyproj.McBrydeSkyproj(ax=ax)
     # We use a small xsize here because otherwise the non-rasterized test pdf
     # (below) is 22Mb and the test takes a long time to run.
-    im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(hspmap, rasterized=True, xsize=200)
+    im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(hspmap, rasterized=True, xsize=200, zoom=False)
     sp.draw_inset_colorbar()
     fname = 'healsparse_rasterized_on.pdf'
     fig.savefig(tmp_path / fname)
@@ -178,7 +178,12 @@ def test_healsparse_rasterize(tmp_path):
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
-    im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(hspmap, rasterized=False, xsize=200)
+    im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(
+        hspmap,
+        rasterized=False,
+        xsize=200,
+        zoom=False,
+    )
     sp.draw_inset_colorbar()
     fname = 'healsparse_rasterized_off.pdf'
     fig.savefig(tmp_path / fname)
@@ -187,6 +192,22 @@ def test_healsparse_rasterize(tmp_path):
 
     # The rasterized map will be smaller than the non-rasterized map.
     assert size_rasterized_on < size_rasterized_off
+
+    # Test with a redraw event.
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    sp = skyproj.McBrydeSkyproj(ax=ax)
+    im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(hspmap, rasterized=True, xsize=200, zoom=False)
+    sp.set_extent([10.5, -0.5, -0.5, 10.5])
+    sp.draw_inset_colorbar()
+    fname = 'healsparse_rasterized_on2.pdf'
+    fig.savefig(tmp_path / fname)
+
+    size_rasterized_on2 = os.path.getsize(tmp_path / fname)
+
+    # The rasterized map will be smaller than the non-rasterized map.
+    assert size_rasterized_on2 < size_rasterized_off
 
 
 def test_healsparse_bool(tmp_path):
@@ -321,6 +342,22 @@ def test_healpix_rasterized(tmp_path):
 
     # The rasterized map will be smaller than the non-rasterized map.
     assert size_rasterized_on < size_rasterized_off
+
+    # Test with a redraw event.
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    sp = skyproj.McBrydeSkyproj(ax=ax)
+    im, lon_raster, lat_raster, values_raster = sp.draw_hpxmap(hpxmap, nest=True, rasterized=True, xsize=200)
+    sp.set_extent([10.5, -0.5, -0.5, 10.5])
+    sp.draw_inset_colorbar()
+    fname = 'healsparse_rasterized_on2.pdf'
+    fig.savefig(tmp_path / fname)
+
+    size_rasterized_on2 = os.path.getsize(tmp_path / fname)
+
+    # The rasterized map will be smaller than the non-rasterized map.
+    assert size_rasterized_on2 < size_rasterized_off
 
 
 def test_healsparse_widemask(tmp_path):
