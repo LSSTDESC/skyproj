@@ -64,7 +64,8 @@ class _Skyproj():
                              'xsize': None,
                              'kwargs_pcolormesh': None,
                              'nside': None,
-                             'nest': None}
+                             'nest': None,
+                             'rasterized': True}
 
         if longitude_ticks == 'positive':
             self._longitude_ticks = longitude_ticks
@@ -843,6 +844,7 @@ class _Skyproj():
 
         im = self.pcolormesh(lon_raster, lat_raster, values_raster,
                              vmin=vmin, vmax=vmax,
+                             rasterized=self._redraw_dict['rasterized'],
                              **self._redraw_dict['kwargs_pcolormesh'])
         self._redraw_dict['im'] = im
         self._ax._sci(im)
@@ -1146,6 +1148,7 @@ class _Skyproj():
         self._redraw_dict['vmin'] = vmin
         self._redraw_dict['vmax'] = vmax
         self._redraw_dict['xsize'] = xsize
+        self._redraw_dict['rasterized'] = rasterized
         self._redraw_dict['kwargs_pcolormesh'] = kwargs
 
         return im, lon_raster, lat_raster, values_raster
@@ -1272,6 +1275,7 @@ class _Skyproj():
         self._redraw_dict['vmin'] = vmin
         self._redraw_dict['vmax'] = vmax
         self._redraw_dict['xsize'] = xsize
+        self._redraw_dict['rasterized'] = rasterized
         self._redraw_dict['kwargs_pcolormesh'] = kwargs
 
         return im, lon_raster, lat_raster, values_raster
