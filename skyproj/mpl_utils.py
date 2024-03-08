@@ -1,5 +1,4 @@
 import numpy as np
-from packaging import version
 
 from mpl_toolkits.axisartist.grid_finder import ExtremeFinderSimple
 import mpl_toolkits.axisartist.angle_helper as angle_helper
@@ -7,11 +6,6 @@ from mpl_toolkits.axisartist.grid_helper_curvelinear import GridHelperCurveLinea
 
 from .utils import wrap_values
 
-import matplotlib
-if version.parse(matplotlib.__version__) >= version.parse('3.5'):
-    _celestial_angle_360 = True
-else:
-    _celestial_angle_360 = False
 
 __all__ = ['WrappedFormatterDMS', 'ExtremeFinderWrapped', 'GridHelperSkyproj']
 
@@ -211,7 +205,7 @@ class GridHelperSkyproj(GridHelperCurveLinear):
 
             prev_xy = None
             for ctr, ((xy, a), l) in enumerate(zip(tick_locs, tick_labels)):
-                if self._celestial and _celestial_angle_360:
+                if self._celestial:
                     angle_normal = 360.0 - a
                 else:
                     angle_normal = a
@@ -226,7 +220,7 @@ class GridHelperSkyproj(GridHelperCurveLinear):
             for (xy, a), l in zip(
                     _grid_info[lon_or_lat]["tick_locs"][axis_side],
                     _grid_info[lon_or_lat]["tick_labels"][axis_side]):
-                if self._celestial and _celestial_angle_360:
+                if self._celestial:
                     angle_normal = 360.0 - a
                 else:
                     angle_normal = a
