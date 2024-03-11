@@ -177,6 +177,8 @@ def _get_norm(norm, vmin, vmax, log_scale, values):
     if vmin is None or vmax is None:
         vmin, vmax = get_autoscale_vmin_vmax(values, vmin, vmax)
     if log_scale:
+        if vmin <= 0.0 or vmax <= 0.0:
+            raise ValueError("Cannot use a log scale if vmin or vmax < 0.0")
         return LogNorm(vmin=vmin, vmax=vmax)
     else:
         return Normalize(vmin=vmin, vmax=vmax)
