@@ -80,6 +80,11 @@ lon_range : `tuple` [`float`, `float`], optional
     Longitude range to plot [``lon_min``, ``lon_max``].
 lat_range : `tuple` [`float`, `float`], optional
     Latitude range to plot [``lat_min``, ``lat_max``].
+log_scale : `bool`, optional
+    Use logarithmic color scale?
+norm : `matplotlib.colors.Normalize`, optional
+    Normalization object.  If this is set then vmin, vmax, log_scale
+    are ignored.
 **kwargs : `dict`
     Additional args to pass to pcolormesh."""
 

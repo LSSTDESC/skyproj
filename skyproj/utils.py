@@ -152,3 +152,31 @@ def get_autoscale_vmin_vmax(values, vmin_in, vmax_in):
     vmax = vmax_in if vmax_in is not None else _vmax
 
     return vmin, vmax
+
+
+def _get_norm(norm, vmin, vmax, log_scale, values):
+    """Get the Normalization object.
+
+    Parameters
+    ----------
+    norm : `matplotlib.colors.Normalization` or `None`
+        Input normalization object.
+    vmin : `float` or `None`
+        Input vmin.
+    vmax : `float` or `None`
+        Input vmax.
+    log_scale : `bool`
+        Use a logarithm normalization?
+    values : `np.ndarray`
+        Array of values to compute scale.
+    """
+    from matplotlib.colors import Normalize, LogNorm
+
+    if norm is not None:
+        return norm
+    if vmin is None or vmax is None:
+        vmin, vmax = get_autoscale_vmin_vmax(values, vmin, vmax)
+    if log_scale:
+        return LogNorm(vmin=vmin, vmax=vmax)
+    else:
+        return Normalize(vmin=vmin, vmax=vmax)
