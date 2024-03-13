@@ -238,6 +238,8 @@ class _Skyproj():
         self._changed_x_axis = False
         self._changed_y_axis = False
 
+        self._ax._artist = self._aa
+
     def set_extent(self, extent):
         """Set the extent.
 
@@ -687,8 +689,10 @@ class _Skyproj():
         self._aa.axis['bottom'].major_ticklabels.set_visible(True)
         self._aa.axis['top'].major_ticklabels.set_visible(True)
 
-        self.set_xlabel(self._default_xy_labels[0])
-        self.set_ylabel(self._default_xy_labels[1])
+        self._ax._artist = self._aa
+
+        self._ax.set_xlabel(self._default_xy_labels[0])
+        self._ax.set_ylabel(self._default_xy_labels[1])
 
         fig.sca(self._ax)
 
@@ -930,7 +934,11 @@ class _Skyproj():
         **kwargs : `dict`
             Additional keyword arguments accepted by ax.set_xlabel().
         """
-        return self._aa.axis[side].label.set(text=text, **kwargs)
+        warnings.warn("Usage of set_xlabel on a skyproj map has been deprecated. "
+                      "Please use sp.ax.set_xlabel() instead.",
+                      FutureWarning)
+
+        return self._ax.set_xlabel(text, side=side, **kwargs)
 
     def set_ylabel(self, text, side='left', **kwargs):
         """Set the label on the y axis.
@@ -944,7 +952,11 @@ class _Skyproj():
         **kwargs : `dict`
             Additional keyword arguments accepted by ax.set_xlabel().
         """
-        return self._aa.axis[side].label.set(text=text, **kwargs)
+        warnings.warn("Usage of set_ylabel on a skyproj map has been deprecated. "
+                      "Please use sp.ax.set_ylabel() instead.",
+                      FutureWarning)
+
+        return self._ax.set_ylabel(text, side=side, **kwargs)
 
     @property
     def ax(self):

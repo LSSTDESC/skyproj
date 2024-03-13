@@ -28,6 +28,8 @@ class SkyAxes(matplotlib.axes.Axes):
 
         self.plate_carree = PlateCarreeCRS()
 
+        self._artist = None
+
         super().__init__(*args, **kwargs)
 
     def clear(self):
@@ -298,6 +300,40 @@ class SkyAxes(matplotlib.axes.Axes):
     @property
     def lat_0(self):
         return self.projection.lat_0
+
+    def set_xlabel(self, text, side='bottom', **kwargs):
+        """Set the label on the x axis.
+
+        Parameters
+        ----------
+        text : `str`
+            x label string.
+        side : `str`, optional
+            Side to set the label.  Can be ``bottom`` or ``top``.
+        **kwargs : `dict`
+            Additional keyword arguments accepted by ax.set_xlabel().
+        """
+        if self._artist is None:
+            raise RuntimeError("set_xlabel run without initialization of map.")
+
+        return self._artist.axis[side].label.set(text=text, **kwargs)
+
+    def set_ylabel(self, text, side='left', **kwargs):
+        """Set the label on the y axis.
+
+        Parameters
+        ----------
+        text : `str`
+            x label string.
+        side : `str`, optional
+            Side to set the label.  Can be ``left`` or ``right``.
+        **kwargs : `dict`
+            Additional keyword arguments accepted by ax.set_xlabel().
+        """
+        if self._artist is None:
+            raise RuntimeError("set_xlabel run without initialization of map.")
+
+        return self._artist.axis[side].label.set(text=text, **kwargs)
 
     def update_projection(self, crs_new):
         """Update the projection central coordinate.
