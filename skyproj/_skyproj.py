@@ -9,7 +9,7 @@ import mpl_toolkits.axisartist as axisartist
 import mpl_toolkits.axisartist.angle_helper as angle_helper
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.cm import ScalarMappable
-from matplotlib.colors import Normalize
+from matplotlib.colors import Normalize, LogNorm
 
 from .skycrs import get_crs, PlateCarreeCRS, GnomonicCRS
 from .hpx_utils import healpix_pixels_range, hspmap_to_xy, hpxmap_to_xy, healpix_to_xy, healpix_bin
@@ -857,14 +857,21 @@ class _Skyproj():
         self._redraw_dict['im'] = im
         self._ax._sci(im)
 
-        if redraw_colorbar:
-            mappable = ScalarMappable(Normalize(vmin=vmin, vmax=vmax),
-                                      cmap=self._redraw_dict['colorbar'].cmap)
-            self._redraw_dict['colorbar'].update_normal(mappable)
-        if redraw_inset_colorbar:
-            mappable = ScalarMappable(Normalize(vmin=vmin, vmax=vmax),
-                                      cmap=self._redraw_dict['inset_colorbar'].cmap)
-            self._redraw_dict['inset_colorbar'].update_normal(mappable)
+        if redraw_colorbar or redraw_inset_colorbar:
+            if isinstance(norm, str):
+                if norm == "log":
+                    map_norm = LogNorm(vmin=vmin, vmax=vmax)
+                else:
+                    map_norm = Normalize(vmin=vmin, vmax=vmax)
+            else:
+                map_norm = norm
+
+            mappable = ScalarMappable(map_norm, cmap=self._redraw_dict['colorbar'].cmap)
+
+            if redraw_colorbar:
+                self._redraw_dict['colorbar'].update_normal(mappable)
+            else:
+                self._redraw_dict['inset_colorbar'].update_normal(mappable)
 
     def _change_size(self, event):
         """Callback for figure resize.
