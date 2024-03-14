@@ -147,8 +147,8 @@ def test_healsparse_log_scale(tmp_path):
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
-    with pytest.raises(ValueError, match="Cannot use a log scale"):
-        im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(hspmap, log_scale=True)
+    with pytest.raises(ValueError, match="Invalid vmin or vmax"):
+        im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(hspmap, norm="log")
         sp.draw_colorbar()
 
     # Offset the map so that we can use a log scale.
@@ -158,7 +158,7 @@ def test_healsparse_log_scale(tmp_path):
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
-    im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(hspmap, log_scale=True)
+    im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(hspmap, norm="log")
     sp.draw_colorbar()
     fname = 'healsparse_five.png'
     fig.savefig(tmp_path / fname)
@@ -384,7 +384,7 @@ def test_healpix_log_scale(tmp_path):
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
-    im, lon_raster, lat_raster, values_raster = sp.draw_hpxmap(hpxmap, nest=True, log_scale=True)
+    im, lon_raster, lat_raster, values_raster = sp.draw_hpxmap(hpxmap, nest=True, norm="log")
     sp.draw_colorbar()
     fname = 'healsparse_five.png'
     fig.savefig(tmp_path / fname)
@@ -649,7 +649,7 @@ def test_hpxpix_log_scale(tmp_path):
                                                                pixels,
                                                                values,
                                                                nest=True,
-                                                               log_scale=True)
+                                                               norm="log")
     sp.draw_colorbar()
     fname = 'healsparse_five.png'
     fig.savefig(tmp_path / fname)

@@ -9,12 +9,11 @@ import mpl_toolkits.axisartist as axisartist
 import mpl_toolkits.axisartist.angle_helper as angle_helper
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.cm import ScalarMappable
-from matplotlib.colors import Normalize, LogNorm
 
 from .skycrs import get_crs, PlateCarreeCRS, GnomonicCRS
 from .hpx_utils import healpix_pixels_range, hspmap_to_xy, hpxmap_to_xy, healpix_to_xy, healpix_bin
 from .mpl_utils import ExtremeFinderWrapped, WrappedFormatterDMS, GridHelperSkyproj
-from .utils import wrap_values, _get_boundary_poly_xy, get_autoscale_vmin_vmax, _get_norm
+from .utils import wrap_values, _get_boundary_poly_xy, get_autoscale_vmin_vmax
 
 from ._docstrings import skyproj_init_parameters, skyproj_kwargs_par
 from ._docstrings import (
@@ -61,7 +60,6 @@ class _Skyproj():
                              'lat_range_home': None,
                              'vmin': None,
                              'vmax': None,
-                             'log_scale': None,
                              'norm': None,
                              'xsize': None,
                              'kwargs_pcolormesh': None,
@@ -824,9 +822,9 @@ class _Skyproj():
 
         redraw_colorbar = False
         redraw_inset_colorbar = False
-        _norm = None
-        if self._redraw_dict["norm"] is not None:
-            _norm = self._redraw_dict['norm']
+        norm = self._redraw_dict["norm"]
+        if not isinstance(norm, str):
+            pass
         elif self._autorescale:
             # Recompute scaling
             try:
@@ -847,18 +845,12 @@ class _Skyproj():
             vmin = self._redraw_dict['vmin']
             vmax = self._redraw_dict['vmax']
 
-        if _norm is None:
-            if self._redraw_dict['log_scale']:
-                _norm = LogNorm(vmin=vmin, vmax=vmax)
-            else:
-                _norm = Normalize(vmin=vmin, vmax=vmax)
-
         if self._redraw_dict['im'] is not None:
             self._redraw_dict['im'].remove()
             self._redraw_dict['im'] = None
 
         im = self.pcolormesh(lon_raster, lat_raster, values_raster,
-                             norm=_norm,
+                             norm=norm, vmin=vmin, vmax=vmax,
                              rasterized=self._redraw_dict['rasterized'],
                              **self._redraw_dict['kwargs_pcolormesh'])
         self._redraw_dict['im'] = im
@@ -1115,7 +1107,7 @@ class _Skyproj():
     @add_func_docstr(draw_hpxmap_docstr)
     def draw_hpxmap(self, hpxmap, nest=False, zoom=True, xsize=1000, vmin=None, vmax=None,
                     rasterized=True, lon_range=None, lat_range=None,
-                    log_scale=False, norm=None, **kwargs):
+                    log_scale=False, norm="linear", **kwargs):
 
         nside = hpg.npixel_to_nside(hpxmap.size)
         pixels, = np.where(hpxmap != hpg.UNSEEN)
@@ -1143,7 +1135,15 @@ class _Skyproj():
                                                              nest=nest,
                                                              xsize=xsize)
 
-        _norm = _get_norm(norm, vmin, vmax, log_scale, values_raster.compressed())
+        if isinstance(norm, str):
+            _vmin, _vmax = get_autoscale_vmin_vmax(
+                values_raster.compressed(),
+                vmin,
+                vmax,
+            )
+        else:
+            _vmin = None
+            _vmax = None
 
         if zoom:
             extent = self.compute_extent(lon_raster[:-1, :-1][~values_raster.mask],
@@ -1154,7 +1154,9 @@ class _Skyproj():
             lon_raster,
             lat_raster,
             values_raster,
-            norm=_norm,
+            norm=norm,
+            vmin=_vmin,
+            vmax=_vmax,
             rasterized=rasterized,
             **kwargs,
         )
@@ -1181,7 +1183,7 @@ class _Skyproj():
     def draw_hpxpix(self, nside, pixels, values, nest=False, zoom=True, xsize=1000,
                     vmin=None, vmax=None,
                     rasterized=True, lon_range=None, lat_range=None,
-                    log_scale=False, norm=None, **kwargs):
+                    log_scale=False, norm="linear", **kwargs):
         if lon_range is None or lat_range is None:
             if zoom:
                 _lon_range, _lat_range = healpix_pixels_range(nside,
@@ -1209,7 +1211,15 @@ class _Skyproj():
             lat_range=lat_range
         )
 
-        _norm = _get_norm(norm, vmin, vmax, log_scale, values_raster.compressed())
+        if isinstance(norm, str):
+            _vmin, _vmax = get_autoscale_vmin_vmax(
+                values_raster.compressed(),
+                vmin,
+                vmax,
+            )
+        else:
+            _vmin = None
+            _vmax = None
 
         if zoom:
             extent = self.compute_extent(lon_raster[:-1, :-1][~values_raster.mask],
@@ -1220,7 +1230,9 @@ class _Skyproj():
             lon_raster,
             lat_raster,
             values_raster,
-            norm=_norm,
+            norm=norm,
+            vmin=_vmin,
+            vmax=_vmax,
             rasterized=rasterized,
             **kwargs,
         )
@@ -1231,7 +1243,7 @@ class _Skyproj():
     @add_func_docstr(draw_hspmap_docstr)
     def draw_hspmap(self, hspmap, zoom=True, xsize=1000, vmin=None, vmax=None,
                     rasterized=True, lon_range=None, lat_range=None, valid_mask=False,
-                    log_scale=False, norm=None, **kwargs):
+                    norm="linear", **kwargs):
         self._hspmap = hspmap
         self._hpxmap = None
 
@@ -1268,7 +1280,15 @@ class _Skyproj():
                                                              xsize=xsize,
                                                              valid_mask=valid_mask)
 
-        _norm = _get_norm(norm, vmin, vmax, log_scale, values_raster.compressed())
+        if isinstance(norm, str):
+            _vmin, _vmax = get_autoscale_vmin_vmax(
+                values_raster.compressed(),
+                vmin,
+                vmax,
+            )
+        else:
+            _vmin = None
+            _vmax = None
 
         if zoom:
             # Watch for masked array here...
@@ -1280,7 +1300,9 @@ class _Skyproj():
             lon_raster,
             lat_raster,
             values_raster,
-            norm=_norm,
+            norm=norm,
+            vmin=_vmin,
+            vmax=_vmax,
             rasterized=rasterized,
             **kwargs,
         )
@@ -1295,7 +1317,6 @@ class _Skyproj():
         self._redraw_dict['im'] = im
         self._redraw_dict['vmin'] = vmin
         self._redraw_dict['vmax'] = vmax
-        self._redraw_dict['log_scale'] = log_scale
         self._redraw_dict['norm'] = norm
         self._redraw_dict['xsize'] = xsize
         self._redraw_dict['rasterized'] = rasterized
@@ -1307,13 +1328,13 @@ class _Skyproj():
     def draw_hpxbin(self, lon, lat, C=None, nside=256, nest=False, zoom=True, xsize=1000,
                     vmin=None, vmax=None,
                     rasterized=True, lon_range=None, lat_range=None,
-                    log_scale=False, norm=None, **kwargs):
+                    norm="linear", **kwargs):
         hpxmap = healpix_bin(lon, lat, C=C, nside=nside, nest=nest)
 
         im, lon_raster, lat_raster, values_raster = self.draw_hpxmap(
             hpxmap, nest=nest, zoom=zoom, xsize=xsize, vmin=vmin,
             vmax=vmax, rasterized=rasterized, lon_range=lon_range,
-            lat_range=lat_range, log_scale=log_scale, norm=norm,
+            lat_range=lat_range, norm=norm,
             **kwargs)
 
         return hpxmap, im, lon_raster, lat_raster, values_raster
