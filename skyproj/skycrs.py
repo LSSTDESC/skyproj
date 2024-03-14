@@ -94,7 +94,13 @@ class SkyCRS(CRS):
                 x = wrap_values(x)
             try:
                 transformer = Transformer.from_crs(src_crs, self, always_xy=True)
-                result[:, 0], result[:, 1] = transformer.transform(x, y, None, errcheck=False)
+                if len(x) == 1:
+                    _x = x[0]
+                    _y = y[0]
+                else:
+                    _x = x
+                    _y = y
+                result[:, 0], result[:, 1] = transformer.transform(_x, _y, None, errcheck=False)
             except ProjError as err:
                 msg = str(err).lower()
                 if (
