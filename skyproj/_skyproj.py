@@ -9,6 +9,7 @@ import mpl_toolkits.axisartist as axisartist
 import mpl_toolkits.axisartist.angle_helper as angle_helper
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.cm import ScalarMappable
+from matplotlib.colors import Normalize
 
 from .skycrs import get_crs, PlateCarreeCRS, GnomonicCRS
 from .hpx_utils import healpix_pixels_range, hspmap_to_xy, hpxmap_to_xy, healpix_to_xy, healpix_bin
