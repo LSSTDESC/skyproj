@@ -1115,7 +1115,7 @@ class _Skyproj():
     @add_func_docstr(draw_hpxmap_docstr)
     def draw_hpxmap(self, hpxmap, nest=False, zoom=True, xsize=1000, vmin=None, vmax=None,
                     rasterized=True, lon_range=None, lat_range=None,
-                    log_scale=False, norm="linear", **kwargs):
+                    norm="linear", **kwargs):
 
         nside = hpg.npixel_to_nside(hpxmap.size)
         pixels, = np.where(hpxmap != hpg.UNSEEN)
@@ -1179,7 +1179,6 @@ class _Skyproj():
         self._redraw_dict['nest'] = nest
         self._redraw_dict['vmin'] = vmin
         self._redraw_dict['vmax'] = vmax
-        self._redraw_dict['log_scale'] = log_scale
         self._redraw_dict['norm'] = norm
         self._redraw_dict['xsize'] = xsize
         self._redraw_dict['rasterized'] = rasterized
@@ -1191,7 +1190,7 @@ class _Skyproj():
     def draw_hpxpix(self, nside, pixels, values, nest=False, zoom=True, xsize=1000,
                     vmin=None, vmax=None,
                     rasterized=True, lon_range=None, lat_range=None,
-                    log_scale=False, norm="linear", **kwargs):
+                    norm="linear", **kwargs):
         if lon_range is None or lat_range is None:
             if zoom:
                 _lon_range, _lat_range = healpix_pixels_range(nside,
