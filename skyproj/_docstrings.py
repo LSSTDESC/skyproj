@@ -80,6 +80,10 @@ lon_range : `tuple` [`float`, `float`], optional
     Longitude range to plot [``lon_min``, ``lon_max``].
 lat_range : `tuple` [`float`, `float`], optional
     Latitude range to plot [``lat_min``, ``lat_max``].
+norm : `str` or `matplotlib.colors.Normalize`, optional
+    The normalization method used to scale the data. By default a
+    linear scaling is used. This may be an instance of `Normalize` or
+    a scale name, such as ``linear``, ``log``, ``symlog``, ``logit``.
 **kwargs : `dict`
     Additional args to pass to pcolormesh."""
 

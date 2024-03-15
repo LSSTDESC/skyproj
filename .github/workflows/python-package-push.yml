@@ -11,7 +11,6 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.10']
-        matplotlib-version: ['>=3.6']
 
     steps:
     - uses: actions/checkout@v3
@@ -29,7 +28,7 @@ jobs:
       shell: bash -l {0}
       run: |
         mamba config --set always_yes yes
-        mamba install numpy "astropy>=4.0" "matplotlib${{ matrix.matplotlib-version }}" hpgeom setuptools_scm setuptools_scm_git_archive healsparse "pyproj>=3.1" flake8 pytest jupyter "nbconvert<7"
+        mamba install numpy "astropy>=4.0" matplotlib hpgeom setuptools_scm setuptools_scm_git_archive healsparse "pyproj>=3.1" flake8 pytest jupyter "nbconvert<7"
         python -m pip install --no-deps .
 
     - name: Lint with flake8

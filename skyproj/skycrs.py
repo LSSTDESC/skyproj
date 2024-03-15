@@ -94,7 +94,13 @@ class SkyCRS(CRS):
                 x = wrap_values(x)
             try:
                 transformer = Transformer.from_crs(src_crs, self, always_xy=True)
-                result[:, 0], result[:, 1] = transformer.transform(x, y, None, errcheck=False)
+                if len(x) == 1:
+                    _x = x[0]
+                    _y = y[0]
+                else:
+                    _x = x
+                    _y = y
+                result[:, 0], result[:, 1] = transformer.transform(_x, _y, None, errcheck=False)
             except ProjError as err:
                 msg = str(err).lower()
                 if (
@@ -157,16 +163,9 @@ class SkyCRS(CRS):
         return (SkyTransform(self) + axes.transData)
 
     def _as_mpl_axes(self):
-        import matplotlib
         from .skyaxes import SkyAxes
 
         axes = SkyAxes
-
-        # Support for old matplotlib.
-        version_parts = matplotlib.__version__.split('.')
-        if int(version_parts[0]) <= 3 and int(version_parts[1]) < 6:
-            # Monkey-patch in the old cla.
-            axes.cla = axes.cla_mplpre36
 
         return axes, {'sky_crs': self}
 

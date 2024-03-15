@@ -9,6 +9,7 @@ matplotlib.use("Agg")
 
 from matplotlib.testing.compare import compare_images, ImageComparisonFailure  # noqa: E402
 import matplotlib.pyplot as plt  # noqa: E402
+from matplotlib.colors import LogNorm  # noqa: E402
 
 import skyproj  # noqa: E402
 
@@ -128,6 +129,69 @@ def test_healsparse(tmp_path):
     im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(hspmap)
     sp.draw_inset_colorbar()
     fname = 'healsparse_four.png'
+    fig.savefig(tmp_path / fname)
+    err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
+    if err:
+        raise ImageComparisonFailure(err)
+
+
+def test_healsparse_log_scale(tmp_path):
+    """Test plotting a healsparse map with a log scale."""
+    plt.rcParams.update(plt.rcParamsDefault)
+
+    hspmap = _get_hspmap()
+
+    # Check that we get an error if we try a map with log scale and negative
+    # range.
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    sp = skyproj.McBrydeSkyproj(ax=ax)
+    with pytest.raises(ValueError, match="Invalid vmin or vmax"):
+        im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(hspmap, norm="log")
+        sp.draw_colorbar()
+
+    # Offset the map so that we can use a log scale.
+    hspmap += 10.0
+
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    sp = skyproj.McBrydeSkyproj(ax=ax)
+    im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(hspmap, norm="log")
+    sp.draw_colorbar()
+    fname = 'healsparse_five.png'
+    fig.savefig(tmp_path / fname)
+    err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
+    if err:
+        raise ImageComparisonFailure(err)
+
+
+def test_healsparse_input_norm(tmp_path):
+    """Test plotting a healsparse map with input normalization."""
+    plt.rcParams.update(plt.rcParamsDefault)
+
+    hspmap = _get_hspmap() + 10.0
+
+    # First make sure we get matched vmin/vmax.
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    sp = skyproj.McBrydeSkyproj(ax=ax)
+    im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(hspmap)
+    vmin, vmax = skyproj.utils.get_autoscale_vmin_vmax(values_raster.compressed(), None, None)
+    plt.close(fig)
+
+    norm = LogNorm(vmin=vmin, vmax=vmax)
+
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    sp = skyproj.McBrydeSkyproj(ax=ax)
+    # This should ignore the input vmin/vmax if we set the norm.
+    im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(hspmap, norm=norm, vmin=-100.0, vmax=-50.0)
+    sp.draw_colorbar()
+    fname = 'healsparse_five.png'
     fig.savefig(tmp_path / fname)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
     if err:
@@ -303,6 +367,62 @@ def test_healpix(tmp_path):
     sp.draw_hpxmap(hpxmap, nest=True)
     sp.draw_inset_colorbar()
     fname = 'healsparse_four.png'
+    fig.savefig(tmp_path / fname)
+    err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
+    if err:
+        raise ImageComparisonFailure(err)
+
+
+def test_healpix_log_scale(tmp_path):
+    """Test plotting a healpix map with a log scale."""
+    plt.rcParams.update(plt.rcParamsDefault)
+
+    hspmap = _get_hspmap() + 10.0
+    hpxmap = hspmap.generate_healpix_map()
+
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    sp = skyproj.McBrydeSkyproj(ax=ax)
+    im, lon_raster, lat_raster, values_raster = sp.draw_hpxmap(hpxmap, nest=True, norm="log")
+    sp.draw_colorbar()
+    fname = 'healsparse_five.png'
+    fig.savefig(tmp_path / fname)
+    err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
+    if err:
+        raise ImageComparisonFailure(err)
+
+
+def test_healpix_input_norm(tmp_path):
+    """Test plotting a healsparse map with input normalization."""
+    plt.rcParams.update(plt.rcParamsDefault)
+
+    hspmap = _get_hspmap() + 10.0
+    hpxmap = hspmap.generate_healpix_map()
+
+    # First make sure we get matched vmin/vmax.
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    sp = skyproj.McBrydeSkyproj(ax=ax)
+    im, lon_raster, lat_raster, values_raster = sp.draw_hpxmap(hpxmap, nest=True)
+    vmin, vmax = skyproj.utils.get_autoscale_vmin_vmax(values_raster.compressed(), None, None)
+    plt.close(fig)
+
+    norm = LogNorm(vmin=vmin, vmax=vmax)
+
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    sp = skyproj.McBrydeSkyproj(ax=ax)
+    # This should ignore the input vmin/vmax if we set the norm.
+    im, lon_raster, lat_raster, values_raster = sp.draw_hpxmap(hpxmap,
+                                                               nest=True,
+                                                               norm=norm,
+                                                               vmin=-100.0,
+                                                               vmax=-50.0)
+    sp.draw_colorbar()
+    fname = 'healsparse_five.png'
     fig.savefig(tmp_path / fname)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
     if err:
@@ -507,6 +627,73 @@ def test_hpxpix(tmp_path):
     sp.draw_hpxpix(hspmap.nside_sparse, pixels, values, nest=True)
     sp.draw_inset_colorbar()
     fname = 'healsparse_four.png'
+    fig.savefig(tmp_path / fname)
+    err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
+    if err:
+        raise ImageComparisonFailure(err)
+
+
+def test_hpxpix_log_scale(tmp_path):
+    """Test plotting healpix pixels with a log scale."""
+    plt.rcParams.update(plt.rcParamsDefault)
+
+    hspmap = _get_hspmap() + 10.0
+    pixels = hspmap.valid_pixels
+    values = hspmap[pixels]
+
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    sp = skyproj.McBrydeSkyproj(ax=ax)
+    im, lon_raster, lat_raster, values_raster = sp.draw_hpxpix(hspmap.nside_sparse,
+                                                               pixels,
+                                                               values,
+                                                               nest=True,
+                                                               norm="log")
+    sp.draw_colorbar()
+    fname = 'healsparse_five.png'
+    fig.savefig(tmp_path / fname)
+    err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
+    if err:
+        raise ImageComparisonFailure(err)
+
+
+def test_hpxpix_input_norm(tmp_path):
+    """Test plotting healpix pixels with input normalization."""
+    plt.rcParams.update(plt.rcParamsDefault)
+
+    hspmap = _get_hspmap() + 10.0
+    pixels = hspmap.valid_pixels
+    values = hspmap[pixels]
+
+    # First make sure we get matched vmin/vmax.
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    sp = skyproj.McBrydeSkyproj(ax=ax)
+    im, lon_raster, lat_raster, values_raster = sp.draw_hpxpix(hspmap.nside_sparse,
+                                                               pixels,
+                                                               values,
+                                                               nest=True)
+    vmin, vmax = skyproj.utils.get_autoscale_vmin_vmax(values_raster.compressed(), None, None)
+    plt.close(fig)
+
+    norm = LogNorm(vmin=vmin, vmax=vmax)
+
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    sp = skyproj.McBrydeSkyproj(ax=ax)
+    # This should ignore the input vmin/vmax if we set the norm.
+    im, lon_raster, lat_raster, values_raster = sp.draw_hpxpix(hspmap.nside_sparse,
+                                                               pixels,
+                                                               values,
+                                                               nest=True,
+                                                               norm=norm,
+                                                               vmin=-100.0,
+                                                               vmax=-50.0)
+    sp.draw_colorbar()
+    fname = 'healsparse_five.png'
     fig.savefig(tmp_path / fname)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
     if err:
