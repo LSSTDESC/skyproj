@@ -1,5 +1,6 @@
 import math
 import numpy as np
+import functools
 
 from pyproj import CRS
 from pyproj import Transformer
@@ -9,7 +10,8 @@ from .utils import wrap_values
 
 __all__ = ["SkyCRS", "PlateCarreeCRS", "McBrydeThomasFlatPolarQuarticCRS", "MollweideCRS",
            "HammerCRS", "EqualEarthCRS", "LambertAzimuthalEqualAreaCRS", "GnomonicCRS",
-           "ObliqueMollweideCRS", "AlbersEqualAreaCRS", "get_crs", "get_available_crs"]
+           "ObliqueMollweideCRS", "AlbersEqualAreaCRS", "get_crs", "get_available_crs",
+           "proj", "proj_inverse"]
 
 
 RADIUS = 1.0
@@ -444,3 +446,31 @@ def get_available_crs():
         available_crs[name] = descr
 
     return available_crs
+
+
+def proj(lon, lat, projection=None, pole_clip=None, wrap=None):
+    if projection is None:
+        raise RuntimeError("Must specify a projection.")
+
+    lon = np.atleast_1d(lon)
+    lat = np.atleast_1d(lat)
+    if pole_clip is not None:
+        out = ((lat < (-90.0 + pole_clip))
+               | (lat > (90.0 - pole_clip)))
+    if wrap is not None:
+        lon[np.isclose(lon, wrap)] = wrap - 1e-10
+    proj_xy = projection.transform_points(PlateCarreeCRS(), lon, lat)
+    if pole_clip is not None:
+        proj_xy[..., 1][out] = np.nan
+
+    return proj_xy[..., 0], proj_xy[..., 1]
+
+
+def proj_inverse(x, y, projection=None):
+    if projection is None:
+        raise RuntimeError("Must specify a projection.")
+
+    x = np.atleast_1d(x)
+    y = np.atleast_1d(y)
+    proj_lonlat = PlateCarreeCRS().transform_points(projection, x, y)
+    return proj_lonlat[..., 0], proj_lonlat[..., 1]
