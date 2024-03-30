@@ -5,8 +5,12 @@ import warnings
 import matplotlib.axes
 from pyproj import Geod
 
-from .skycrs import PlateCarreeCRS
+from .skycrs import PlateCarreeCRS, proj, proj_inverse
 from .utils import wrap_values
+from .skygrid import SkyGridlines
+from .mpl_utils import ExtremeFinderWrapped, WrappedFormatterDMS, GridHelperSkyproj
+import mpl_toolkits.axisartist.angle_helper as angle_helper
+
 
 __all__ = ["SkyAxes"]
 
@@ -28,22 +32,120 @@ class SkyAxes(matplotlib.axes.Axes):
 
         self.plate_carree = PlateCarreeCRS()
 
-        self._artist = None
+        # self._artist = None
+        # self.gridlines = SkyGridlines([])
+        self.gridlines = None
 
         super().__init__(*args, **kwargs)
+
+        # This needs to happen to make sure that it's all set correctly.
+        self.clear()
 
     def clear(self):
         """Clear the current axes."""
         result = super().clear()
-        self.xaxis.set_visible(False)
-        self.yaxis.set_visible(False)
+
+        # This will turn off all the built-in ticks.
+        tick_param_dict = {
+            "left": False,
+            "right": False,
+            "top": False,
+            "bottom": False,
+            "labelleft": False,
+            "labelright": False,
+            "labelbottom": False,
+            "labeltop": False,
+            }
+        self.xaxis.set_tick_params(**tick_param_dict)
+        self.yaxis.set_tick_params(**tick_param_dict)
 
         self.set_frame_on(False)
 
         # Always equal aspect ratio.
         self.set_aspect('equal')
 
+        self._set_artist_props(self.gridlines)
+
         return result
+
+    # This could be modified to add n_grid_lon, n_grid_lat,
+    # longitude ticks (?) oh yes because those will be here.
+    # Also celestial... all of these things should be done here.
+    def grid(self, visible=False, which="major", axis="both",
+             n_grid_lon=None, n_grid_lat=None,
+             longitude_ticks="positive", equatorial_labels=False, celestial=True,
+             full_circle=False, wrap=0.0, min_lon_ticklabel_delta=0.1,
+             **kwargs):
+        print("CALLING GRID")
+        self._grid_visible = visible
+
+        # Note need pole clip thing (maybe)
+        _proj_wrap = functools.partial(proj, projection=self.projection, wrap=wrap)
+        _proj_inverse = functools.partial(proj_inverse, projection=self.projection)
+        _extreme_finder = ExtremeFinderWrapped(20, 20, wrap)
+        if wrap == 180.0 and not full_circle:
+            _include_last_lon = True
+        else:
+            _include_last_lon = False
+
+        _n_grid_lon, _n_grid_lat = self._compute_n_grid_from_extent(
+            self.get_extent(),
+            n_grid_lon=n_grid_lon,
+            n_grid_lat=n_grid_lat,
+        )
+
+        _grid_locator1 = angle_helper.LocatorD(_n_grid_lon, include_last=_include_last_lon)
+        _grid_locator2 = angle_helper.LocatorD(_n_grid_lat, include_last=True)
+
+        # We always want the formatting to be wrapped at 180 (-180 to 180)
+        _tick_formatter1 = WrappedFormatterDMS(180.0, longitude_ticks)
+        _tick_formatter2 = angle_helper.FormatterDMS()
+
+        if self.projection.name == "cyl":
+            _delta_cut = 80.0
+        else:
+            _delta_cut = 0.5*self.projection.radius
+
+        # We need to build a grid helper
+        grid_helper = GridHelperSkyproj(
+            (_proj_wrap, _proj_inverse),
+            extreme_finder=_extreme_finder,
+            grid_locator1=_grid_locator1,
+            grid_locator2=_grid_locator2,
+            tick_formatter1=_tick_formatter1,
+            tick_formatter2=_tick_formatter2,
+            celestial=celestial,
+            equatorial_labels=equatorial_labels,
+            delta_cut=_delta_cut,
+            min_lon_ticklabel_delta=min_lon_ticklabel_delta,
+        )
+        # grid_helper.update_lim(self)
+
+        if self.gridlines is None:
+            self.gridlines = SkyGridlines(grid_helper=grid_helper)
+        else:
+            self.gridlines._grid_helper = grid_helper
+
+        self.gridlines.set(**kwargs)
+
+    def draw(self, renderer):
+        super().draw(renderer)
+
+        if self._grid_visible:
+            self.gridlines._grid_helper.update_lim(self)
+            self.gridlines.draw(renderer)
+
+    def set_grid_helper(self, grid_helper):
+        # TEMPORARY ... would like to have the grid helper at initialization
+        # but this may not be possible?  Ah can be done when grid is set.
+        # In fact the grid call can initialize everything.
+        print("SET")
+        self.gridlines._grid_helper2 = grid_helper
+        # Try this...
+        # Will probably need to do this on all updates...
+        # On the draw!!!!
+        # print("WAT")
+        # self.gridlines._grid_helper.update_lim(self)
 
     def set_extent(self, extent, lonlat=True):
         """Set the extent of the axes.
@@ -301,39 +403,37 @@ class SkyAxes(matplotlib.axes.Axes):
     def lat_0(self):
         return self.projection.lat_0
 
-    def set_xlabel(self, text, side='bottom', **kwargs):
+    def set_xlabel(self, xlabel, labelpad=20, fontsize="xx-large", **kwargs):
         """Set the label on the x axis.
 
         Parameters
         ----------
-        text : `str`
+        xlabel : `str`
             x label string.
-        side : `str`, optional
-            Side to set the label.  Can be ``bottom`` or ``top``.
+        labelpad : `int`, optional
+            Padding from the map.
+        fontsize : `int` or `str`, optional
+            Font size for label.
         **kwargs : `dict`
             Additional keyword arguments accepted by ax.set_xlabel().
         """
-        if self._artist is None:
-            raise RuntimeError("set_xlabel run without initialization of map.")
+        return super().set_xlabel(xlabel, labelpad=labelpad, fontsize=fontsize, **kwargs)
 
-        return self._artist.axis[side].label.set(text=text, **kwargs)
-
-    def set_ylabel(self, text, side='left', **kwargs):
+    def set_ylabel(self, ylabel, labelpad=20, fontsize="xx-large", **kwargs):
         """Set the label on the y axis.
 
         Parameters
         ----------
-        text : `str`
-            x label string.
-        side : `str`, optional
-            Side to set the label.  Can be ``left`` or ``right``.
+        ylabel : `str`
+            y label string.
+        labelpad : `int`, optional
+            Padding from the map.
+        fontsize : `int` or `str`, optional
+            Font size for label.
         **kwargs : `dict`
-            Additional keyword arguments accepted by ax.set_xlabel().
+            Additional keyword arguments accepted by ax.set_ylabel().
         """
-        if self._artist is None:
-            raise RuntimeError("set_xlabel run without initialization of map.")
-
-        return self._artist.axis[side].label.set(text=text, **kwargs)
+        return super().set_ylabel(ylabel, labelpad=labelpad, fontsize=fontsize, **kwargs)
 
     def update_projection(self, crs_new):
         """Update the projection central coordinate.
@@ -343,3 +443,33 @@ class SkyAxes(matplotlib.axes.Axes):
         crs_new : `skyproj.SkyCRS`
         """
         self.projection = crs_new
+
+    def _compute_n_grid_from_extent(self, extent, n_grid_lat=None, n_grid_lon=None):
+        """Compute the number of grid lines from the extent.
+
+        This will respect values that were set at initialization time.
+
+        Parameters
+        ----------
+        extent : array-like
+            Extent as [lon_min, lon_max, lat_min, lat_max].
+        n_grid_lat : `int`, optional
+            Requested number of latitude gridlines; otherwise automatic.
+        n_grid_lon : `int`, optional
+            Requested number of longitude gridlines; otherwise automatic.
+
+        Returns
+        -------
+        n_grid_lon : `int`
+            Number of gridlines in the longitude direction.
+        n_grid_lat : `int`
+            Number of gridlines in the latitude direction.
+        """
+        if n_grid_lat is None:
+            n_grid_lat = 6
+        if n_grid_lon is None:
+            latscale = np.cos(np.deg2rad(np.mean(extent[2:])))
+            ratio = np.clip(np.abs(extent[1] - extent[0])*latscale/(extent[3] - extent[2]), 1./3., 5./3.)
+            n_grid_lon = int(np.ceil(ratio * n_grid_lat))
+
+        return n_grid_lon, n_grid_lat

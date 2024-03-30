@@ -1,4 +1,5 @@
 import warnings
+import functools
 
 import matplotlib.pyplot as plt
 
@@ -11,7 +12,7 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.cm import ScalarMappable
 from matplotlib.colors import Normalize, LogNorm
 
-from .skycrs import get_crs, PlateCarreeCRS, GnomonicCRS
+from .skycrs import get_crs, PlateCarreeCRS, GnomonicCRS, proj, proj_inverse
 from .hpx_utils import healpix_pixels_range, hspmap_to_xy, hpxmap_to_xy, healpix_to_xy, healpix_bin
 from .mpl_utils import ExtremeFinderWrapped, WrappedFormatterDMS, GridHelperSkyproj
 from .utils import wrap_values, _get_boundary_poly_xy, get_autoscale_vmin_vmax
@@ -106,7 +107,7 @@ class _Skyproj():
         self._crs_orig = crs
         self._reprojected = False
 
-        self._aa = None
+        # self._aa = None
 
         self.do_celestial = celestial
         self.do_gridlines = gridlines
@@ -171,14 +172,15 @@ class _Skyproj():
         y : `np.ndarray`
             Array of y values.
         """
-        lon = np.atleast_1d(lon)
-        lat = np.atleast_1d(lat)
-        out = ((lat < (-90.0 + self._pole_clip))
-               | (lat > (90.0 - self._pole_clip)))
-        proj_xy = self.crs.transform_points(PlateCarreeCRS(), lon, lat)
+        return proj(lon, lat, projection=self.crs, pole_clip=self._pole_clip)
+        # lon = np.atleast_1d(lon)
+        # lat = np.atleast_1d(lat)
+        # out = ((lat < (-90.0 + self._pole_clip))
+        #        | (lat > (90.0 - self._pole_clip)))
+        # proj_xy = self.crs.transform_points(PlateCarreeCRS(), lon, lat)
         # FIXME I don't like this, look at the get_extent code instead/as well?
-        proj_xy[..., 1][out] = np.nan
-        return proj_xy[..., 0], proj_xy[..., 1]
+        # proj_xy[..., 1][out] = np.nan
+        # return proj_xy[..., 0], proj_xy[..., 1]
 
     def proj_inverse(self, x, y):
         """Apply inverse projection to a set of points.
@@ -199,10 +201,11 @@ class _Skyproj():
         lat : `np.ndarray`
             Array of latitudes (degrees).
         """
-        x = np.atleast_1d(x)
-        y = np.atleast_1d(y)
-        proj_lonlat = PlateCarreeCRS().transform_points(self.crs, x, y)
-        return proj_lonlat[..., 0], proj_lonlat[..., 1]
+        return proj_inverse(x, y, self.crs)
+        # x = np.atleast_1d(x)
+        # y = np.atleast_1d(y)
+        # proj_lonlat = PlateCarreeCRS().transform_points(self.crs, x, y)
+        # return proj_lonlat[..., 0], proj_lonlat[..., 1]
 
     def _initialize_axes(self, extent, extent_xy=None):
         """Initialize the axes with a given extent.
@@ -218,26 +221,35 @@ class _Skyproj():
             Used for full-sky initialization.
         """
         # Reset any axis artist if necessary
-        if self._aa is not None:
-            self._aa.remove()
-            self._aa = None
+        # if self._aa is not None:
+        #     self._aa.remove()
+        #     self._aa = None
 
         self._set_axes_limits(extent, extent_xy=extent_xy, invert=False)
         self._create_axes(extent)
         self._set_axes_limits(extent, extent_xy=extent_xy, invert=self.do_celestial)
 
         self._ax.set_frame_on(False)
+        # if self.do_gridlines:
+        #     self._aa.grid(True, linestyle=':', color='k', lw=0.5)
         if self.do_gridlines:
-            self._aa.grid(True, linestyle=':', color='k', lw=0.5)
+            self._ax.grid(visible=True, linestyle=':', color='k', lw=0.5,
+                          n_grid_lon=self._n_grid_lon, n_grid_lat=self._n_grid_lat,
+                          longitude_ticks=self._longitude_ticks,
+                          equatorial_labels=self._equatorial_labels,
+                          celestial=self.do_celestial,
+                          full_circle=self._full_circle,
+                          wrap=self._wrap,
+                          min_lon_ticklabel_delta=self._min_lon_ticklabel_delta)
 
-        self._aa.axis[:].line.set_visible(False)
-        self._aa.axis[:].major_ticks.set_visible(False)
+        # self._aa.axis[:].line.set_visible(False)
+        # self._aa.axis[:].major_ticks.set_visible(False)
 
         self._extent_xy = self._ax.get_extent(lonlat=False)
         self._changed_x_axis = False
         self._changed_y_axis = False
 
-        self._ax._artist = self._aa
+        # self._ax._artist = self._aa
 
     def set_extent(self, extent):
         """Set the extent.
@@ -332,8 +344,8 @@ class _Skyproj():
                                              clip_on=False,
                                              linewidth=plt.rcParams['axes.linewidth'])
 
-        self._aa.axis[:].line.set_visible(False)
-        self._aa.axis[:].major_ticks.set_visible(False)
+        # self._aa.axis[:].line.set_visible(False)
+        # self._aa.axis[:].major_ticks.set_visible(False)
 
         # Remove any previous labels
         if self._boundary_labels:
@@ -398,8 +410,8 @@ class _Skyproj():
         boundary_labels = []
 
         for axis_side in ['left', 'right']:
-            if not self._aa.axis[axis_side].major_ticklabels.get_visible():
-                continue
+            # if not self._aa.axis[axis_side].major_ticklabels.get_visible():
+            #     continue
 
             tick_levels = grid_info['lat']['tick_levels'][gi_side_map[axis_side]]
 
@@ -519,8 +531,8 @@ class _Skyproj():
                                                      va='bottom'))
         else:
             for axis_side in ['top', 'bottom']:
-                if not self._aa.axis[axis_side].major_ticklabels.get_visible():
-                    continue
+                # if not self._aa.axis[axis_side].major_ticklabels.get_visible():
+                #     continue
 
                 if self._radial_labels and axis_side == 'bottom':
                     continue
@@ -616,14 +628,14 @@ class _Skyproj():
         else:
             self._ax.set_extent(extent, lonlat=True)
 
-        if self._aa is not None:
-            self._aa.set_xlim(self._ax.get_xlim())
-            self._aa.set_ylim(self._ax.get_ylim())
+        # if self._aa is not None:
+        #     self._aa.set_xlim(self._ax.get_xlim())
+        #     self._aa.set_ylim(self._ax.get_ylim())
 
         if invert:
             self._ax.invert_xaxis()
-            if self._aa is not None:
-                self._aa.invert_xaxis()
+            # if self._aa is not None:
+            #     self._aa.invert_xaxis()
 
         return self._ax.get_xlim(), self._ax.get_ylim()
 
@@ -650,12 +662,13 @@ class _Skyproj():
         self._tick_formatter1 = WrappedFormatterDMS(180.0, self._longitude_ticks)
         self._tick_formatter2 = angle_helper.FormatterDMS()
 
-        def proj_wrap(lon, lat):
-            lon = np.atleast_1d(lon)
-            lat = np.atleast_1d(lat)
-            lon[np.isclose(lon, self._wrap)] = self._wrap - 1e-10
-            proj_xy = self.crs.transform_points(PlateCarreeCRS(), lon, lat)
-            return proj_xy[..., 0], proj_xy[..., 1]
+        # def proj_wrap(lon, lat):
+        #     lon = np.atleast_1d(lon)
+        #     lat = np.atleast_1d(lat)
+        #     lon[np.isclose(lon, self._wrap)] = self._wrap - 1e-10
+        #     proj_xy = self.crs.transform_points(PlateCarreeCRS(), lon, lat)
+        #     return proj_xy[..., 0], proj_xy[..., 1]
+        _proj_wrap = functools.partial(proj, projection=self.crs, wrap=self._wrap)
 
         if self.crs.name == 'cyl':
             delta_cut = 80.0
@@ -663,7 +676,7 @@ class _Skyproj():
             delta_cut = 0.5*self.crs.radius
 
         grid_helper = GridHelperSkyproj(
-            (proj_wrap, self.proj_inverse),
+            (_proj_wrap, self.proj_inverse),
             extreme_finder=extreme_finder,
             grid_locator1=grid_locator1,
             grid_locator2=grid_locator2,
@@ -676,19 +689,21 @@ class _Skyproj():
         )
 
         self._grid_helper = grid_helper
+        # THIS IS NECESSARY WHY...
+        self._ax.set_grid_helper(grid_helper)
 
         fig = self._ax.figure
-        rect = self._ax.get_position()
-        self._aa = axisartist.Axes(fig, rect, grid_helper=grid_helper, frameon=False, aspect=1.0)
-        fig.add_axes(self._aa)
+        # rect = self._ax.get_position()
+        # self._aa = axisartist.Axes(fig, rect, grid_helper=grid_helper, frameon=False, aspect=1.0)
+        # fig.add_axes(self._aa)
 
-        self._aa.format_coord = self._format_coord
-        self._aa.axis['left'].major_ticklabels.set_visible(True)
-        self._aa.axis['right'].major_ticklabels.set_visible(False)
-        self._aa.axis['bottom'].major_ticklabels.set_visible(True)
-        self._aa.axis['top'].major_ticklabels.set_visible(True)
+        # self._aa.format_coord = self._format_coord
+        # self._aa.axis['left'].major_ticklabels.set_visible(True)
+        # self._aa.axis['right'].major_ticklabels.set_visible(False)
+        # self._aa.axis['bottom'].major_ticklabels.set_visible(True)
+        # self._aa.axis['top'].major_ticklabels.set_visible(True)
 
-        self._ax._artist = self._aa
+        # self._ax._artist = self._aa
 
         self._ax.set_xlabel(self._default_xy_labels[0])
         self._ax.set_ylabel(self._default_xy_labels[1])
@@ -787,8 +802,8 @@ class _Skyproj():
         self._extent_xy = extent_xy
 
         # This synchronizes the axis artist to the plot axes after zoom.
-        if self._aa is not None:
-            self._aa.set_position(self._ax.get_position(), which='original')
+        # if self._aa is not None:
+        #     self._aa.set_position(self._ax.get_position(), which='original')
 
         self._draw_aa_bounds_and_labels()
 
@@ -881,13 +896,14 @@ class _Skyproj():
         event : `matplotlib.backend_bases.Event`
         """
         # This synchronizes the axis artist to the plot axes after zoom.
-        if self._aa is not None:
-            self._aa.set_position(self._ax.get_position(), which='original')
+        # if self._aa is not None:
+        #     self._aa.set_position(self._ax.get_position(), which='original')
+        pass
 
     def _draw_callback(self, event):
         # On draw it's sometimes necessary to synchronize the axisartist.
-        if self._aa is not None:
-            self._aa.set_position(self._ax.get_position(), which='original')
+        # if self._aa is not None:
+        #     self._aa.set_position(self._ax.get_position(), which='original')
 
         # We need to set the initial extent on first draw
         if np.allclose(self._initial_extent_xy, 0):
@@ -922,49 +938,13 @@ class _Skyproj():
 
             self._reprojected = True
 
-    def set_xlabel(self, text, side='bottom', **kwargs):
-        """Set the label on the x axis.
-
-        Parameters
-        ----------
-        text : `str`
-            x label string.
-        side : `str`, optional
-            Side to set the label.  Can be ``bottom`` or ``top``.
-        **kwargs : `dict`
-            Additional keyword arguments accepted by ax.set_xlabel().
-        """
-        warnings.warn("Usage of set_xlabel on a skyproj map has been deprecated. "
-                      "Please use sp.ax.set_xlabel() instead.",
-                      FutureWarning)
-
-        return self._ax.set_xlabel(text, side=side, **kwargs)
-
-    def set_ylabel(self, text, side='left', **kwargs):
-        """Set the label on the y axis.
-
-        Parameters
-        ----------
-        text : `str`
-            x label string.
-        side : `str`, optional
-            Side to set the label.  Can be ``left`` or ``right``.
-        **kwargs : `dict`
-            Additional keyword arguments accepted by ax.set_xlabel().
-        """
-        warnings.warn("Usage of set_ylabel on a skyproj map has been deprecated. "
-                      "Please use sp.ax.set_ylabel() instead.",
-                      FutureWarning)
-
-        return self._ax.set_ylabel(text, side=side, **kwargs)
-
     @property
     def ax(self):
         return self._ax
 
-    @property
-    def aa(self):
-        return self._aa
+    # @property
+    # def aa(self):
+    #     return self._aa
 
     def compute_extent(self, lon, lat):
         """Compute plotting extent for a set of lon/lat points.
@@ -1496,8 +1476,8 @@ class _Skyproj():
         if label is not None:
             cbar.set_label(label, size=fontsize)
 
-        if self._aa is not None:
-            self._aa.set_position(self._ax.get_position(), which='original')
+        # if self._aa is not None:
+        #     self._aa.set_position(self._ax.get_position(), which='original')
 
         # Reset the "home" position because axis has been shifted.
         self._initial_extent_xy = self._ax.get_extent(lonlat=False)
