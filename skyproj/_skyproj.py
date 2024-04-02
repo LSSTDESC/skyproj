@@ -984,7 +984,7 @@ class _Skyproj():
         extent : `list`
             Plotting extent [lon_max, lon_min, lat_min, lat_max]
         """
-        lon_wrap = wrap_values(lon)
+        lon_wrap = wrap_values(lon, wrap=self._wrap)
 
         # Compute lat range with cushion
         lat_min0 = np.min(lat)
