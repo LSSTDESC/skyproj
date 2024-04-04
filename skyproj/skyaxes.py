@@ -33,8 +33,8 @@ class SkyAxes(matplotlib.axes.Axes):
         self.plate_carree = PlateCarreeCRS()
 
         # self._artist = None
-        # self.gridlines = SkyGridlines([])
-        self.gridlines = None
+        self.gridlines = SkyGridlines([])
+        # self.gridlines = None
 
         super().__init__(*args, **kwargs)
 
@@ -44,6 +44,8 @@ class SkyAxes(matplotlib.axes.Axes):
     def clear(self):
         """Clear the current axes."""
         result = super().clear()
+
+        print("CLEARING")
 
         # This will turn off all the built-in ticks.
         tick_param_dict = {
@@ -76,76 +78,70 @@ class SkyAxes(matplotlib.axes.Axes):
              longitude_ticks="positive", equatorial_labels=False, celestial=True,
              full_circle=False, wrap=0.0, min_lon_ticklabel_delta=0.1,
              **kwargs):
-        print("CALLING GRID")
         self._grid_visible = visible
 
-        # Note need pole clip thing (maybe)
-        _proj_wrap = functools.partial(proj, projection=self.projection, wrap=wrap)
-        _proj_inverse = functools.partial(proj_inverse, projection=self.projection)
-        _extreme_finder = ExtremeFinderWrapped(20, 20, wrap)
-        if wrap == 180.0 and not full_circle:
-            _include_last_lon = True
-        else:
-            _include_last_lon = False
+        # FIXME: do logic correctly to make sure everything is set up
+        # when we want it.  Note that grid() is called randomly by
+        # something in the code chain along the way.
 
-        _n_grid_lon, _n_grid_lat = self._compute_n_grid_from_extent(
-            self.get_extent(),
-            n_grid_lon=n_grid_lon,
-            n_grid_lat=n_grid_lat,
-        )
+        if visible:
+            # Set up grid finder and grid lines.
 
-        _grid_locator1 = angle_helper.LocatorD(_n_grid_lon, include_last=_include_last_lon)
-        _grid_locator2 = angle_helper.LocatorD(_n_grid_lat, include_last=True)
+            # Note need pole clip thing (maybe)
+            _proj_wrap = functools.partial(proj, projection=self.projection, wrap=wrap)
+            _proj_inverse = functools.partial(proj_inverse, projection=self.projection)
+            _extreme_finder = ExtremeFinderWrapped(20, 20, wrap)
+            if wrap == 180.0 and not full_circle:
+                _include_last_lon = True
+            else:
+                _include_last_lon = False
 
-        # We always want the formatting to be wrapped at 180 (-180 to 180)
-        _tick_formatter1 = WrappedFormatterDMS(180.0, longitude_ticks)
-        _tick_formatter2 = angle_helper.FormatterDMS()
+            _n_grid_lon, _n_grid_lat = self._compute_n_grid_from_extent(
+                self.get_extent(),
+                n_grid_lon=n_grid_lon,
+                n_grid_lat=n_grid_lat,
+            )
 
-        if self.projection.name == "cyl":
-            _delta_cut = 80.0
-        else:
-            _delta_cut = 0.5*self.projection.radius
+            _grid_locator1 = angle_helper.LocatorD(_n_grid_lon, include_last=_include_last_lon)
+            _grid_locator2 = angle_helper.LocatorD(_n_grid_lat, include_last=True)
 
-        # We need to build a grid helper
-        grid_helper = GridHelperSkyproj(
-            (_proj_wrap, _proj_inverse),
-            extreme_finder=_extreme_finder,
-            grid_locator1=_grid_locator1,
-            grid_locator2=_grid_locator2,
-            tick_formatter1=_tick_formatter1,
-            tick_formatter2=_tick_formatter2,
-            celestial=celestial,
-            equatorial_labels=equatorial_labels,
-            delta_cut=_delta_cut,
-            min_lon_ticklabel_delta=min_lon_ticklabel_delta,
-        )
-        # grid_helper.update_lim(self)
+            # We always want the formatting to be wrapped at 180 (-180 to 180)
+            _tick_formatter1 = WrappedFormatterDMS(180.0, longitude_ticks)
+            _tick_formatter2 = angle_helper.FormatterDMS()
 
-        if self.gridlines is None:
-            self.gridlines = SkyGridlines(grid_helper=grid_helper)
-        else:
+            if self.projection.name == "cyl":
+                _delta_cut = 80.0
+            else:
+                _delta_cut = 0.5*self.projection.radius
+
+            # We need to build a grid helper
+            grid_helper = GridHelperSkyproj(
+                (_proj_wrap, _proj_inverse),
+                extreme_finder=_extreme_finder,
+                grid_locator1=_grid_locator1,
+                grid_locator2=_grid_locator2,
+                tick_formatter1=_tick_formatter1,
+                tick_formatter2=_tick_formatter2,
+                celestial=celestial,
+                equatorial_labels=equatorial_labels,
+                delta_cut=_delta_cut,
+                min_lon_ticklabel_delta=min_lon_ticklabel_delta,
+            )
+            # FIXME: add a set_grid_helper thingy.
             self.gridlines._grid_helper = grid_helper
 
+        # We don't want the projection here because the gridlines
+        # are all in projected coordinates.
         self.gridlines.set(**kwargs)
 
     def draw(self, renderer):
         super().draw(renderer)
 
         if self._grid_visible:
+            # Turn this into a one-stop shop.
             self.gridlines._grid_helper.update_lim(self)
+            self.gridlines.set_clip_box(self.bbox)
             self.gridlines.draw(renderer)
-
-    def set_grid_helper(self, grid_helper):
-        # TEMPORARY ... would like to have the grid helper at initialization
-        # but this may not be possible?  Ah can be done when grid is set.
-        # In fact the grid call can initialize everything.
-        print("SET")
-        self.gridlines._grid_helper2 = grid_helper
-        # Try this...
-        # Will probably need to do this on all updates...
-        # On the draw!!!!
-        # print("WAT")
-        # self.gridlines._grid_helper.update_lim(self)
 
     def set_extent(self, extent, lonlat=True):
         """Set the extent of the axes.
