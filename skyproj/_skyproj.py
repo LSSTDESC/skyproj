@@ -314,13 +314,23 @@ class _Skyproj():
         else:
             include_last_lon = False
 
+        # Bring inside, check if gridlines...
+
         if n_grid_lon != self._grid_helper.grid_finder.grid_locator1.nbins:
             self._grid_helper.grid_finder.grid_locator1 = angle_helper.LocatorD(
                 n_grid_lon,
                 include_last=include_last_lon,
             )
+            self._ax.gridlines._grid_helper.grid_finder.grid_locator1 = angle_helper.LocatorD(
+                n_grid_lon,
+                include_last=include_last_lon,
+            )
         if n_grid_lat != self._grid_helper.grid_finder.grid_locator2.nbins:
             self._grid_helper.grid_finder.grid_locator2 = angle_helper.LocatorD(
+                n_grid_lat,
+                include_last=True,
+            )
+            self._ax.gridlines._grid_helper.grid_finder.grid_locator1 = angle_helper.LocatorD(
                 n_grid_lat,
                 include_last=True,
             )
@@ -353,7 +363,11 @@ class _Skyproj():
                 label.remove()
             self._boundary_labels = []
 
-        grid_finder = self._grid_helper.grid_finder
+        # grid_finder = self._grid_helper.grid_finder
+        # NOTE THIS MADE IT WORSE
+        # try updating the limit first
+        # self._ax.gridlines._grid_helper.update_lim(self._ax)
+        grid_finder = self._ax.gridlines._grid_helper.grid_finder
         grid_info = grid_finder.get_grid_info(
             extent_xy[0],
             extent_xy[2],
@@ -409,7 +423,7 @@ class _Skyproj():
 
         boundary_labels = []
 
-        for axis_side in ['left', 'right']:
+        for axis_side in ['left',]: # 'right']:
             # if not self._aa.axis[axis_side].major_ticklabels.get_visible():
             #     continue
 
@@ -419,8 +433,8 @@ class _Skyproj():
                 if np.abs(np.abs(lat_level) - 90.0) < 1.0:
                     continue
 
-                if int(lat_level*factor) in tick_levels:
-                    continue
+                # if int(lat_level*factor) in tick_levels:
+                #     continue
 
                 lat_line_x = lat_line[0][0]
                 lat_line_y = lat_line[0][1]
@@ -434,8 +448,12 @@ class _Skyproj():
                 else:
                     ha = 'left'
 
+                # We need middle even thing ... but that's
+                # actually not what is going on.  
                 if lat_level < 0.0:
                     va = 'top'
+                elif lat_level == 0.0:
+                    va = 'center'
                 else:
                     va = 'bottom'
 
@@ -689,8 +707,6 @@ class _Skyproj():
         )
 
         self._grid_helper = grid_helper
-        # THIS IS NECESSARY WHY...
-        self._ax.set_grid_helper(grid_helper)
 
         fig = self._ax.figure
         # rect = self._ax.get_position()
