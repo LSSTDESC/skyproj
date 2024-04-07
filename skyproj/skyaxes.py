@@ -2,14 +2,16 @@ import functools
 import numpy as np
 import warnings
 
+import matplotlib as mpl
 import matplotlib.axes
 from pyproj import Geod
 
 from .skycrs import PlateCarreeCRS, proj, proj_inverse
 from .utils import wrap_values
-from .skygrid import SkyGridlines
+from .skygrid import SkyGridlines, SkyGridHelper
 from .mpl_utils import ExtremeFinderWrapped, WrappedFormatterDMS, GridHelperSkyproj
 import mpl_toolkits.axisartist.angle_helper as angle_helper
+from mpl_toolkits.axisartist.axis_artist import TickLabels
 
 
 __all__ = ["SkyAxes"]
@@ -32,11 +34,29 @@ class SkyAxes(matplotlib.axes.Axes):
 
         self.plate_carree = PlateCarreeCRS()
 
-        # self._artist = None
+        # Would like to fix this up.
         self.gridlines = SkyGridlines([])
-        # self.gridlines = None
 
         super().__init__(*args, **kwargs)
+
+        # Make an _init_blah set of things.
+        # I think that the stuff in clear should be here.
+        # Unless there are things that get reset from the global clear.
+
+        # Could have kwargs checks here for the parameters.  That would
+        # be useful!
+        # trans = (self._axis_artist_helper.get_tick_transform(self.axes)
+        #          + self.offset_transform)
+        # I don't know if we ever need the offset transform which is an aa thing.
+        # trans = self.get_xaxis_transform()
+        self.xticklabels = TickLabels(
+            axis=self.xaxis,
+            axis_direction="top", # unsure
+            figure=self.figure,
+            transform=self.get_xaxis_transform(),
+            fontsize=mpl.rcParams["xtick.labelsize"],
+            pad= mpl.rcParams["xtick.major.pad"],
+        )
 
         # This needs to happen to make sure that it's all set correctly.
         self.clear()
@@ -44,8 +64,6 @@ class SkyAxes(matplotlib.axes.Axes):
     def clear(self):
         """Clear the current axes."""
         result = super().clear()
-
-        print("CLEARING")
 
         # This will turn off all the built-in ticks.
         tick_param_dict = {
@@ -88,6 +106,7 @@ class SkyAxes(matplotlib.axes.Axes):
             # Set up grid finder and grid lines.
 
             # Note need pole clip thing (maybe)
+            """
             _proj_wrap = functools.partial(proj, projection=self.projection, wrap=wrap)
             _proj_inverse = functools.partial(proj_inverse, projection=self.projection)
             _extreme_finder = ExtremeFinderWrapped(20, 20, wrap)
@@ -115,20 +134,46 @@ class SkyAxes(matplotlib.axes.Axes):
                 _delta_cut = 0.5*self.projection.radius
 
             # We need to build a grid helper
-            grid_helper = GridHelperSkyproj(
-                (_proj_wrap, _proj_inverse),
-                extreme_finder=_extreme_finder,
-                grid_locator1=_grid_locator1,
-                grid_locator2=_grid_locator2,
-                tick_formatter1=_tick_formatter1,
-                tick_formatter2=_tick_formatter2,
+            # grid_helper = GridHelperSkyproj(
+            #     (_proj_wrap, _proj_inverse),
+            #     extreme_finder=_extreme_finder,
+            #     grid_locator1=_grid_locator1,
+            #     grid_locator2=_grid_locator2,
+            #     tick_formatter1=_tick_formatter1,
+            #     tick_formatter2=_tick_formatter2,
+            #     celestial=celestial,
+            #     equatorial_labels=equatorial_labels,
+            #     delta_cut=_delta_cut,
+            #     min_lon_ticklabel_delta=min_lon_ticklabel_delta,
+            # )
+            grid_helper = SkyGridHelper(
+                _proj_wrap,
+                _proj_inverse,
+                _extreme_finder,
+                _grid_locator1,
+                _grid_locator2,
+                _tick_formatter1,
+                _tick_formatter2,
                 celestial=celestial,
                 equatorial_labels=equatorial_labels,
                 delta_cut=_delta_cut,
                 min_lon_ticklabel_delta=min_lon_ticklabel_delta,
             )
-            # FIXME: add a set_grid_helper thingy.
-            self.gridlines._grid_helper = grid_helper
+            """
+
+            grid_helper = SkyGridHelper(
+                self.projection,
+                wrap,
+                n_grid_lon_default=n_grid_lon,
+                n_grid_lat_default=n_grid_lat,
+                longitude_ticks=longitude_ticks,
+                celestial=celestial,
+                equatorial_labels=equatorial_labels,
+                full_circle=full_circle,
+                min_lon_ticklabel_delta=min_lon_ticklabel_delta,
+            )
+
+            self.gridlines.set_grid_helper(grid_helper)
 
         # We don't want the projection here because the gridlines
         # are all in projected coordinates.
@@ -142,6 +187,14 @@ class SkyAxes(matplotlib.axes.Axes):
             self.gridlines._grid_helper.update_lim(self)
             self.gridlines.set_clip_box(self.bbox)
             self.gridlines.draw(renderer)
+
+        # tick label thing.
+        # First we have to set the locs, angles, labels.
+        # This will all need to be overhauled for compatibility with new mpl 3.9
+        # In the meantime, I want to get the iterator and set it by
+        # hand here.
+        # tick_iter = self.gridlines._grid_helper.get_tick_iterator()
+        # self.xticklabels.draw(renderer)
 
     def set_extent(self, extent, lonlat=True):
         """Set the extent of the axes.
