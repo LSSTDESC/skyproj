@@ -165,6 +165,7 @@ class SkyGridHelper:
                 n_grid_lon_default=self._n_grid_lon_default,
                 n_grid_lat_default=self._n_grid_lat_default,
             )
+            print("Making %d/%d lines" % (_n_grid_lon, _n_grid_lat))
 
             if self._wrap == 180.0 and not self._full_circle:
                 _include_last_lon = True
@@ -181,6 +182,8 @@ class SkyGridHelper:
         self._grid_info = self.get_grid_info(x1, y1, x2, y2)
 
     def get_grid_info(self, x1, y1, x2, y2):
+        """
+        """
 
         extremes = self._extreme_finder(self.inv_transform_xy, x1, y1, x2, y2)
 

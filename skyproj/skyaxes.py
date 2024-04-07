@@ -55,7 +55,7 @@ class SkyAxes(matplotlib.axes.Axes):
             figure=self.figure,
             transform=self.get_xaxis_transform(),
             fontsize=mpl.rcParams["xtick.labelsize"],
-            pad= mpl.rcParams["xtick.major.pad"],
+            pad=mpl.rcParams["xtick.major.pad"],
         )
 
         # This needs to happen to make sure that it's all set correctly.
@@ -66,6 +66,8 @@ class SkyAxes(matplotlib.axes.Axes):
         result = super().clear()
 
         # This will turn off all the built-in ticks.
+        # FIXME add in checks for these so that we can catch them...
+        # if possible.
         tick_param_dict = {
             "left": False,
             "right": False,
@@ -188,6 +190,8 @@ class SkyAxes(matplotlib.axes.Axes):
 
         self.set_xlim([x0, x1])
         self.set_ylim([y0, y1])
+
+        # FIXME: do automatic inversion here.
 
     def get_extent(self, lonlat=True):
         """Get the extent of the axes.
@@ -437,33 +441,3 @@ class SkyAxes(matplotlib.axes.Axes):
         crs_new : `skyproj.SkyCRS`
         """
         self.projection = crs_new
-
-    def _compute_n_grid_from_extent(self, extent, n_grid_lat=None, n_grid_lon=None):
-        """Compute the number of grid lines from the extent.
-
-        This will respect values that were set at initialization time.
-
-        Parameters
-        ----------
-        extent : array-like
-            Extent as [lon_min, lon_max, lat_min, lat_max].
-        n_grid_lat : `int`, optional
-            Requested number of latitude gridlines; otherwise automatic.
-        n_grid_lon : `int`, optional
-            Requested number of longitude gridlines; otherwise automatic.
-
-        Returns
-        -------
-        n_grid_lon : `int`
-            Number of gridlines in the longitude direction.
-        n_grid_lat : `int`
-            Number of gridlines in the latitude direction.
-        """
-        if n_grid_lat is None:
-            n_grid_lat = 6
-        if n_grid_lon is None:
-            latscale = np.cos(np.deg2rad(np.mean(extent[2:])))
-            ratio = np.clip(np.abs(extent[1] - extent[0])*latscale/(extent[3] - extent[2]), 1./3., 5./3.)
-            n_grid_lon = int(np.ceil(ratio * n_grid_lat))
-
-        return n_grid_lon, n_grid_lat
