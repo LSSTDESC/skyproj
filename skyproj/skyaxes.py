@@ -105,63 +105,8 @@ class SkyAxes(matplotlib.axes.Axes):
         if visible:
             # Set up grid finder and grid lines.
 
-            # Note need pole clip thing (maybe)
-            """
-            _proj_wrap = functools.partial(proj, projection=self.projection, wrap=wrap)
-            _proj_inverse = functools.partial(proj_inverse, projection=self.projection)
-            _extreme_finder = ExtremeFinderWrapped(20, 20, wrap)
-            if wrap == 180.0 and not full_circle:
-                _include_last_lon = True
-            else:
-                _include_last_lon = False
-
-            _n_grid_lon, _n_grid_lat = self._compute_n_grid_from_extent(
-                self.get_extent(),
-                n_grid_lon=n_grid_lon,
-                n_grid_lat=n_grid_lat,
-            )
-
-            _grid_locator1 = angle_helper.LocatorD(_n_grid_lon, include_last=_include_last_lon)
-            _grid_locator2 = angle_helper.LocatorD(_n_grid_lat, include_last=True)
-
-            # We always want the formatting to be wrapped at 180 (-180 to 180)
-            _tick_formatter1 = WrappedFormatterDMS(180.0, longitude_ticks)
-            _tick_formatter2 = angle_helper.FormatterDMS()
-
-            if self.projection.name == "cyl":
-                _delta_cut = 80.0
-            else:
-                _delta_cut = 0.5*self.projection.radius
-
-            # We need to build a grid helper
-            # grid_helper = GridHelperSkyproj(
-            #     (_proj_wrap, _proj_inverse),
-            #     extreme_finder=_extreme_finder,
-            #     grid_locator1=_grid_locator1,
-            #     grid_locator2=_grid_locator2,
-            #     tick_formatter1=_tick_formatter1,
-            #     tick_formatter2=_tick_formatter2,
-            #     celestial=celestial,
-            #     equatorial_labels=equatorial_labels,
-            #     delta_cut=_delta_cut,
-            #     min_lon_ticklabel_delta=min_lon_ticklabel_delta,
-            # )
             grid_helper = SkyGridHelper(
-                _proj_wrap,
-                _proj_inverse,
-                _extreme_finder,
-                _grid_locator1,
-                _grid_locator2,
-                _tick_formatter1,
-                _tick_formatter2,
-                celestial=celestial,
-                equatorial_labels=equatorial_labels,
-                delta_cut=_delta_cut,
-                min_lon_ticklabel_delta=min_lon_ticklabel_delta,
-            )
-            """
-
-            grid_helper = SkyGridHelper(
+                self,
                 self.projection,
                 wrap,
                 n_grid_lon_default=n_grid_lon,
