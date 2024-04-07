@@ -77,6 +77,7 @@ class SkyGridHelper:
     """
     def __init__(
         self,
+        axis,
         projection,
         wrap=0.0,
         n_grid_lon_default=None,
@@ -109,36 +110,8 @@ class SkyGridHelper:
         self._grid_info = None
         self._old_limits = None
 
-    """
-    def __init__(
-        self,
-        transform_lonlat_to_xy,
-        transform_xy_to_lonlat,
-        extreme_finder,
-        grid_locator_lon,
-        grid_locator_lat,
-        tick_formatter_lon,
-        tick_formatter_lat,
-        celestial=True,
-        equatorial_labels=False,
-        delta_cut=80.0,
-        min_lon_ticklabel_delta=0.1,
-    ):
-        self._transform_lonlat_to_xy = transform_lonlat_to_xy
-        self._transform_xy_to_lonlat = transform_xy_to_lonlat
-        self._extreme_finder = extreme_finder
-        self._grid_locator_lon = grid_locator_lon
-        self._grid_locator_lat = grid_locator_lat
-        self._tick_formatter_lon = tick_formatter_lon
-        self._tick_formatter_lat = tick_formatter_lat
-        self._celestial = celestial
-        self._equatorial_labels = equatorial_labels
-        self._delta_cut = delta_cut
-        self._min_lon_ticklabel_delta = min_lon_ticklabel_delta
+        self.update_lim(axis)
 
-        self._grid_info = None
-        self._old_limits = None
-    """
     def get_gridlines(self, axis="both"):
         """
         """
@@ -184,9 +157,6 @@ class SkyGridHelper:
     def update_lim(self, axis):
         """
         """
-        # This is the limits in projected coordinates.
-        # But we also know the extent in lon/lat coordinates which
-        # allows us to compute the number of gridlines.  Automagically.
         x1, x2 = axis.get_xlim()
         y1, y2 = axis.get_ylim()
         if self._old_limits != (x1, x2, y1, y2):
