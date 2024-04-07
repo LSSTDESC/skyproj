@@ -309,12 +309,16 @@ class _Skyproj():
         n_grid_lat : `int`
             Number of gridlines in the latitude direction.
         """
+        return
         if self._wrap == 180.0 and not self._full_circle:
             include_last_lon = True
         else:
             include_last_lon = False
 
         # Bring inside, check if gridlines...
+        # FIXME this should not be here.
+        # And should be moved in and create an api.
+
 
         if n_grid_lon != self._grid_helper.grid_finder.grid_locator1.nbins:
             self._grid_helper.grid_finder.grid_locator1 = angle_helper.LocatorD(
@@ -367,27 +371,29 @@ class _Skyproj():
         # NOTE THIS MADE IT WORSE
         # try updating the limit first
         # self._ax.gridlines._grid_helper.update_lim(self._ax)
-        grid_finder = self._ax.gridlines._grid_helper.grid_finder
-        grid_info = grid_finder.get_grid_info(
-            extent_xy[0],
-            extent_xy[2],
-            extent_xy[1],
-            extent_xy[3]
-        )
+        # grid_finder = self._ax.gridlines._grid_helper.grid_finder
+        # grid_finder = self._ax.gridlines._grid_helper
+        # grid_info = grid_finder.get_grid_info(
+        #    extent_xy[0],
+        #    extent_xy[2],
+        #    extent_xy[1],
+        #    extent_xy[3]
+        #)
 
         # Recover lon_level, lat_level
-        extremes = grid_finder.extreme_finder(
-            grid_finder.inv_transform_xy,
-            extent_xy[0],
-            extent_xy[2],
-            extent_xy[1],
-            extent_xy[3]
-        )
-        _, _, lon_factor = grid_finder.grid_locator1(extremes[0], extremes[1])
-        _, _, lat_factor = grid_finder.grid_locator2(extremes[2], extremes[3])
+        # FIXME
+        #extremes = grid_finder._extreme_finder(
+        #    grid_finder.inv_transform_xy,
+        #    extent_xy[0],
+        #    extent_xy[2],
+        #    extent_xy[1],
+        #    extent_xy[3]
+        #)
+        #_, _, lon_factor = grid_finder._grid_locator_lon(extremes[0], extremes[1])
+        #_, _, lat_factor = grid_finder._grid_locator_lat(extremes[2], extremes[3])
 
-        self._boundary_labels.extend(self._draw_aa_lat_labels(extent_xy, grid_info, lat_factor))
-        self._boundary_labels.extend(self._draw_aa_lon_labels(extent_xy, grid_info, lon_factor))
+        # self._boundary_labels.extend(self._draw_aa_lat_labels(extent_xy, grid_info, lat_factor))
+        # self._boundary_labels.extend(self._draw_aa_lon_labels(extent_xy, grid_info, lon_factor))
 
     def _draw_aa_lat_labels(self, extent_xy, grid_info, factor):
         """Draw axis artist latitude labels.
