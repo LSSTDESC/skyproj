@@ -2,12 +2,12 @@ import numpy as np
 
 from mpl_toolkits.axisartist.grid_finder import ExtremeFinderSimple
 import mpl_toolkits.axisartist.angle_helper as angle_helper
-from mpl_toolkits.axisartist.grid_helper_curvelinear import GridHelperCurveLinear
+from mpl_toolkits.axisartist.axis_artist import TickLabels
 
 from .utils import wrap_values
 
 
-__all__ = ['WrappedFormatterDMS', 'ExtremeFinderWrapped', 'GridHelperSkyproj']
+__all__ = ['WrappedFormatterDMS', 'ExtremeFinderWrapped', 'SkyTickLabels']
 
 
 class WrappedFormatterDMS(angle_helper.FormatterDMS):
@@ -102,126 +102,27 @@ class ExtremeFinderWrapped(ExtremeFinderSimple):
         return lon_min, lon_max, lat_min, lat_max
 
 
-class GridHelperSkyproj(GridHelperCurveLinear):
-    """GridHelperCurveLinear with tick overlap protection.
+class SkyTickLabels(TickLabels):
+    def __init__(self, *, axis_direction="bottom", visible=True, **kwargs):
+        super().__init__(axis_direction=axis_direction, **kwargs)
 
-    Parameters
-    ----------
-    *args : `list`
-        Arguments for ``GridHelperCurveLinear``.
-    celestial : `bool`, optional
-        Plot is celestial, and angles should be 0 to 360.  Otherwise -180 to 180.
-    equatorial_labels : `bool`, optional
-        Longitude labels are marked on the equator instead of edges.
-    delta_cut : `float`, optional
-        Gridline step (degrees) to signify a jump around a wrapped edge.
-    min_lon_ticklabel_delta : `float`, optional
-        Minimum relative spacing between longitude tick labels (relative to width
-        of axis). Smaller values yield closer tick labels (and potential for clashes)
-        and larger values yield more spacing between tick labels.
-    **kwargs : `dict`, optional
-        Additional kwargs for ``GridHelperCurveLinear``.
-    """
-    def __init__(self, *args, celestial=True, equatorial_labels=False, delta_cut=80.0,
-                 min_lon_ticklabel_delta=0.1, **kwargs):
-        self._celestial = celestial
-        self._equatorial_labels = equatorial_labels
-        self._delta_cut = delta_cut
-        self._min_lon_ticklabel_delta = min_lon_ticklabel_delta
+        self._axis_direction = axis_direction
+        self._visible = visible
 
-        super().__init__(*args, **kwargs)
+    @property
+    def visible(self):
+        return self._visible
 
-    def get_gridlines(self, which="major", axis="both"):
-        # docstring inherited
-        try:
-            _grid_info = self._grid_info
-        except AttributeError:
-            _grid_info = self.grid_info
-
-        grid_lines = []
-        if axis in ["both", "x"]:
-            for gl in _grid_info["lon"]["lines"]:
-                grid_lines.extend(self._cut_grid_line_jumps(gl))
-        if axis in ["both", "y"]:
-            for gl in _grid_info["lat"]["lines"]:
-                grid_lines.extend(self._cut_grid_line_jumps(gl))
-        return grid_lines
-
-    def _cut_grid_line_jumps(self, gl):
-        """Check for jumps and cut gridlines into multiple sections.
-
-        Parameters
-        ----------
-        gl : `list` [`tuple`]
-            Input gridlines.  List of tuples of numpy arrays.
-
-        Returns
-        -------
-        gl_new : `list` [`tuple`]
-            New gridlines.  Jumps have been replaced with `np.nan`
-            values to ensure lines are not connected around edges.
+    def set_from_tick_iterator(self, tick_iter):
         """
-        dx = gl[0][0][1:] - gl[0][0][: -1]
-        dy = gl[0][1][1:] - gl[0][1][: -1]
+        """
+        ticklabel_add_angle = dict(left=180, right=0, bottom=0, top=180)[self._axis_direction]
 
-        split, = (np.hypot(dx, dy) > self._delta_cut).nonzero()
+        # ticks_loc_angle = []
+        ticklabels_loc_angle_label = []
 
-        if split.size == 0:
-            return gl
+        for loc, angle_normal, angle_tangent, label in tick_iter:
+            angle_label = angle_tangent - 90 + ticklabel_add_angle
+            ticklabels_loc_angle_label.append([loc, angle_label, label])
 
-        gl_new = [(np.insert(gl[0][0], split + 1, np.nan),
-                   np.insert(gl[0][1], split + 1, np.nan))]
-
-        return gl_new
-
-    def get_tick_iterator(self, nth_coord, axis_side, minor=False):
-        # docstring inherited
-        try:
-            _grid_info = self._grid_info
-        except AttributeError:
-            _grid_info = self.grid_info
-
-        angle_tangent = dict(left=90, right=90, bottom=0, top=0)[axis_side]
-        lon_or_lat = ["lon", "lat"][nth_coord]
-        if lon_or_lat == "lon":
-            # Need to compute maximum extent in the x direction
-            x_min = 1e100
-            x_max = -1e100
-            for line in _grid_info['lon_lines']:
-                x_min = min((x_min, np.min(line[0])))
-                x_max = max((x_max, np.max(line[0])))
-            delta_x = x_max - x_min
-        if not minor:  # major ticks
-            tick_locs = _grid_info[lon_or_lat]["tick_locs"][axis_side]
-            tick_labels = _grid_info[lon_or_lat]["tick_labels"][axis_side]
-
-            if lon_or_lat == "lon" and self._equatorial_labels:
-                min_lat = np.min(_grid_info["lat"]["levels"])
-                max_lat = np.max(_grid_info["lat"]["levels"])
-                if (min_lat < -89.0 and axis_side == "bottom") \
-                   or (max_lat > 89.0 and axis_side == "top"):
-                    tick_locs = []
-                    tick_labels = []
-
-            prev_xy = None
-            for ctr, ((xy, a), l) in enumerate(zip(tick_locs, tick_labels)):
-                if self._celestial:
-                    angle_normal = 360.0 - a
-                else:
-                    angle_normal = a
-
-                if ctr > 0 and lon_or_lat == 'lon':
-                    # Check if this is too close to the last label.
-                    if abs(xy[0] - prev_xy[0])/delta_x < self._min_lon_ticklabel_delta:
-                        continue
-                prev_xy = xy
-                yield xy, angle_normal, angle_tangent, l
-        else:
-            for (xy, a), l in zip(
-                    _grid_info[lon_or_lat]["tick_locs"][axis_side],
-                    _grid_info[lon_or_lat]["tick_labels"][axis_side]):
-                if self._celestial:
-                    angle_normal = 360.0 - a
-                else:
-                    angle_normal = a
-                yield xy, angle_normal, angle_tangent, ""
+        self.set_locs_angles_labels(ticklabels_loc_angle_label)

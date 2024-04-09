@@ -14,7 +14,6 @@ from matplotlib.colors import Normalize, LogNorm
 
 from .skycrs import get_crs, PlateCarreeCRS, GnomonicCRS, proj, proj_inverse
 from .hpx_utils import healpix_pixels_range, hspmap_to_xy, hpxmap_to_xy, healpix_to_xy, healpix_bin
-from .mpl_utils import ExtremeFinderWrapped, WrappedFormatterDMS, GridHelperSkyproj
 from .utils import wrap_values, _get_boundary_poly_xy, get_autoscale_vmin_vmax
 
 from ._docstrings import skyproj_init_parameters, skyproj_kwargs_par
@@ -535,6 +534,7 @@ class _Skyproj():
             # We want our set_extent to automatically do the inversion if it
             # is set to be inverted, I think.
             # And can use ax.xaxis_inverted() to check if it already is.
+            # FIXME
             self._ax.invert_xaxis()
 
         return self._ax.get_xlim(), self._ax.get_ylim()
