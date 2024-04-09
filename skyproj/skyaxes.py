@@ -9,9 +9,9 @@ from pyproj import Geod
 from .skycrs import PlateCarreeCRS, proj, proj_inverse
 from .utils import wrap_values
 from .skygrid import SkyGridlines, SkyGridHelper
-from .mpl_utils import ExtremeFinderWrapped, WrappedFormatterDMS, GridHelperSkyproj
-import mpl_toolkits.axisartist.angle_helper as angle_helper
-from mpl_toolkits.axisartist.axis_artist import TickLabels
+from .mpl_utils import ExtremeFinderWrapped, WrappedFormatterDMS, SkyTickLabels
+from matplotlib.transforms import (
+    Affine2D, Bbox, IdentityTransform, ScaledTranslation)
 
 
 __all__ = ["SkyAxes"]
@@ -39,24 +39,50 @@ class SkyAxes(matplotlib.axes.Axes):
 
         super().__init__(*args, **kwargs)
 
-        # Make an _init_blah set of things.
-        # I think that the stuff in clear should be here.
-        # Unless there are things that get reset from the global clear.
+        # And here we will need x top and bottom, y left not right.
+        # So we need to figure out how to specify these, etc.
 
-        # Could have kwargs checks here for the parameters.  That would
-        # be useful!
-        # trans = (self._axis_artist_helper.get_tick_transform(self.axes)
-        #          + self.offset_transform)
-        # I don't know if we ever need the offset transform which is an aa thing.
-        # trans = self.get_xaxis_transform()
-        self.xticklabels = TickLabels(
-            axis=self.xaxis,
-            axis_direction="top", # unsure
-            figure=self.figure,
-            transform=self.get_xaxis_transform(),
-            fontsize=mpl.rcParams["xtick.labelsize"],
-            pad=mpl.rcParams["xtick.major.pad"],
-        )
+        self._ticklabels = {
+            "left": SkyTickLabels(
+                axis=self.yaxis,
+                axis_direction="left",
+                figure=self.figure,
+                transform=self.transData,
+                fontsize=mpl.rcParams["ytick.labelsize"],
+                pad=mpl.rcParams["ytick.major.pad"],
+            ),
+            "right": SkyTickLabels(
+                axis=self.yaxis,
+                axis_direction="right",
+                figure=self.figure,
+                transform=self.transData,
+                fontsize=mpl.rcParams["ytick.labelsize"],
+                pad=mpl.rcParams["ytick.major.pad"],
+            ),
+            "top": SkyTickLabels(
+                axis=self.xaxis,
+                axis_direction="top",
+                figure=self.figure,
+                transform=self.transData,
+                fontsize=mpl.rcParams["xtick.labelsize"],
+                pad=mpl.rcParams["xtick.major.pad"],
+            ),
+            "bottom": SkyTickLabels(
+                axis=self.xaxis,
+                axis_direction="bottom",
+                figure=self.figure,
+                transform=self.transData,
+                fontsize=mpl.rcParams["xtick.labelsize"],
+                pad=mpl.rcParams["xtick.major.pad"],
+            ),
+        }
+
+        self._ticklabels_visibility = {
+            "left": True,
+            "right": False,
+            "top": True,
+            "bottom": True,
+        }
 
         # This needs to happen to make sure that it's all set correctly.
         self.clear()
@@ -64,6 +90,8 @@ class SkyAxes(matplotlib.axes.Axes):
     def clear(self):
         """Clear the current axes."""
         result = super().clear()
+
+        print("Calling Clear")
 
         # This will turn off all the built-in ticks.
         # FIXME add in checks for these so that we can catch them...
@@ -87,6 +115,8 @@ class SkyAxes(matplotlib.axes.Axes):
         self.set_aspect('equal')
 
         self._set_artist_props(self.gridlines)
+
+        # FIXME: this should probably reset the ticklabel thingies.
 
         return result
 
@@ -127,6 +157,7 @@ class SkyAxes(matplotlib.axes.Axes):
         self.gridlines.set(**kwargs)
 
     def draw(self, renderer):
+        print("Calling axis draw...")
         super().draw(renderer)
 
         if self._grid_visible:
@@ -135,13 +166,68 @@ class SkyAxes(matplotlib.axes.Axes):
             self.gridlines.set_clip_box(self.bbox)
             self.gridlines.draw(renderer)
 
-        # tick label thing.
-        # First we have to set the locs, angles, labels.
-        # This will all need to be overhauled for compatibility with new mpl 3.9
-        # In the meantime, I want to get the iterator and set it by
-        # hand here.
-        # tick_iter = self.gridlines._grid_helper.get_tick_iterator()
-        # self.xticklabels.draw(renderer)
+        for lon_or_lat, side in [("lon", "top"), ("lon", "bottom"), ("lat", "left"), ("lat", "right")]:
+            if self._ticklabels_visibility[self._ticklabels[side]._axis_direction]:
+                tick_iter = self.gridlines.get_tick_iterator(lon_or_lat, side)
+                self._ticklabels[side].set_from_tick_iterator(tick_iter)
+                self._ticklabels[side].draw(renderer)
+
+    def set_lon_ticklabel_params(self, side, *, fontsize=None, pad=None, visible=None):
+        """
+        """
+        if visible is not None:
+            if side in ["top", "both"]:
+                self._ticklabels_visibility["top"] = visible
+            if side in ["bottom", "both"]:
+                self._ticklabels_visibility["bottom"] = visible
+
+        if fontsize is not None:
+            if side in ["top", "both"]:
+                self._ticklabels["top"].set_fontsize(fontsize)
+            if side in ["bottom", "both"]:
+                self._ticklabels["bottom"].set_fontsize(fontsize)
+
+        if pad is not None:
+            if side in ["top", "both"]:
+                self._ticklabels["top"].set_pad(pad)
+            if side in ["bottom", "both"]:
+                self._ticklabels["bottom"].set_pad(pad)
+
+    def set_lat_ticklabel_params(self, side, *, fontsize=None, pad=None, visible=None):
+        """
+        """
+        if visible is not None:
+            if side in ["left", "both"]:
+                self._ticklabels_visibility["left"] = visible
+            if side in ["right", "both"]:
+                self._ticklabels_visibility["right"] = visible
+
+        if fontsize is not None:
+            if side in ["left", "both"]:
+                self._ticklabels["left"].set_fontsize(fontsize)
+            if side in ["right", "both"]:
+                self._ticklabels["right"].set_fontsize(fontsize)
+
+        if pad is not None:
+            if side in ["left", "both"]:
+                self._ticklabels["left"].set_pad(pad)
+            if side in ["right", "both"]:
+                self._ticklabels["right"].set_pad(pad)
+
+    def invert_xaxis(self):
+        super().invert_xaxis()
+
+        print("inverting...")
+
+        # So this takes left and makes it right and vice versa.
+        # I don't think that's what I want.  Well... maybe it is.
+
+        if self.xaxis_inverted():
+            self._ticklabels["left"].set_axis_direction("right")
+            self._ticklabels["right"].set_axis_direction("left")
+        else:
+            self._ticklabels["left"].set_axis_direction("left")
+            self._ticklabels["right"].set_axis_direction("right")
 
     def set_extent(self, extent, lonlat=True):
         """Set the extent of the axes.

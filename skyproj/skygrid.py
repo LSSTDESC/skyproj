@@ -96,8 +96,10 @@ class SkyGridHelper:
         self._extreme_finder = ExtremeFinderWrapped(20, 20, wrap)
         self._grid_locator_lon = None
         self._grid_locator_lat = None
-        self._tick_formatter_lon = WrappedFormatterDMS(180.0, longitude_ticks)
-        self._tick_formatter_lat = angle_helper.FormatterDMS()
+        self._tick_formatters = {
+            "lon": WrappedFormatterDMS(180.0, longitude_ticks),
+            "lat": angle_helper.FormatterDMS(),
+        }
         self._celestial = celestial
         self._equatorial_labels = equatorial_labels
         self._full_circle = full_circle
@@ -199,6 +201,7 @@ class SkyGridHelper:
         lon_values = lon_levs[:lon_n] / lon_factor
         lat_values = lat_levs[:lat_n] / lat_factor
 
+        print("EXTREME", lat_min, lat_max)
         lon_lines, lat_lines = self._get_raw_grid_lines(lon_values,
                                                         lat_values,
                                                         lon_min, lon_max,
@@ -211,9 +214,26 @@ class SkyGridHelper:
             # "lon", "lat", filled below.
         }
 
-        for idx, lon_or_lat, levs, factor, values, lines in [
-                (1, "lon", lon_levs, lon_factor, lon_values, lon_lines),
-                (2, "lat", lat_levs, lat_factor, lat_values, lat_lines),
+        use_equatorial_labels = False
+        if self._equatorial_labels:
+            if np.min(lat_values) < -89.0 and np.max(lat_values) > 89.0:
+                use_equatorial_labels = True
+
+        inverted = False
+        if x1 < x2:
+            gi_side_map = {side: side for side in ['left', 'right']}
+            min_x = x1
+            max_x = x2
+        else:
+            gi_side_map = {'left': 'right',
+                           'right': 'left'}
+            inverted = True
+            min_x = x2
+            max_x = x1
+
+        for lon_or_lat, levs, factor, values, lines in [
+                ("lon", lon_levs, lon_factor, lon_values, lon_lines),
+                ("lat", lat_levs, lat_factor, lat_values, lat_lines),
         ]:
             grid_info[lon_or_lat] = gi = {
                 "lines": [[l] for l in lines],
@@ -223,15 +243,39 @@ class SkyGridHelper:
                 # This is not what I want actually.  I need to get in here
                 # and modify to get things that hit the edge!
                 # But there is the thing about the alignment.
-                all_crossings = _find_line_box_crossings(np.column_stack([lx, ly]), bb)
-                for side, crossings in zip(
-                        ["left", "right", "bottom", "top"], all_crossings):
-                    for crossing in crossings:
-                        gi["ticks"][side].append({"level": level, "loc": crossing})
+
+                if lon_or_lat == "lon" and use_equatorial_labels:
+                    xy = self.transform_xy(level, 0.0)
+                    # Make sure we don't try to label at the extreme edges.
+                    if xy[0] > min_x and xy[0] < max_x:
+                        gi["ticks"]["top"].append({"level": level, "loc": (xy, 0.0)})
+                else:
+                    all_crossings = _find_line_box_crossings(np.column_stack([lx, ly]), bb)
+                    for side, crossings in zip(
+                            ["left", "right", "bottom", "top"], all_crossings):
+                        for crossing in crossings:
+                            gi["ticks"][side].append({"level": level, "loc": crossing})
+
+                    # inner_crossings = _find_inner_crossings(np.column_stack([lx, ly])
+
+                    if lon_or_lat == "lat":
+
+                        xys = np.column_stack([lx, ly])
+                        if lon_or_lat == "lat":
+                            for side in ["left", "right"]:
+                                line_x = xys[:, 0]
+                                line_y = xys[:, 1]
+                                if gi_side_map[side] == "right":
+                                    line_x = line_x[::-1]
+                                    line_y = line_y[::-1]
+                                if line_x[0] <= min_x or line_x[0] >= max_x or \
+                                   line_y[0] <= y1 or line_y[0] >= y2:
+                                    continue
+                                print("Use: ", lon_or_lat, side, level)
+                                gi["ticks"][gi_side_map[side]].append({"level": level, "loc": ((line_x[0], line_y[0]), 0.0)})
             for side in gi["ticks"]:
                 levs = [tick["level"] for tick in gi["ticks"][side]]
-                # labels = self._format_ticks(idx, side, factor, levs)
-                labels = ["lab"]*len(levs)
+                labels = self._tick_formatters[lon_or_lat](side, factor, levs)
                 for tick, label in zip(gi["ticks"][side], labels):
                     tick["label"] = label
 
@@ -257,15 +301,35 @@ class SkyGridHelper:
     def inv_transform_xy(self, x, y):
         return np.column_stack(self._transform_xy_to_lonlat(x, y)).T
 
-    # def update_grid_locator_lon(self, new_grid_locator):
-    #     self._grid_locator_lon = new_grid_locator
+    def get_tick_iterator(self, lon_or_lat, axis_side):
+        """
+        """
+        angle_tangent = dict(left=90, right=90, bottom=0, top=0)[axis_side]
+        if lon_or_lat == "lon":
+            # Need to compute maximum extent in the x direction
+            x_min = 1e100
+            x_max = -1e100
+            for line in self._grid_info[lon_or_lat]["lines"]:
+                x_min = min((x_min, np.min(line[0])))
+                x_max = max((x_max, np.max(line[0])))
+            delta_x = x_max - x_min
 
-    # def update_grid_locator_lat(self, new_grid_locator):
-    #     self._grid_locator_lat = new_grid_locator
+        tick_locs = [item["loc"] for item in self._grid_info[lon_or_lat]["ticks"][axis_side]]
+        tick_labels = [item["label"] for item in self._grid_info[lon_or_lat]["ticks"][axis_side]]
 
-    def get_tick_iterator(self):
-        # Maybe this is where we do the thing.
-        raise NotImplementedError("Oops")
+        prev_xy = None
+        for ctr, ((xy, a), l) in enumerate(zip(tick_locs, tick_labels)):
+            if self._celestial:
+                angle_normal = 360.0 - a
+            else:
+                angle_normal = a
+
+            if ctr > 0 and lon_or_lat == 'lon':
+                # Check if this is too close to the last label.
+                if abs(xy[0] - prev_xy[0])/delta_x < self._min_lon_ticklabel_delta:
+                    continue
+            prev_xy = xy
+            yield xy, angle_normal, angle_tangent, l
 
     def _compute_n_grid_from_extent(self, extent, n_grid_lat_default=None, n_grid_lon_default=None):
         """Compute the number of grid lines from the extent.
@@ -314,6 +378,9 @@ class SkyGridlines(matplotlib.collections.LineCollection):
         """
         """
         self._grid_helper = grid_helper
+
+    def get_tick_iterator(self, lon_or_lat, axis_side):
+        return self._grid_helper.get_tick_iterator(lon_or_lat, axis_side)
 
     def draw(self, renderer):
         gridlines = self._grid_helper.get_gridlines()
