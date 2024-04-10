@@ -72,6 +72,35 @@ def _find_line_box_crossings(xys, bbox):
     return crossings
 
 
+def _find_inner_crossings(line_x, line_y, lon_or_lat, min_x, max_x, min_y, max_y):
+    """
+    """
+    crossings = {}
+    if lon_or_lat == "lat":
+        for side in ["left", "right"]:
+            if side == "right":
+                line_x = line_x[::-1]
+                line_y = line_y[::-1]
+            if line_x[0] <= min_x or line_x[0] >= max_x or \
+               line_y[0] <= min_y or line_y[0] >= max_y:
+                continue
+            crossings[side] = ((line_x[0], line_y[0]), 0.0)
+    else:
+        for side in ["top", "bottom"]:
+            # FIXME: radial labels
+            if side == "top":
+                line_index = -1
+            else:
+                line_index = 0
+
+            if line_x[line_index] <= min_x or line_x[line_index] >= max_x or \
+               line_y[line_index] <= min_y or line_y[line_index] >= max_y:
+                continue
+            crossings[side] = ((line_x[line_index], line_y[line_index]), 0.0)
+
+    return crossings
+
+
 class SkyGridHelper:
     """
     """
@@ -93,7 +122,7 @@ class SkyGridHelper:
         self._wrap = wrap
         self._n_grid_lon_default = n_grid_lon_default
         self._n_grid_lat_default = n_grid_lat_default
-        self._extreme_finder = ExtremeFinderWrapped(20, 20, wrap)
+        self._extreme_finder = ExtremeFinderWrapped(20, 20, wrap, self.transform_xy)
         self._grid_locator_lon = None
         self._grid_locator_lat = None
         self._tick_formatters = {
@@ -167,7 +196,6 @@ class SkyGridHelper:
                 n_grid_lon_default=self._n_grid_lon_default,
                 n_grid_lat_default=self._n_grid_lat_default,
             )
-            print("Making %d/%d lines" % (_n_grid_lon, _n_grid_lat))
 
             if self._wrap == 180.0 and not self._full_circle:
                 _include_last_lon = True
@@ -201,7 +229,6 @@ class SkyGridHelper:
         lon_values = lon_levs[:lon_n] / lon_factor
         lat_values = lat_levs[:lat_n] / lat_factor
 
-        print("EXTREME", lat_min, lat_max)
         lon_lines, lat_lines = self._get_raw_grid_lines(lon_values,
                                                         lat_values,
                                                         lon_min, lon_max,
@@ -256,23 +283,11 @@ class SkyGridHelper:
                         for crossing in crossings:
                             gi["ticks"][side].append({"level": level, "loc": crossing})
 
-                    # inner_crossings = _find_inner_crossings(np.column_stack([lx, ly])
+                    inner_crossings = _find_inner_crossings(lx, ly, lon_or_lat, min_x, max_x, y1, y2)
+                    for side in ["left", "right", "bottom", "top"]:
+                        if side in inner_crossings:
+                            gi["ticks"][side].append({"level": level, "loc": inner_crossings[side]})
 
-                    if lon_or_lat == "lat":
-
-                        xys = np.column_stack([lx, ly])
-                        if lon_or_lat == "lat":
-                            for side in ["left", "right"]:
-                                line_x = xys[:, 0]
-                                line_y = xys[:, 1]
-                                if gi_side_map[side] == "right":
-                                    line_x = line_x[::-1]
-                                    line_y = line_y[::-1]
-                                if line_x[0] <= min_x or line_x[0] >= max_x or \
-                                   line_y[0] <= y1 or line_y[0] >= y2:
-                                    continue
-                                print("Use: ", lon_or_lat, side, level)
-                                gi["ticks"][gi_side_map[side]].append({"level": level, "loc": ((line_x[0], line_y[0]), 0.0)})
             for side in gi["ticks"]:
                 levs = [tick["level"] for tick in gi["ticks"][side]]
                 labels = self._tick_formatters[lon_or_lat](side, factor, levs)

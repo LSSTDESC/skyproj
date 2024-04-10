@@ -157,7 +157,6 @@ class SkyAxes(matplotlib.axes.Axes):
         self.gridlines.set(**kwargs)
 
     def draw(self, renderer):
-        print("Calling axis draw...")
         super().draw(renderer)
 
         if self._grid_visible:
@@ -216,8 +215,6 @@ class SkyAxes(matplotlib.axes.Axes):
 
     def invert_xaxis(self):
         super().invert_xaxis()
-
-        print("inverting...")
 
         # So this takes left and makes it right and vice versa.
         # I don't think that's what I want.  Well... maybe it is.

@@ -312,7 +312,7 @@ class MollweideSkyproj(_Skyproj, _Ellipse21):
 
     @property
     def _pole_clip(self):
-        return 1.0
+        return 0.0
 
     @property
     def _equatorial_labels(self):
