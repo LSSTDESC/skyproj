@@ -17,16 +17,18 @@ import skyproj  # noqa: E402
 ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
-def _get_hspmap():
+def _get_hspmap(ra_center=5.0):
     # Make a square noise field
     np.random.seed(1234)
 
     hspmap = hsp.HealSparseMap.make_empty(32, 4096, np.float32)
-    poly = hsp.geom.Polygon(ra=[0.0, 10.0, 10.0, 0.0], dec=[0.0, 0.0, 10.0, 10.0], value=1.0)
+    poly = hsp.geom.Polygon(ra=[ra_center-5.0, ra_center+5.0, ra_center+5.0, ra_center-5.0],
+                            dec=[0.0, 0.0, 10.0, 10.0], value=1.0)
     pixels = poly.get_pixels(nside=hspmap.nside_sparse)
     hspmap[pixels] = np.random.normal(size=pixels.size).astype(np.float32)
     # Add in a central square of fixed value.
-    poly2 = hsp.geom.Polygon(ra=[5, 5.2, 5.2, 5.0], dec=[5, 5.0, 5.2, 5.2], value=3.0)
+    poly2 = hsp.geom.Polygon(ra=[ra_center, ra_center + 0.2, ra_center + 0.2, ra_center],
+                             dec=[5, 5.0, 5.2, 5.2], value=3.0)
     pixels2 = poly2.get_pixels(nside=hspmap.nside_sparse)
     hspmap[pixels2] = 3.0
 
@@ -746,3 +748,17 @@ def test_hpxpix_rasterized(tmp_path):
 
     # The rasterized map will be smaller than the non-rasterized map.
     assert size_rasterized_on < size_rasterized_off
+
+
+@pytest.mark.parametrize("lon_0", [0.0, 180.0])
+def test_healsparse_gnomonic(tmp_path, lon_0):
+    """Test healsparse map with gnomonic projections."""
+    plt.rcParams.update(plt.rcParamsDefault)
+
+    hspmap = _get_hspmap(ra_center=lon_0)
+
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    sp = skyproj.GnomonicSkyproj(ax=ax, lon_0=lon_0, lat_0=0.0)
+    im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(hspmap, zoom=True)
