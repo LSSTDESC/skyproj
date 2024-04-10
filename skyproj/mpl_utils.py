@@ -73,16 +73,38 @@ class ExtremeFinderWrapped(ExtremeFinderSimple):
     wrap_angle : `float`
         Angle at which the 360-degree cycle should be wrapped.
     """
-    def __init__(self, nx, ny, wrap_angle):
+    def __init__(self, nx, ny, wrap_angle, transform_lonlat_to_xy):
         self.nx, self.ny = nx, ny
         self._wrap = wrap_angle
         self._eps = 1e-5
 
-    def __call__(self, transform_xy, x1, y1, x2, y2):
+        # When we set this up we know the maximum possible range in x and y
+        # and make sure that we don't go out of this range.
+        lon, lat = np.meshgrid(
+            wrap_values(np.linspace(-180.0, 180.0, self.nx), wrap=self._wrap),
+            np.linspace(-90.0, 90.0, self.ny),
+        )
+        x, y = transform_lonlat_to_xy(np.ravel(lon), np.ravel(lat))
+        self.xmin = np.nanmin(x)
+        self.xmax = np.nanmax(x)
+        self.ymin = np.nanmin(y)
+        self.ymax = np.nanmax(y)
+
+    def __call__(self, transform_xy_to_lonlat, x1, y1, x2, y2):
         # docstring inherited
         x, y = np.meshgrid(
-            np.linspace(x1, x2, self.nx), np.linspace(y1, y2, self.ny))
-        lon, lat = transform_xy(np.ravel(x), np.ravel(y))
+            np.linspace(
+                np.clip(x1, self.xmin, self.xmax),
+                np.clip(x2, self.xmin, self.xmax),
+                self.nx,
+            ),
+            np.linspace(
+                np.clip(y1, self.ymin, self.ymax),
+                np.clip(y2, self.ymin, self.ymax),
+                self.ny,
+            ),
+        )
+        lon, lat = transform_xy_to_lonlat(np.ravel(x), np.ravel(y))
 
         with np.errstate(invalid='ignore'):
             lon = wrap_values(lon, wrap=self._wrap)
