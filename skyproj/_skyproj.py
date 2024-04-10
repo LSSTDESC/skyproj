@@ -431,7 +431,7 @@ class _Skyproj():
                 if lat_line_y[0] < extent_xy[2] or lat_line_y[0] > extent_xy[3]:
                     continue
 
-                if lat_line_x[0] < extent_xy[x0_index] or lat_line_y[0] > extent_xy[x1_index]:
+                if lat_line_x[0] < extent_xy[x0_index] or lat_line_x[0] > extent_xy[x1_index]:
                     continue
 
                 label = self._tick_formatter2(axis_side, factor, [lat_level])[0]
