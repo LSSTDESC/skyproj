@@ -2,7 +2,7 @@ import numpy as np
 
 from mpl_toolkits.axisartist.grid_finder import ExtremeFinderSimple
 import mpl_toolkits.axisartist.angle_helper as angle_helper
-from mpl_toolkits.axisartist.axis_artist import TickLabels
+from mpl_toolkits.axisartist.axis_artist import TickLabels, LabelBase
 
 from .utils import wrap_values
 
@@ -140,11 +140,47 @@ class SkyTickLabels(TickLabels):
         """
         ticklabel_add_angle = dict(left=180, right=0, bottom=0, top=180)[self._axis_direction]
 
-        # ticks_loc_angle = []
         ticklabels_loc_angle_label = []
+        self._alignments = []
 
-        for loc, angle_normal, angle_tangent, label in tick_iter:
+        for loc, angle_normal, angle_tangent, label, alignment in tick_iter:
             angle_label = angle_tangent - 90 + ticklabel_add_angle
             ticklabels_loc_angle_label.append([loc, angle_label, label])
+            self._alignments.append(alignment)
 
         self.set_locs_angles_labels(ticklabels_loc_angle_label)
+
+    def draw(self, renderer):
+        if not self.get_visible():
+            self._axislabel_pad = self._external_pad
+            return
+
+        r, total_width = self._get_ticklabels_offsets(renderer,
+                                                      self._axis_direction)
+
+        pad = self._external_pad + renderer.points_to_pixels(self.get_pad())
+        self._offset_radius = r + pad
+
+        ha_default = self.get_ha()
+        va_default = self.get_va()
+
+        # for i, ((x, y), a, l) in enumerate(self._locs_angles_labels):
+        for ((x, y), a, l), (ha, va) in zip(self._locs_angles_labels, self._alignments):
+            if not l.strip():
+                continue
+            self._ref_angle = a
+            self.set_x(x)
+            self.set_y(y)
+            if ha == "":
+                self.set_ha(ha_default)
+            else:
+                self.set_ha(ha)
+            if va == "":
+                self.set_va(va_default)
+            else:
+                self.set_va(va)
+            self.set_text(l)
+            LabelBase.draw(self, renderer)
+
+        # the value saved will be used to draw axislabel.
+        self._axislabel_pad = total_width + pad
