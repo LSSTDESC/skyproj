@@ -67,7 +67,7 @@ def _find_line_box_crossings(xys, bbox):
                     continue
                 crossing = (u0, v)[sl]
                 theta = np.degrees(np.arctan2(*dxys[idx][::-1]))
-                cross.append((crossing, theta))
+                cross.append((crossing, theta, ("", "")))
             crossings.append(cross)
     return crossings
 
@@ -84,7 +84,13 @@ def _find_inner_crossings(line_x, line_y, lon_or_lat, min_x, max_x, min_y, max_y
             if line_x[0] <= min_x or line_x[0] >= max_x or \
                line_y[0] <= min_y or line_y[0] >= max_y:
                 continue
-            crossings[side] = ((line_x[0], line_y[0]), 0.0)
+            if line_y[0] < 0.0:
+                va = "top"
+            elif line_y[0] > 0.0:
+                va = "bottom"
+            else:
+                va = ""
+            crossings[side] = ((line_x[0], line_y[0]), 0.0, ("", va))
     else:
         for side in ["top", "bottom"]:
             # FIXME: radial labels
@@ -96,7 +102,7 @@ def _find_inner_crossings(line_x, line_y, lon_or_lat, min_x, max_x, min_y, max_y
             if line_x[line_index] <= min_x or line_x[line_index] >= max_x or \
                line_y[line_index] <= min_y or line_y[line_index] >= max_y:
                 continue
-            crossings[side] = ((line_x[line_index], line_y[line_index]), 0.0)
+            crossings[side] = ((line_x[line_index], line_y[line_index]), 0.0, ("", ""))
 
     return crossings
 
@@ -333,7 +339,7 @@ class SkyGridHelper:
         tick_labels = [item["label"] for item in self._grid_info[lon_or_lat]["ticks"][axis_side]]
 
         prev_xy = None
-        for ctr, ((xy, a), l) in enumerate(zip(tick_locs, tick_labels)):
+        for ctr, ((xy, a, alignment), l) in enumerate(zip(tick_locs, tick_labels)):
             if self._celestial:
                 angle_normal = 360.0 - a
             else:
@@ -344,7 +350,7 @@ class SkyGridHelper:
                 if abs(xy[0] - prev_xy[0])/delta_x < self._min_lon_ticklabel_delta:
                     continue
             prev_xy = xy
-            yield xy, angle_normal, angle_tangent, l
+            yield xy, angle_normal, angle_tangent, l, alignment
 
     def _compute_n_grid_from_extent(self, extent, n_grid_lat_default=None, n_grid_lon_default=None):
         """Compute the number of grid lines from the extent.
