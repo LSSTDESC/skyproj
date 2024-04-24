@@ -27,7 +27,7 @@ jobs:
     - name: Configure conda and install code
       shell: bash -l {0}
       run: |
-        mamba install -y numpy "astropy>=4.0" matplotlib hpgeom setuptools_scm setuptools_scm_git_archive healsparse "pyproj>=3.1" flake8 pytest jupyter "nbconvert<7"
+        mamba install -y numpy "astropy>=4.0" matplotlib hpgeom setuptools_scm setuptools_scm_git_archive healsparse "pyproj>=3.1" flake8 pytest jupyter nbconvert
         python -m pip install --no-deps .
 
     - name: Lint with flake8
