@@ -2,9 +2,56 @@
 requires = [
     "setuptools>=46",
     "wheel",
-    "setuptools_scm",
-    "setuptools_scm_git_archive"
+    "setuptools_scm>=7",
+    "tomli>=1.0.0; python_version < '3.11'",
 ]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "skyproj"
+authors = [
+    {name = "Eli Rykoff", email = "erykoff@stanford.edu"},
+    {name = "Alex Drlica-Wagner"},
+    {name = "others"},
+]
+description = "Python tools for making sky projections and maps"
+dynamic = ["version", "dependencies"]
+license = {file = "LICENSE"}
+readme = "README.md"
+requires-python = ">= 3.8"
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Topic :: Scientific/Engineering :: Astronomy",
+]
+
+[project.urls]
+home = "https://github.com/lsstdesc/skyproj"
+
+[tool.setuptools]
+include-package-data = true
+zip-safe = true
+packages = {find = {exclude=["tests*"]}}
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[tool.setuptools.package-data]
+skyproj = ["data/*.txt", "data/*.dat"]
+
 [tool.setuptools_scm]
+write_to = "skyproj/_version.py"
+write_to_template = "__version__ = '{version}'\n"
+
+[tool.flake8]
+max-line-length = 110
+ignore = ["E133", "E226", "E228", "N802", "N803", "N806", "N812", "N815", "N816", "W503"]
+exclude = [
+  "**/__init__.py",
+  "docs/conf.py",
+  "docs/_build/html/conf.py",
+  "build",
+]

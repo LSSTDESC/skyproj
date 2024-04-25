@@ -1,8 +1,6 @@
-oldest-supported-numpy
 astropy>=4.0
-matplotlib>=3.1
+matplotlib>=3.6
 hpgeom
-setuptools_scm
-setuptools_scm_git_archive
 healsparse
 pyproj>=3.1
+numpy

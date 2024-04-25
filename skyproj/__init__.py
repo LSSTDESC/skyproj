@@ -1,13 +1,7 @@
 try:
-    from importlib.metadata import version, PackageNotFoundError
+    from ._version import __version__
 except ImportError:
-    from importlib_metadata import version, PackageNotFoundError
-
-try:
-    __version__ = version("skyproj")
-except PackageNotFoundError:
-    # package is not installed
-    pass
+    __version__ = "0.0.0"
 
 from .skyproj import *
 from .skycrs import *
