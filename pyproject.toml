@@ -10,7 +10,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "skyproj"
 authors = [
-    {name = "Eli Rykoff, Alex Drlica-Wagner, and others", email = "erykoff@stanford.edu"},
+    {name = "Eli Rykoff", email = "erykoff@stanford.edu"},
     {name = "Alex Drlica-Wagner"},
     {name = "others"},
 ]
