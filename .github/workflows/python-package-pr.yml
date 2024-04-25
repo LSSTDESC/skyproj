@@ -30,8 +30,32 @@ jobs:
     - name: Configure conda and install code
       shell: bash -l {0}
       run: |
-        mamba install -y --file requirements.txt --file requirements-dev.txt
-        python -m pip install --no-deps .
+        mamba install -y --file requirements.txt --file requirements-dev.txt python-build
+        python -m pip install --no-deps --no-build-isolation .
+
+    - name: test versions
+      shell: bash -e {0}
+      run: |
+        pip uninstall skyproj --yes
+        [[ $(python setup.py --version) != "0.0.0" ]] || exit 1
+
+        rm -rf dist/*
+        python setup.py sdist
+        pip install --no-deps --no-build-isolation dist/*.tar.gz
+        pushd ..
+        python -c "import skyproj; assert skyproj.__version__ != '0.0.0'"
+        popd
+        pip uninstall skyproj --yes
+
+        rm -rf dist/*
+        python -m build --sdist . --outdir dist
+        pip install --no-deps --no-build-isolation dist/*.tar.gz
+        pushd ..
+        python -c "import skyproj; assert skyproj.__version__ != '0.0.0'"
+        popd
+        pip uninstall skyproj --yes
+
+        python -m pip install --no-deps --no-build-isolation .
 
     - name: Lint with flake8
       shell: bash -l {0}

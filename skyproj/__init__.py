@@ -1,7 +1,7 @@
 try:
     from ._version import __version__
 except ImportError:
-    pass
+    __version__ = "0.0.0"
 
 from .skyproj import *
 from .skycrs import *
