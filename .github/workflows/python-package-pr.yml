@@ -39,6 +39,7 @@ jobs:
       shell: bash -e {0}
       run: |
         pip uninstall skyproj --yes
+        python setup.py --version
         [[ $(python setup.py --version) != "0.0.0" ]] || exit 1
 
         rm -rf dist/*
