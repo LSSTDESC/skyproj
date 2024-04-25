@@ -1,0 +1,5 @@
+pytest
+flake8
+jupyter
+nbconvert
+flake8-pyproject
