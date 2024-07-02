@@ -139,6 +139,9 @@ def get_autoscale_vmin_vmax(values, vmin_in, vmax_in):
     """
     if values.dtype == bool or len(values) == 0:
         _vmin, _vmax = 0, 1
+    elif values.dtype == np.uint8 and np.max(values) <= 1:
+        # This is the internal representation of booleans to make numpy happy.
+        _vmin, _vmax = 0, 1
     else:
         _vmin, _vmax = np.nanpercentile(values, (AUTOSCALE_PERCENTILE_LOW, AUTOSCALE_PERCENTILE_HIGH))
 
