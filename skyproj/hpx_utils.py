@@ -101,6 +101,10 @@ def hspmap_to_xy(hspmap, lon_range, lat_range, xsize=1000, aspect=1.0, valid_mas
     else:
         mask = (np.isclose(values, hspmap._sentinel) | np.isnan(values))
 
+    # If the values are boolean, convert to integers.
+    if values.dtype == np.bool_:
+        values = values.astype(np.int16)
+
     return lon_raster, lat_raster, np.ma.array(values, mask=mask)
 
 
