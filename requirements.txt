@@ -1,5 +1,5 @@
 astropy>=4.0
-matplotlib>=3.6
+matplotlib>=3.8
 hpgeom
 healsparse
 pyproj>=3.1
