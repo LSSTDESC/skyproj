@@ -54,4 +54,5 @@ exclude = [
   "docs/conf.py",
   "docs/_build/html/conf.py",
   "build",
+  "vendor/mpl_toolkit_functions.py",
 ]
