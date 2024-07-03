@@ -2,7 +2,7 @@ import numpy as np
 
 from mpl_toolkits.axisartist.grid_finder import ExtremeFinderSimple
 import mpl_toolkits.axisartist.angle_helper as angle_helper
-from mpl_toolkits.axisartist.grid_helper_curvelinear import GridHelperCurveLinear
+from .vendor.mpl_toolkit_functions import GridHelperCurveLinear
 
 from .utils import wrap_values
 

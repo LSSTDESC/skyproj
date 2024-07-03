@@ -18,7 +18,7 @@ description = "Python tools for making sky projections and maps"
 dynamic = ["version", "dependencies"]
 license = {file = "LICENSE"}
 readme = "README.md"
-requires-python = ">= 3.8"
+requires-python = ">= 3.9"
 classifiers = [
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: BSD License",
@@ -54,4 +54,5 @@ exclude = [
   "docs/conf.py",
   "docs/_build/html/conf.py",
   "build",
+  "vendor/mpl_toolkit_functions.py",
 ]
