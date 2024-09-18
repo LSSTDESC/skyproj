@@ -553,6 +553,8 @@ class _Skyproj():
         self._ax.set_xlabel(self._default_xy_labels[0])
         self._ax.set_ylabel(self._default_xy_labels[1])
 
+        self._ax.format_coord = self._format_coord
+
         fig.sca(self._ax)
 
         return fig, self._ax
