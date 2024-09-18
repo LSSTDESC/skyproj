@@ -130,6 +130,7 @@ class SkyTickLabels(TickLabels):
 
         self._axis_direction = axis_direction
         self._visible = visible
+        # self.zorder = 10
 
     @property
     def visible(self):
@@ -142,18 +143,38 @@ class SkyTickLabels(TickLabels):
 
         ticklabels_loc_angle_label = []
         self._alignments = []
+        self._outers = []
 
-        for loc, angle_normal, angle_tangent, label, alignment in tick_iter:
+        for loc, angle_normal, angle_tangent, label, alignment, outer in tick_iter:
             angle_label = angle_tangent - 90 + ticklabel_add_angle
             ticklabels_loc_angle_label.append([loc, angle_label, label])
             self._alignments.append(alignment)
+            self._outers.append(outer)
 
         self.set_locs_angles_labels(ticklabels_loc_angle_label)
+
+    def get_texts_widths_heights_descents(self, renderer):
+        """
+        Return a list of ``(width, height, descent)`` tuples for ticklabels.
+
+        Empty labels are left out.
+        """
+        whd_list = []
+        for (_loc, _angle, label), outer in zip(self._locs_angles_labels, self._outers):
+            if not label.strip() or not outer:
+                continue
+            clean_line, ismath = self._preprocess_math(label)
+            whd = renderer.get_text_width_height_descent(
+                clean_line, self._fontproperties, ismath=ismath)
+            whd_list.append(whd)
+        return whd_list
 
     def draw(self, renderer):
         if not self.get_visible():
             self._axislabel_pad = self._external_pad
             return
+
+        print("SkyTickLabels: ", self.zorder)
 
         r, total_width = self._get_ticklabels_offsets(renderer,
                                                       self._axis_direction)
@@ -164,7 +185,6 @@ class SkyTickLabels(TickLabels):
         ha_default = self.get_ha()
         va_default = self.get_va()
 
-        # for i, ((x, y), a, l) in enumerate(self._locs_angles_labels):
         for ((x, y), a, l), (ha, va) in zip(self._locs_angles_labels, self._alignments):
             if not l.strip():
                 continue
@@ -179,8 +199,10 @@ class SkyTickLabels(TickLabels):
                 self.set_va(va_default)
             else:
                 self.set_va(va)
+            # print("setting text to ", x, y, a, ha, va, ha_default, va_default, l)
             self.set_text(l)
             LabelBase.draw(self, renderer)
 
         # the value saved will be used to draw axislabel.
         self._axislabel_pad = total_width + pad
+        print(self._axis_direction, total_width, pad, self._external_pad, self._axislabel_pad)

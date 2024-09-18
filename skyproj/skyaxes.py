@@ -91,8 +91,6 @@ class SkyAxes(matplotlib.axes.Axes):
         """Clear the current axes."""
         result = super().clear()
 
-        print("Calling Clear")
-
         # This will turn off all the built-in ticks.
         # FIXME add in checks for these so that we can catch them...
         # if possible.
@@ -156,7 +154,7 @@ class SkyAxes(matplotlib.axes.Axes):
         # are all in projected coordinates.
         self.gridlines.set(**kwargs)
 
-    def draw(self, renderer):
+    def draw_orig(self, renderer):
         super().draw(renderer)
 
         if self._grid_visible:
@@ -170,6 +168,42 @@ class SkyAxes(matplotlib.axes.Axes):
                 tick_iter = self.gridlines.get_tick_iterator(lon_or_lat, side)
                 self._ticklabels[side].set_from_tick_iterator(tick_iter)
                 self._ticklabels[side].draw(renderer)
+
+    def draw(self, renderer):
+        xaxis_pad, yaxis_pad = 0.0, 0.0
+
+        print("SkyAxes: ", self.zorder)
+
+        # Basic problem: we need to compute all the spacings from the labels
+        # before doing super().draw(renderer) so we can compute the labelpads
+        # but they must actually be drawn *after* the super().draw().
+
+        if self._grid_visible:
+            # Turn this into a one-stop shop.
+            self.gridlines._grid_helper.update_lim(self)
+            self.gridlines.set_clip_box(self.bbox)
+
+            # We only do labels if we have grid lines.
+            for lon_or_lat, side in [("lon", "top"), ("lon", "bottom"), ("lat", "left"), ("lat", "right")]:
+                if self._ticklabels_visibility[self._ticklabels[side]._axis_direction]:
+                    tick_iter = self.gridlines.get_tick_iterator(lon_or_lat, side)
+                    self._ticklabels[side].set_from_tick_iterator(tick_iter)
+                    self._ticklabels[side].draw(renderer)
+                    if side == "top" or side == "bottom":
+                        xaxis_pad = max(xaxis_pad, self._ticklabels[side]._axislabel_pad)
+                    else:
+                        yaxis_pad = max(yaxis_pad, self._ticklabels[side]._axislabel_pad)
+
+        # This is close ...
+        # Okay 13 isn't right, but there's a small pad that needs to be converted.
+        self.xaxis.labelpad = xaxis_pad/renderer.points_to_pixels(1.0) + 13 # + Plus something?
+        self.yaxis.labelpad = yaxis_pad/renderer.points_to_pixels(1.0) + 13 # + plus something?
+
+        super().draw(renderer)
+
+        if self._grid_visible:
+            # These must be drawn on top.
+            self.gridlines.draw(renderer)
 
     def set_lon_ticklabel_params(self, side, *, fontsize=None, pad=None, visible=None):
         """
@@ -484,7 +518,7 @@ class SkyAxes(matplotlib.axes.Axes):
     def lat_0(self):
         return self.projection.lat_0
 
-    def set_xlabel(self, xlabel, labelpad=20, fontsize="xx-large", **kwargs):
+    def set_xlabel(self, xlabel, labelpad=0, fontsize="xx-large", **kwargs):
         """Set the label on the x axis.
 
         Parameters
@@ -500,7 +534,7 @@ class SkyAxes(matplotlib.axes.Axes):
         """
         return super().set_xlabel(xlabel, labelpad=labelpad, fontsize=fontsize, **kwargs)
 
-    def set_ylabel(self, ylabel, labelpad=20, fontsize="xx-large", **kwargs):
+    def set_ylabel(self, ylabel, labelpad=0, fontsize="xx-large", **kwargs):
         """Set the label on the y axis.
 
         Parameters
