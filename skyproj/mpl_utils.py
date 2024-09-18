@@ -130,6 +130,7 @@ class SkyTickLabels(TickLabels):
 
         self._axis_direction = axis_direction
         self._visible = visible
+        self._padding_computed = False
         # self.zorder = 10
 
     @property
@@ -169,12 +170,14 @@ class SkyTickLabels(TickLabels):
             whd_list.append(whd)
         return whd_list
 
-    def draw(self, renderer):
+    def compute_padding(self, renderer):
+        # This must be called before draw()
+
         if not self.get_visible():
             self._axislabel_pad = self._external_pad
             return
 
-        print("SkyTickLabels: ", self.zorder)
+        self._padding_computed = True
 
         r, total_width = self._get_ticklabels_offsets(renderer,
                                                       self._axis_direction)
@@ -182,12 +185,27 @@ class SkyTickLabels(TickLabels):
         pad = self._external_pad + renderer.points_to_pixels(self.get_pad())
         self._offset_radius = r + pad
 
+        self._axislabel_pad = total_width + pad
+
+    def draw(self, renderer):
+        if not self._padding_computed:
+            self.compute_padding(renderer)
+
+        if not self.get_visible():
+            return
+
+        print("SkyTickLabels: ", self.zorder)
+
         ha_default = self.get_ha()
         va_default = self.get_va()
 
         for ((x, y), a, l), (ha, va) in zip(self._locs_angles_labels, self._alignments):
             if not l.strip():
                 continue
+
+            override_ha = False
+            override_va = False
+
             self._ref_angle = a
             self.set_x(x)
             self.set_y(y)
@@ -195,14 +213,20 @@ class SkyTickLabels(TickLabels):
                 self.set_ha(ha_default)
             else:
                 self.set_ha(ha)
+                override_ha = True
             if va == "":
                 self.set_va(va_default)
             else:
                 self.set_va(va)
-            # print("setting text to ", x, y, a, ha, va, ha_default, va_default, l)
+                override_va = True
             self.set_text(l)
             LabelBase.draw(self, renderer)
 
-        # the value saved will be used to draw axislabel.
-        self._axislabel_pad = total_width + pad
-        print(self._axis_direction, total_width, pad, self._external_pad, self._axislabel_pad)
+            # Reset if necessary.
+            if override_ha:
+                self.set_ha(ha_default)
+            if override_va:
+                self.set_va(va_default)
+
+        # Reset this variable.
+        self._padding_computed = False
