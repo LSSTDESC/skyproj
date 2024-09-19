@@ -44,7 +44,6 @@ class SkyAxes(matplotlib.axes.Axes):
 
         self._ticklabels = {
             "left": SkyTickLabels(
-                axis=self.yaxis,
                 axis_direction="left",
                 figure=self.figure,
                 transform=self.transData,
@@ -52,7 +51,6 @@ class SkyAxes(matplotlib.axes.Axes):
                 pad=mpl.rcParams["ytick.major.pad"],
             ),
             "right": SkyTickLabels(
-                axis=self.yaxis,
                 axis_direction="right",
                 figure=self.figure,
                 transform=self.transData,
@@ -60,7 +58,6 @@ class SkyAxes(matplotlib.axes.Axes):
                 pad=mpl.rcParams["ytick.major.pad"],
             ),
             "top": SkyTickLabels(
-                axis=self.xaxis,
                 axis_direction="top",
                 figure=self.figure,
                 transform=self.transData,
@@ -68,7 +65,6 @@ class SkyAxes(matplotlib.axes.Axes):
                 pad=mpl.rcParams["xtick.major.pad"],
             ),
             "bottom": SkyTickLabels(
-                axis=self.xaxis,
                 axis_direction="bottom",
                 figure=self.figure,
                 transform=self.transData,
@@ -103,7 +99,7 @@ class SkyAxes(matplotlib.axes.Axes):
             "labelright": False,
             "labelbottom": False,
             "labeltop": False,
-            }
+        }
         self.xaxis.set_tick_params(**tick_param_dict)
         self.yaxis.set_tick_params(**tick_param_dict)
 
@@ -199,8 +195,8 @@ class SkyAxes(matplotlib.axes.Axes):
 
         # This is close ...
         # Okay 13 isn't right, but there's a small pad that needs to be converted.
-        self.xaxis.labelpad = xaxis_pad/renderer.points_to_pixels(1.0) + 13 # + Plus something?
-        self.yaxis.labelpad = yaxis_pad/renderer.points_to_pixels(1.0) + 13 # + plus something?
+        self.xaxis.labelpad = xaxis_pad/renderer.points_to_pixels(1.0) + 13  # + Plus something?
+        self.yaxis.labelpad = yaxis_pad/renderer.points_to_pixels(1.0) + 13  # + plus something?
 
         super().draw(renderer)
 

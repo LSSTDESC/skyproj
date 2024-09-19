@@ -2,7 +2,10 @@ import numpy as np
 
 from mpl_toolkits.axisartist.grid_finder import ExtremeFinderSimple
 import mpl_toolkits.axisartist.angle_helper as angle_helper
-from mpl_toolkits.axisartist.axis_artist import TickLabels, LabelBase
+
+import matplotlib.text as mtext
+from matplotlib.transforms import Affine2D
+from matplotlib import _api
 
 from .utils import wrap_values
 
@@ -124,14 +127,208 @@ class ExtremeFinderWrapped(ExtremeFinderSimple):
         return lon_min, lon_max, lat_min, lat_max
 
 
-class SkyTickLabels(TickLabels):
+class SkyTickLabels(mtext.Text):
     def __init__(self, *, axis_direction="bottom", visible=True, **kwargs):
-        super().__init__(axis_direction=axis_direction, **kwargs)
+        super().__init__(**kwargs)
 
-        self._axis_direction = axis_direction
+        # Initialization vendored from AxisLabel.
+        self.set_axis_direction(axis_direction)
+        self._axislabel_pad = 0
+        self._pad = 5
+        self._external_pad = 0
+
+        # Initialization vendored from LabelBase.
+        self.locs_and_labels = []
+        self._ref_angle = 0
+        self._offset_radius = 0.
+        self.set_rotation_mode("anchor")
+        self._text_follow_ref_angle = True
+
+        # Extra initialization.
         self._visible = visible
         self._padding_computed = False
-        # self.zorder = 10
+
+    # ==================================================
+    # The following methods are vendored from AxisLabel.
+    def get_pad(self):
+        """
+        Return the internal pad in points.
+
+        See `.set_pad` for more details.
+        """
+        return self._pad
+
+    def set_pad(self, pad):
+        """
+        Set the internal pad in points.
+
+        The actual pad will be the sum of the internal pad and the
+        external pad (the latter is set automatically by the `.AxisArtist`).
+
+        Parameters
+        ----------
+        pad : float
+            The internal pad in points.
+        """
+        self._pad = pad
+
+    def set_default_alignment(self, d):
+        """
+        Set the default alignment. See `set_axis_direction` for details.
+
+        Parameters
+        ----------
+        d : {"left", "bottom", "right", "top"}
+        """
+        va, ha = _api.check_getitem(self._default_alignments, d=d)
+        self.set_va(va)
+        self.set_ha(ha)
+
+    def set_default_angle(self, d):
+        """
+        Set the default angle. See `set_axis_direction` for details.
+
+        Parameters
+        ----------
+        d : {"left", "bottom", "right", "top"}
+        """
+        self.set_rotation(_api.check_getitem(self._default_angles, d=d))
+
+    def set_axis_direction(self, d):
+        """
+        Adjust the text angle and text alignment of axis label
+        according to the matplotlib convention.
+
+        =====================    ========== ========= ========== ==========
+        Property                 left       bottom    right      top
+        =====================    ========== ========= ========== ==========
+        axislabel angle          180        0         0          180
+        axislabel va             center     top       center     bottom
+        axislabel ha             right      center    right      center
+        =====================    ========== ========= ========== ==========
+
+        Note that the text angles are actually relative to (90 + angle
+        of the direction to the ticklabel), which gives 0 for bottom
+        axis.
+
+        Parameters
+        ----------
+        d : {"left", "bottom", "right", "top"}
+        """
+        self.set_default_alignment(d)
+        self.set_default_angle(d)
+        self._axis_direction = d
+
+    # The previous methods are vendored from AxisLabel.
+    # =================================================
+
+    # =================================================
+    # The following methods are vendored from TickLabel.
+
+    _default_alignments = dict(left=("center", "right"),
+                               right=("center", "left"),
+                               bottom=("baseline", "center"),
+                               top=("baseline", "center"))
+
+    _default_angles = dict(left=90,
+                           right=-90,
+                           bottom=0,
+                           top=180)
+
+    def set_locs_angles_labels(self, locs_angles_labels):
+        self._locs_angles_labels = locs_angles_labels
+
+    def get_texts_widths_heights_descents(self, renderer):
+        """
+        Return a list of ``(width, height, descent)`` tuples for ticklabels.
+
+        Empty labels are left out.
+        """
+        whd_list = []
+        for (_loc, _angle, label), outer in zip(self._locs_angles_labels, self._outers):
+            if not label.strip() or not outer:
+                continue
+            clean_line, ismath = self._preprocess_math(label)
+            whd = renderer.get_text_width_height_descent(
+                clean_line, self._fontproperties, ismath=ismath)
+            whd_list.append(whd)
+        return whd_list
+
+    def _get_ticklabels_offsets(self, renderer, label_direction):
+        """
+        Calculate the ticklabel offsets from the tick and their total heights.
+
+        The offset only takes account the offset due to the vertical alignment
+        of the ticklabels: if axis direction is bottom and va is 'top', it will
+        return 0; if va is 'baseline', it will return (height-descent).
+        """
+        whd_list = self.get_texts_widths_heights_descents(renderer)
+
+        if not whd_list:
+            return 0, 0
+
+        r = 0
+        va, ha = self.get_va(), self.get_ha()
+
+        if label_direction == "left":
+            pad = max(w for w, h, d in whd_list)
+            if ha == "left":
+                r = pad
+            elif ha == "center":
+                r = .5 * pad
+        elif label_direction == "right":
+            pad = max(w for w, h, d in whd_list)
+            if ha == "right":
+                r = pad
+            elif ha == "center":
+                r = .5 * pad
+        elif label_direction == "bottom":
+            pad = max(h for w, h, d in whd_list)
+            if va == "bottom":
+                r = pad
+            elif va == "center":
+                r = .5 * pad
+            elif va == "baseline":
+                max_ascent = max(h - d for w, h, d in whd_list)
+                max_descent = max(d for w, h, d in whd_list)
+                r = max_ascent
+                pad = max_ascent + max_descent
+        elif label_direction == "top":
+            pad = max(h for w, h, d in whd_list)
+            if va == "top":
+                r = pad
+            elif va == "center":
+                r = .5 * pad
+            elif va == "baseline":
+                max_ascent = max(h - d for w, h, d in whd_list)
+                max_descent = max(d for w, h, d in whd_list)
+                r = max_descent
+                pad = max_ascent + max_descent
+
+        # r : offset
+        # pad : total height of the ticklabels. This will be used to
+        # calculate the pad for the axislabel.
+        return r, pad
+
+    # The previous methods are vendored from TickLabel.
+    # =================================================
+
+    # =================================================
+    # The following methods are vendored from LabelBase.
+
+    @property
+    def _offset_ref_angle(self):
+        return self._ref_angle
+
+    @property
+    def _text_ref_angle(self):
+        if self._text_follow_ref_angle:
+            return self._ref_angle + 90
+        else:
+            return 0
+
+    # The previous methods are vendored from LabelBase.
+    # =================================================
 
     @property
     def visible(self):
@@ -153,22 +350,6 @@ class SkyTickLabels(TickLabels):
             self._outers.append(outer)
 
         self.set_locs_angles_labels(ticklabels_loc_angle_label)
-
-    def get_texts_widths_heights_descents(self, renderer):
-        """
-        Return a list of ``(width, height, descent)`` tuples for ticklabels.
-
-        Empty labels are left out.
-        """
-        whd_list = []
-        for (_loc, _angle, label), outer in zip(self._locs_angles_labels, self._outers):
-            if not label.strip() or not outer:
-                continue
-            clean_line, ismath = self._preprocess_math(label)
-            whd = renderer.get_text_width_height_descent(
-                clean_line, self._fontproperties, ismath=ismath)
-            whd_list.append(whd)
-        return whd_list
 
     def compute_padding(self, renderer):
         # This must be called before draw()
@@ -194,8 +375,6 @@ class SkyTickLabels(TickLabels):
         if not self.get_visible():
             return
 
-        print("SkyTickLabels: ", self.zorder)
-
         ha_default = self.get_ha()
         va_default = self.get_va()
 
@@ -220,7 +399,21 @@ class SkyTickLabels(TickLabels):
                 self.set_va(va)
                 override_va = True
             self.set_text(l)
-            LabelBase.draw(self, renderer)
+
+            # The following code is adapted from LabelBase.draw()
+            # save original and adjust some properties
+            tr = self.get_transform()
+            angle_orig = self.get_rotation()
+            theta = np.deg2rad(self._offset_ref_angle)
+            dd = self._offset_radius
+            dx, dy = dd * np.cos(theta), dd * np.sin(theta)
+
+            self.set_transform(tr + Affine2D().translate(dx, dy))
+            self.set_rotation(self._text_ref_angle + angle_orig)
+            super().draw(renderer)
+            # restore original properties
+            self.set_transform(tr)
+            self.set_rotation(angle_orig)
 
             # Reset if necessary.
             if override_ha:
