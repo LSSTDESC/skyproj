@@ -378,6 +378,9 @@ class SkyTickLabels(mtext.Text):
         ha_default = self.get_ha()
         va_default = self.get_va()
 
+        tr = self.get_transform()
+        angle_orig = self.get_rotation()
+
         for ((x, y), a, l), (ha, va) in zip(self._locs_angles_labels, self._alignments):
             if not l.strip():
                 continue
@@ -401,9 +404,6 @@ class SkyTickLabels(mtext.Text):
             self.set_text(l)
 
             # The following code is adapted from LabelBase.draw()
-            # save original and adjust some properties
-            tr = self.get_transform()
-            angle_orig = self.get_rotation()
             theta = np.deg2rad(self._offset_ref_angle)
             dd = self._offset_radius
             dx, dy = dd * np.cos(theta), dd * np.sin(theta)
@@ -411,15 +411,12 @@ class SkyTickLabels(mtext.Text):
             self.set_transform(tr + Affine2D().translate(dx, dy))
             self.set_rotation(self._text_ref_angle + angle_orig)
             super().draw(renderer)
-            # restore original properties
-            self.set_transform(tr)
-            self.set_rotation(angle_orig)
 
-            # Reset if necessary.
-            if override_ha:
-                self.set_ha(ha_default)
-            if override_va:
-                self.set_va(va_default)
+        # Restore original properties
+        self.set_transform(tr)
+        self.set_rotation(angle_orig)
+        self.set_ha(ha_default)
+        self.set_va(va_default)
 
         # Reset this variable.
         self._padding_computed = False
