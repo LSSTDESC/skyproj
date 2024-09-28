@@ -80,6 +80,9 @@ class SkyAxes(matplotlib.axes.Axes):
             "bottom": True,
         }
 
+        self._xlabelpad = mpl.rcParams["axes.labelpad"]
+        self._ylabelpad = mpl.rcParams["axes.labelpad"]
+
         # This needs to happen to make sure that it's all set correctly.
         self.clear()
 
@@ -193,10 +196,8 @@ class SkyAxes(matplotlib.axes.Axes):
                     else:
                         yaxis_pad = max(yaxis_pad, self._ticklabels[side]._axislabel_pad)
 
-        # This is close ...
-        # Okay 13 isn't right, but there's a small pad that needs to be converted.
-        self.xaxis.labelpad = xaxis_pad/renderer.points_to_pixels(1.0) + 13  # + Plus something?
-        self.yaxis.labelpad = yaxis_pad/renderer.points_to_pixels(1.0) + 13  # + plus something?
+        self.xaxis.labelpad = xaxis_pad/renderer.points_to_pixels(1.0) + self._xlabelpad
+        self.yaxis.labelpad = yaxis_pad/renderer.points_to_pixels(1.0) + self._ylabelpad
 
         super().draw(renderer)
 
@@ -519,37 +520,36 @@ class SkyAxes(matplotlib.axes.Axes):
     def lat_0(self):
         return self.projection.lat_0
 
-    def set_xlabel(self, xlabel, labelpad=0, fontsize="xx-large", **kwargs):
+    def set_xlabel(self, xlabel, fontsize="xx-large", **kwargs):
         """Set the label on the x axis.
 
         Parameters
         ----------
         xlabel : `str`
             x label string.
-        labelpad : `int`, optional
-            Padding from the map.
         fontsize : `int` or `str`, optional
             Font size for label.
         **kwargs : `dict`
             Additional keyword arguments accepted by ax.set_xlabel().
         """
-        return super().set_xlabel(xlabel, labelpad=labelpad, fontsize=fontsize, **kwargs)
+        self._xlabelpad = kwargs.pop("labelpad", mpl.rcParams["axes.labelpad"])
+        # self._xlabelpad = labelpad
+        return super().set_xlabel(xlabel, labelpad=0, fontsize=fontsize, **kwargs)
 
-    def set_ylabel(self, ylabel, labelpad=0, fontsize="xx-large", **kwargs):
+    def set_ylabel(self, ylabel, fontsize="xx-large", **kwargs):
         """Set the label on the y axis.
 
         Parameters
         ----------
         ylabel : `str`
             y label string.
-        labelpad : `int`, optional
-            Padding from the map.
         fontsize : `int` or `str`, optional
             Font size for label.
         **kwargs : `dict`
             Additional keyword arguments accepted by ax.set_ylabel().
         """
-        return super().set_ylabel(ylabel, labelpad=labelpad, fontsize=fontsize, **kwargs)
+        self._ylabelpad = kwargs.pop("labelpad", mpl.rcParams["axes.labelpad"])
+        return super().set_ylabel(ylabel, labelpad=0, fontsize=fontsize, **kwargs)
 
     def update_projection(self, crs_new):
         """Update the projection central coordinate.
