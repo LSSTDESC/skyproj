@@ -106,8 +106,6 @@ class _Skyproj():
         self._crs_orig = crs
         self._reprojected = False
 
-        # self._aa = None
-
         self.do_celestial = celestial
         self.do_gridlines = gridlines
         self._autorescale = autorescale
@@ -131,7 +129,6 @@ class _Skyproj():
             extent_xy = None
 
         self._boundary_lines = None
-        self._boundary_labels = []
 
         if "axes.labelsize" not in rcparams:
             rcparams["axes.labelsize"] = 16
@@ -143,14 +140,13 @@ class _Skyproj():
             self._add_change_axis_callbacks()
 
             # Set up callback on figure resize.
-            self._frc = self.ax.figure.canvas.mpl_connect('resize_event', self._change_size)
             self._dc = self.ax.figure.canvas.mpl_connect('draw_event', self._draw_callback)
             self._initial_extent_xy = [0]*4
 
             # Set up reproject callback.
             self._rpc = self.ax.figure.canvas.mpl_connect('key_press_event', self._keypress_callback)
 
-            self._draw_aa_bounds_and_labels()
+            self._draw_bounds()
 
     def proj(self, lon, lat):
         """Apply forward projection to a set of lon/lat positions.
@@ -240,10 +236,10 @@ class _Skyproj():
         self._set_axes_limits(extent, invert=self.do_celestial)
         self._extent_xy = self._ax.get_extent(lonlat=False)
 
-        self._draw_aa_bounds_and_labels()
+        self._draw_bounds()
 
-    def _draw_aa_bounds_and_labels(self):
-        """Set the axisartist bounds and labels."""
+    def _draw_bounds(self):
+        """Draw the map boundary."""
         # Remove any previous lines
         if self._boundary_lines:
             for line in self._boundary_lines:
@@ -260,231 +256,6 @@ class _Skyproj():
                                              lonlat=False,
                                              clip_on=False,
                                              linewidth=plt.rcParams['axes.linewidth'])
-
-        # Remove any previous labels
-        if self._boundary_labels:
-            for label in self._boundary_labels:
-                label.remove()
-            self._boundary_labels = []
-
-    def _draw_aa_lat_labels(self, extent_xy, grid_info, factor):
-        """Draw axis artist latitude labels.
-
-        Parameters
-        ----------
-        extent_xy : `list`
-            Extent in x/y space
-        grid_info : `dict`
-            Grid info to determine label locations
-        factor : `float`
-            Multiplicative factor to convert ticks to values.
-
-        Returns
-        -------
-        labels : `list` [`matplotlib.Text`]
-        """
-        raise NotImplementedError("Should not call draw_aa_lat_labels")
-
-        levels = grid_info['lat']['levels']
-        lines = grid_info['lat']['lines']
-
-        inverted = (extent_xy[1] < extent_xy[0])
-
-        # The grid_info will be reversed left/right if the axis is inverted.
-        if inverted:
-            gi_side_map = {'left': 'right',
-                           'right': 'left'}
-            x0_index = 1
-            x1_index = 0
-        else:
-            gi_side_map = {side: side for side in ['left', 'right']}
-            x0_index = 0
-            x1_index = 1
-
-        boundary_labels = []
-
-        for axis_side in ['left',]: # 'right']:
-            # if not self._aa.axis[axis_side].major_ticklabels.get_visible():
-            #     continue
-
-            tick_levels = grid_info['lat']['tick_levels'][gi_side_map[axis_side]]
-
-            for lat_level, lat_line in zip(levels, lines):
-                if np.abs(np.abs(lat_level) - 90.0) < 1.0:
-                    continue
-
-                # if int(lat_level*factor) in tick_levels:
-                #     continue
-
-                lat_line_x = lat_line[0][0]
-                lat_line_y = lat_line[0][1]
-
-                if gi_side_map[axis_side] == 'right':
-                    lat_line_x = lat_line_x[::-1]
-                    lat_line_y = lat_line_y[::-1]
-
-                if axis_side == 'left':
-                    ha = 'right'
-                else:
-                    ha = 'left'
-
-                # We need middle even thing ... but that's
-                # actually not what is going on.  
-                if lat_level < 0.0:
-                    va = 'top'
-                elif lat_level == 0.0:
-                    va = 'center'
-                else:
-                    va = 'bottom'
-
-                # Skip any that are out of the y bounding box.
-                if lat_line_y[0] < extent_xy[2] or lat_line_y[0] > extent_xy[3]:
-                    continue
-
-                if lat_line_x[0] < extent_xy[x0_index] or lat_line_x[0] > extent_xy[x1_index]:
-                    continue
-
-                label = self._tick_formatter2(axis_side, factor, [lat_level])[0]
-
-                boundary_labels.append(self._ax.text(lat_line_x[0],
-                                                     lat_line_y[0],
-                                                     label,
-                                                     size=plt.rcParams['ytick.labelsize'],
-                                                     lonlat=False,
-                                                     clip_on=False,
-                                                     ha=ha,
-                                                     va=va))
-        return boundary_labels
-
-    def _draw_aa_lon_labels(self, extent_xy, grid_info, factor):
-        """Draw axis artist latitude labels.
-
-        Parameters
-        ----------
-        extent_xy : `list`
-            Extent in x/y space
-        grid_info : `dict`
-            Grid info to determine label locations
-        factor : `float`
-            Multiplicative factor to convert ticks to values.
-
-        Returns
-        -------
-        labels : `list` [`matplotlib.Text`]
-        """
-        raise NotImplementedError("Should not call draw_aa_lat_labels")
-
-        levels = grid_info['lon']['levels']
-        lines = grid_info['lon']['lines']
-
-        # Need to compute maximum extent in the x direction
-        x_min = 1e100
-        x_max = -1e100
-        for line in grid_info['lon_lines']:
-            x_min = min((x_min, np.min(line[0])))
-            x_max = max((x_max, np.max(line[0])))
-        delta_x = x_max - x_min
-
-        # The grid_info will be reversed left/right if the axis is inverted.
-        inverted = (extent_xy[1] < extent_xy[0])
-        if inverted:
-            x0_index = 1
-            x1_index = 0
-        else:
-            x0_index = 0
-            x1_index = 1
-
-        boundary_labels = []
-
-        draw_equatorial_labels = False
-        if self._equatorial_labels:
-            min_lat = np.min(grid_info['lat']['levels'])
-            max_lat = np.max(grid_info['lat']['levels'])
-            if min_lat < -89.0 and max_lat > 89.0:
-                draw_equatorial_labels = True
-
-        if draw_equatorial_labels:
-            levels = np.array(grid_info['lon']['levels'])
-
-            x, y = self.proj(levels, np.zeros(len(levels)))
-
-            ok, = np.where((x > extent_xy[x0_index]) & (x < extent_xy[x1_index])
-                           & (y > extent_xy[2]) & (y < extent_xy[3]))
-
-            prev_x = None
-            for i in ok:
-                if prev_x is not None:
-                    # Check if too close to last label.
-                    if abs(x[i] - prev_x)/delta_x < self._min_lon_ticklabel_delta:
-                        continue
-                prev_x = x[i]
-
-                label = self._tick_formatter1('top', factor, [levels[i]])[0]
-
-                boundary_labels.append(self._ax.text(x[i],
-                                                     y[i],
-                                                     label,
-                                                     size=plt.rcParams['xtick.labelsize'],
-                                                     lonlat=False,
-                                                     clip_on=False,
-                                                     ha='right',
-                                                     va='bottom'))
-        else:
-            for axis_side in ['top', 'bottom']:
-                # if not self._aa.axis[axis_side].major_ticklabels.get_visible():
-                #     continue
-
-                if self._radial_labels and axis_side == 'bottom':
-                    continue
-
-                if axis_side == 'top':
-                    line_index = -1
-                else:
-                    line_index = 0
-
-                tick_levels = grid_info['lon']['tick_levels'][axis_side]
-
-                prev_x = None
-                for lon_level, lon_line in zip(levels, lines):
-                    if int(lon_level*factor) in tick_levels:
-                        continue
-
-                    lon_line_x = lon_line[0][0]
-                    lon_line_y = lon_line[0][1]
-
-                    if lon_line_x[line_index] < extent_xy[x0_index] or \
-                       lon_line_x[line_index] > extent_xy[x1_index] \
-                       or lon_line_y[line_index] < extent_xy[2] or \
-                       lon_line_y[line_index] > extent_xy[3]:
-                        continue
-
-                    if axis_side == 'top':
-                        va = 'bottom'
-                        index = -1
-                        y_offset = 0.02*(lon_line_y[-1] - lon_line_y[0])
-                    else:
-                        va = 'top'
-                        index = 0
-                        y_offset = -0.02*(lon_line_y[-1] - lon_line_y[0])
-
-                    if prev_x is not None:
-                        # check if too close to last label.
-                        if abs(lon_line_x[index] - prev_x)/delta_x < self._min_lon_ticklabel_delta:
-                            continue
-
-                    prev_x = lon_line_x[index]
-
-                    label = self._tick_formatter1(axis_side, factor, [lon_level])[0]
-                    boundary_labels.append(self._ax.text(lon_line_x[index],
-                                                         lon_line_y[index] + y_offset,
-                                                         label,
-                                                         size=plt.rcParams['xtick.labelsize'],
-                                                         lonlat=False,
-                                                         clip_on=False,
-                                                         ha='center',
-                                                         va=va))
-
-        return boundary_labels
 
     def get_extent(self):
         """Get the extent in lon/lat coordinates.
@@ -648,11 +419,7 @@ class _Skyproj():
         self._changed_y_axis = False
         self._extent_xy = extent_xy
 
-        # This synchronizes the axis artist to the plot axes after zoom.
-        # if self._aa is not None:
-        #     self._aa.set_position(self._ax.get_position(), which='original')
-
-        self._draw_aa_bounds_and_labels()
+        self._draw_bounds()
 
         if gone_home:
             lon_range = self._redraw_dict['lon_range_home']
@@ -728,22 +495,7 @@ class _Skyproj():
             else:
                 self._redraw_dict['inset_colorbar'].update_normal(mappable)
 
-    def _change_size(self, event):
-        """Callback for figure resize.
-
-        Parameters
-        ----------
-        event : `matplotlib.backend_bases.Event`
-        """
-        # FIXME this probably isn't needed at all.
-
-        # This synchronizes the axis artist to the plot axes after zoom.
-        # if self._aa is not None:
-        #     self._aa.set_position(self._ax.get_position(), which='original')
-        pass
-
     def _draw_callback(self, event):
-
         # We need to set the initial extent on first draw
         if np.allclose(self._initial_extent_xy, 0):
             self._initial_extent_xy = self._ax.get_extent(lonlat=False)
