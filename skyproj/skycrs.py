@@ -1,6 +1,5 @@
 import math
 import numpy as np
-import functools
 
 from pyproj import CRS
 from pyproj import Transformer

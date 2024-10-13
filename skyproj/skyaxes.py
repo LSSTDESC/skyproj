@@ -6,12 +6,10 @@ import matplotlib as mpl
 import matplotlib.axes
 from pyproj import Geod
 
-from .skycrs import PlateCarreeCRS, proj, proj_inverse
+from .skycrs import PlateCarreeCRS
 from .utils import wrap_values
 from .skygrid import SkyGridlines, SkyGridHelper
-from .mpl_utils import ExtremeFinderWrapped, WrappedFormatterDMS, SkyTickLabels
-from matplotlib.transforms import (
-    Affine2D, Bbox, IdentityTransform, ScaledTranslation)
+from .mpl_utils import SkyTickLabels
 
 
 __all__ = ["SkyAxes"]

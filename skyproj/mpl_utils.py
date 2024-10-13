@@ -401,9 +401,6 @@ class SkyTickLabels(mtext.Text):
             if not l.strip():
                 continue
 
-            override_ha = False
-            override_va = False
-
             self._ref_angle = a
             self.set_x(x)
             self.set_y(y)
@@ -411,12 +408,10 @@ class SkyTickLabels(mtext.Text):
                 self.set_ha(ha_default)
             else:
                 self.set_ha(ha)
-                override_ha = True
             if va == "":
                 self.set_va(va_default)
             else:
                 self.set_va(va)
-                override_va = True
             self.set_text(l)
 
             # The following code is adapted from LabelBase.draw()
