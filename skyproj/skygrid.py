@@ -1,7 +1,7 @@
 import functools
 import numpy as np
 import matplotlib.collections
-from matplotlib.transforms import Bbox, Transform
+from matplotlib.transforms import Bbox
 
 from .skycrs import proj, proj_inverse
 from .mpl_utils import ExtremeFinderWrapped, WrappedFormatterDMS
@@ -289,15 +289,15 @@ class SkyGridHelper:
             if np.min(lat_values) < -89.0 and np.max(lat_values) > 89.0:
                 use_equatorial_labels = True
 
-        inverted = False
+        # inverted = False
         if x1 < x2:
-            gi_side_map = {side: side for side in ['left', 'right']}
+            # gi_side_map = {side: side for side in ['left', 'right']}
             min_x = x1
             max_x = x2
         else:
-            gi_side_map = {'left': 'right',
-                           'right': 'left'}
-            inverted = True
+            # gi_side_map = {'left': 'right',
+            #                'right': 'left'}
+            # inverted = True
             min_x = x2
             max_x = x1
 
@@ -306,7 +306,7 @@ class SkyGridHelper:
                 ("lat", lat_levs, lat_factor, lat_values, lat_lines),
         ]:
             grid_info[lon_or_lat] = gi = {
-                "lines": [[l] for l in lines],
+                "lines": [[line] for line in lines],
                 "ticks": {"left": [], "right": [], "bottom": [], "top": []},
             }
             for (lx, ly), v, level in zip(lines, values, levs):
