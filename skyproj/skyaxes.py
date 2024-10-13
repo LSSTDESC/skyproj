@@ -39,9 +39,6 @@ class SkyAxes(matplotlib.axes.Axes):
 
         super().__init__(*args, **kwargs)
 
-        # And here we will need x top and bottom, y left not right.
-        # So we need to figure out how to specify these, etc.
-
         self._ticklabels = {
             "left": SkyTickLabels(
                 axis_direction="left",
@@ -91,8 +88,6 @@ class SkyAxes(matplotlib.axes.Axes):
         result = super().clear()
 
         # This will turn off all the built-in ticks.
-        # FIXME add in checks for these so that we can catch them...
-        # if possible.
         tick_param_dict = {
             "left": False,
             "right": False,
@@ -113,29 +108,21 @@ class SkyAxes(matplotlib.axes.Axes):
 
         self._set_artist_props(self.gridlines)
 
-        # FIXME: this should probably reset the ticklabel thingies.
-
         return result
 
-    # This could be modified to add n_grid_lon, n_grid_lat,
-    # longitude ticks (?) oh yes because those will be here.
-    # Also celestial... all of these things should be done here.
     def grid(self, visible=False, which="major", axis="both",
              n_grid_lon=None, n_grid_lat=None,
              longitude_ticks="positive", equatorial_labels=False, celestial=True,
              full_circle=False, wrap=0.0, min_lon_ticklabel_delta=0.1,
              **kwargs):
-        self._grid_visible = visible
+        # docstring inherited
 
-        # FIXME: do logic correctly to make sure everything is set up
-        # when we want it.  Note that grid() is called randomly by
-        # something in the code chain along the way.
+        self._grid_visible = visible
 
         if visible:
             # Set up grid finder and grid lines.
 
             grid_helper = SkyGridHelper(
-                self,
                 self.projection,
                 wrap,
                 n_grid_lon_default=n_grid_lon,
@@ -146,6 +133,7 @@ class SkyAxes(matplotlib.axes.Axes):
                 full_circle=full_circle,
                 min_lon_ticklabel_delta=min_lon_ticklabel_delta,
             )
+            grid_helper.update_lim(self)
 
             self.gridlines.set_grid_helper(grid_helper)
 
@@ -153,33 +141,19 @@ class SkyAxes(matplotlib.axes.Axes):
         # are all in projected coordinates.
         self.gridlines.set(**kwargs)
 
-    def draw_orig(self, renderer):
-        super().draw(renderer)
-
-        if self._grid_visible:
-            # Turn this into a one-stop shop.
-            self.gridlines._grid_helper.update_lim(self)
-            self.gridlines.set_clip_box(self.bbox)
-            self.gridlines.draw(renderer)
-
-        for lon_or_lat, side in [("lon", "top"), ("lon", "bottom"), ("lat", "left"), ("lat", "right")]:
-            if self._ticklabels_visibility[self._ticklabels[side]._axis_direction]:
-                tick_iter = self.gridlines.get_tick_iterator(lon_or_lat, side)
-                self._ticklabels[side].set_from_tick_iterator(tick_iter)
-                self._ticklabels[side].draw(renderer)
-
     def draw(self, renderer):
+        # docstring inherited
+
+        # Note that we first need to compute all the lon/lat label locations
+        # and sizes to know the correct padding for the axis label.  But
+        # we need to defer drawing of the labels until the end to ensure that
+        # they end up on top.
         xaxis_pad, yaxis_pad = 0.0, 0.0
-
-        print("SkyAxes: ", self.zorder)
-
-        # Basic problem: we need to compute all the spacings from the labels
-        # before doing super().draw(renderer) so we can compute the labelpads
-        # but they must actually be drawn *after* the super().draw().
 
         labels_to_draw = []
         if self._grid_visible:
-            # Turn this into a one-stop shop.
+            # We need to update the limits and ensure the gridlines know
+            # about the limits for clipping.
             self.gridlines._grid_helper.update_lim(self)
             self.gridlines.set_clip_box(self.bbox)
 
@@ -188,7 +162,6 @@ class SkyAxes(matplotlib.axes.Axes):
                 if self._ticklabels_visibility[self._ticklabels[side]._axis_direction]:
                     tick_iter = self.gridlines.get_tick_iterator(lon_or_lat, side)
                     self._ticklabels[side].set_from_tick_iterator(tick_iter)
-                    # self._ticklabels[side].draw(renderer)
                     self._ticklabels[side].compute_padding(renderer)
                     labels_to_draw.append(self._ticklabels[side])
                     if side == "top" or side == "bottom":
@@ -202,58 +175,13 @@ class SkyAxes(matplotlib.axes.Axes):
         super().draw(renderer)
 
         if self._grid_visible:
-            # These must be drawn on top.
+            # Gridlines and ra/dec labels must be drawn on top.
             self.gridlines.draw(renderer)
             for label_to_draw in labels_to_draw:
                 label_to_draw.draw(renderer)
 
-    def set_lon_ticklabel_params(self, side, *, fontsize=None, pad=None, visible=None):
-        """
-        """
-        if visible is not None:
-            if side in ["top", "both"]:
-                self._ticklabels_visibility["top"] = visible
-            if side in ["bottom", "both"]:
-                self._ticklabels_visibility["bottom"] = visible
-
-        if fontsize is not None:
-            if side in ["top", "both"]:
-                self._ticklabels["top"].set_fontsize(fontsize)
-            if side in ["bottom", "both"]:
-                self._ticklabels["bottom"].set_fontsize(fontsize)
-
-        if pad is not None:
-            if side in ["top", "both"]:
-                self._ticklabels["top"].set_pad(pad)
-            if side in ["bottom", "both"]:
-                self._ticklabels["bottom"].set_pad(pad)
-
-    def set_lat_ticklabel_params(self, side, *, fontsize=None, pad=None, visible=None):
-        """
-        """
-        if visible is not None:
-            if side in ["left", "both"]:
-                self._ticklabels_visibility["left"] = visible
-            if side in ["right", "both"]:
-                self._ticklabels_visibility["right"] = visible
-
-        if fontsize is not None:
-            if side in ["left", "both"]:
-                self._ticklabels["left"].set_fontsize(fontsize)
-            if side in ["right", "both"]:
-                self._ticklabels["right"].set_fontsize(fontsize)
-
-        if pad is not None:
-            if side in ["left", "both"]:
-                self._ticklabels["left"].set_pad(pad)
-            if side in ["right", "both"]:
-                self._ticklabels["right"].set_pad(pad)
-
     def invert_xaxis(self):
         super().invert_xaxis()
-
-        # So this takes left and makes it right and vice versa.
-        # I don't think that's what I want.  Well... maybe it is.
 
         if self.xaxis_inverted():
             self._ticklabels["left"].set_axis_direction("right")
@@ -533,7 +461,6 @@ class SkyAxes(matplotlib.axes.Axes):
             Additional keyword arguments accepted by ax.set_xlabel().
         """
         self._xlabelpad = kwargs.pop("labelpad", mpl.rcParams["axes.labelpad"])
-        # self._xlabelpad = labelpad
         return super().set_xlabel(xlabel, labelpad=0, fontsize=fontsize, **kwargs)
 
     def set_ylabel(self, ylabel, fontsize="xx-large", **kwargs):
