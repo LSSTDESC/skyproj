@@ -335,7 +335,14 @@ class SkyTickLabels(mtext.Text):
         return self._visible
 
     def set_from_tick_iterator(self, tick_iter):
-        """
+        """Set label parameters from a tick iterator.
+
+        Parameters
+        ----------
+        tick_iter : `tuple` [`tuple` [`float`], `float`, `float`, `str`, `str`, `bool`
+            Tuple with x/y position, normal angle, tangent angle,
+            label name, alignment string, and whether this is
+            an outer label or not.
         """
         ticklabel_add_angle = dict(left=180, right=0, bottom=0, top=180)[self._axis_direction]
 
@@ -352,8 +359,16 @@ class SkyTickLabels(mtext.Text):
         self.set_locs_angles_labels(ticklabels_loc_angle_label)
 
     def compute_padding(self, renderer):
-        # This must be called before draw()
+        """Compute axis padding from labels.
 
+        This will set the _axislabel_pad attribute based on the sizes
+        of the tick labels, as rendered by the renderer.
+
+        Parameters
+        ----------
+        renderer : `matplotlib.backends.Renderer`
+            Matplotlib renderer
+        """
         if not self.get_visible():
             self._axislabel_pad = self._external_pad
             return
@@ -369,6 +384,7 @@ class SkyTickLabels(mtext.Text):
         self._axislabel_pad = total_width + pad
 
     def draw(self, renderer):
+        # docstring inherited
         if not self._padding_computed:
             self.compute_padding(renderer)
 
