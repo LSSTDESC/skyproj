@@ -367,7 +367,7 @@ class SkyTickLabels(mtext.Text):
         Parameters
         ----------
         renderer : `matplotlib.backends.Renderer`
-            Matplotlib renderer
+            Matplotlib renderer.
         """
         if not self.get_visible():
             self._axislabel_pad = self._external_pad
