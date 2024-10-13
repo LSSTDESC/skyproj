@@ -6,28 +6,9 @@ from matplotlib.transforms import Bbox, Transform
 from .skycrs import proj, proj_inverse
 from .mpl_utils import ExtremeFinderWrapped, WrappedFormatterDMS
 import mpl_toolkits.axisartist.angle_helper as angle_helper
-# from mpl_toolkits.axisartist.axis_artist import TickLabels
-
 
 __all__ = ["SkyGridHelper", "SkyGridlines"]
 
-"""
-Plan on the "Sky Grid Helper"
-
-In the mpl raw there is a grid helper which has a grid finder and this
-extra level of indirection is confusing and unnessary.
-
-The grid helper (SkyGridHelper) will be set up with all the necessary things.
-
-And what it needs to do is be able to `get_gridlines()` and later something with ticks.
-
-You need to first update_lim with an axis.
-
-And that will set the _grid_info.
-
-And this will possible work at this point.
-
-"""
 
 def _find_line_box_crossings(xys, bbox):
     """
@@ -74,6 +55,31 @@ def _find_line_box_crossings(xys, bbox):
 
 def _find_inner_crossings(line_x, line_y, lon_or_lat, min_x, max_x, min_y, max_y):
     """
+    Find projection boundary crossings that are inside the axis bounding box.
+
+    Parameters
+    ----------
+    line_x : `np.ndarray`
+        x coordinates of the line.
+    line_y : `np.ndarray`
+        y coordinates of the line.
+    lon_or_lat : `str`
+        Must be ``lon`` or ``lat``.
+    min_x : `float`
+        Minimum x value of the bounding box.
+    max_x : `float`
+        Maximum x value of the bounding box.
+    min_y : `float`
+        Minimum y value of the bounding box.
+    max_y : `float`
+        Maximum y value of the bounding box.
+
+    Returns
+    -------
+    crossings : `dict` [`str`, `tuple`]
+        A crossing dictionary keyed by side (``left``/``right`` or
+        ``top``/``bottom``) with a tuple of position, angle, and
+        horizontal/vertical alignment strings.
     """
     crossings = {}
     if lon_or_lat == "lat":
@@ -108,11 +114,33 @@ def _find_inner_crossings(line_x, line_y, lon_or_lat, min_x, max_x, min_y, max_y
 
 
 class SkyGridHelper:
-    """
+    """A helper class to compute quantities for a SkyGrid.
+
+    Parameters
+    ----------
+    projection : `skyproj.SkyCRS`
+        Coordinate reference system for this projection.
+    wrap : `float`, optional
+        Wrapping angle (degrees).
+    n_grid_lon_default : `int`, optional
+        Number of longitude grid lines for default.
+    n_grid_lat_default : `int`, optional
+        Number of latitude grid lines for default.
+    longitude_ticks : `str`, optional
+        If this is ``positive`` then longitudes will be from 0 to 360; if it
+        is ``symmetric`` then the longitudes will be from -180 to 180.
+    celestial : `bool`, optional
+        Is this a celestial plot, inverting the latitude?
+    equatorial_labels : `bool`, optional
+        Should this map have longitude labels along the equator?
+    full_circle : `bool`, optional
+        Does this projection have a fully circular boundary?
+    min_lon_ticklabel_delta : `float`, optional
+        What is the minimal fraction of the total x axis size to allow
+        a tick label to be plotted?
     """
     def __init__(
         self,
-        axis,
         projection,
         wrap=0.0,
         n_grid_lon_default=None,
@@ -147,10 +175,19 @@ class SkyGridHelper:
         self._grid_info = None
         self._old_limits = None
 
-        self.update_lim(axis)
-
     def get_gridlines(self, axis="both"):
         """
+        Get the grid lines associated with this grid helper.
+
+        Parameters
+        ----------
+        axis : `str`, optional
+            Get for the ``x`` axis, ``y`` axis, or ``both`` axes.
+
+        Returns
+        -------
+        grid_lines : `list` of xy tuples.
+            The grid lines in projected coordinates.
         """
         if self._grid_info is None:
             raise RuntimeError("Must first call update_lim(axis)")
@@ -220,7 +257,6 @@ class SkyGridHelper:
     def get_grid_info(self, x1, y1, x2, y2):
         """
         """
-
         extremes = self._extreme_finder(self.inv_transform_xy, x1, y1, x2, y2)
 
         # min & max rage of lat (or lon) for each grid line will be drawn.
@@ -274,16 +310,10 @@ class SkyGridHelper:
                 "ticks": {"left": [], "right": [], "bottom": [], "top": []},
             }
             for (lx, ly), v, level in zip(lines, values, levs):
-                # This is not what I want actually.  I need to get in here
-                # and modify to get things that hit the edge!
-                # But there is the thing about the alignment.
-
                 if lon_or_lat == "lon" and use_equatorial_labels:
-                    # print("Here I am!")
                     xy = self.transform_xy(level, 0.0)[:, 0]
                     # Make sure we don't try to label at the extreme edges.
                     if xy[0] > min_x and xy[0] < max_x:
-                        print(level, xy[0], xy[1])
                         gi["ticks"]["top"].append(
                             {
                                 "level": level,
@@ -302,7 +332,15 @@ class SkyGridHelper:
                                 crossing_ = (crossing[0], crossing[1], ("center", ""))
                             gi["ticks"][side].append({"level": level, "loc": crossing_, "outer": True})
 
+                    # Don't mark the inner poles.
+                    if lon_or_lat == "lat" and level in [-90.0, 90.0]:
+                        continue
+                    # Do not draw inner longitudes.
+                    if lon_or_lat == "lon":
+                        continue
+
                     inner_crossings = _find_inner_crossings(lx, ly, lon_or_lat, min_x, max_x, y1, y2)
+
                     for side in ["left", "right", "bottom", "top"]:
                         if side in inner_crossings:
                             gi["ticks"][side].append(
@@ -399,28 +437,57 @@ class SkyGridHelper:
 
 
 class SkyGridlines(matplotlib.collections.LineCollection):
-    """
+    """A class to describe a set of grid lines on a SkyProj plot.
+
+    Parameters
+    ----------
+    segments : `list` [array-like]
+        List of line segments. See matplotlib.collections.LineCollection.
+    grid_helper : `skyproj.SkyGridHelper`, optional
+        Helper class for computing grid values. May be initialized empty,
+        but must be followed up with `set_grid_helper()` later.
     """
     def __init__(self, segments=[], grid_helper=None, **kwargs):
         super().__init__(segments, **kwargs)
 
-        self.set_clip_on(True)
         # Note that this will not work unless you call
         # set_clip_box(axes.bbox) before drawing.
+
+        self.set_clip_on(True)
 
         self._grid_helper = grid_helper
 
     def set_grid_helper(self, grid_helper):
-        """
+        """Set the grid helper.
+
+        Parameters
+        ----------
+        grid_helper : `skyproj.SkyGridHelper`
         """
         self._grid_helper = grid_helper
 
     def get_tick_iterator(self, lon_or_lat, axis_side):
+        """Get a tick iterator from the grid helper.
+
+        Parameters
+        ----------
+        lon_or_lat : `str`
+            String determining whether to return the longitude or latitude
+            tick iterator.
+        axis_side : `str`
+            Axis side for tick iterator (``left``, ``right``, ``top``, or
+            ``bottom``.)
+
+        Returns
+        -------
+        tick_iterator : `Iterator`
+            Iterator with position, normal angle, tangent angle, label name,
+            alignment string, and boolean if it is inner or outer.
+        """
         return self._grid_helper.get_tick_iterator(lon_or_lat, axis_side)
 
     def draw(self, renderer):
-        print("SkyGrid: ", self.zorder)
-
+        # docstring inherited
         gridlines = self._grid_helper.get_gridlines()
 
         self.set_segments([np.transpose(line) for line in gridlines])
