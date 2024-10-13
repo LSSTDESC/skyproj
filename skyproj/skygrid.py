@@ -229,7 +229,12 @@ class SkyGridHelper:
         return gl_new
 
     def update_lim(self, axis):
-        """
+        """Update grid limits.
+
+        Parameters
+        ----------
+        axis : `matplotlib.axis.Axis`
+            Axis to use for limits to create grid limits.
         """
         x1, x2 = axis.get_xlim()
         y1, y2 = axis.get_ylim()
@@ -252,10 +257,39 @@ class SkyGridHelper:
             self._old_limits = (x1, x2, y1, y2)
 
     def _update_grid(self, x1, y1, x2, y2):
-        self._grid_info = self.get_grid_info(x1, y1, x2, y2)
+        """Update the grid based on axis limits.
 
-    def get_grid_info(self, x1, y1, x2, y2):
+        Parameters
+        ----------
+        x1 : `float`
+            Axis lower xlim.
+        x2 : `float`
+            Axis upper xlim.
+        y1 : `float`
+            Axis lower ylim.
+        y2 : `float`
+            Axis upper ylim.
         """
+        self._grid_info = self._get_grid_info(x1, y1, x2, y2)
+
+    def _get_grid_info(self, x1, y1, x2, y2):
+        """Get the grid info structure for this grid.
+
+        Parameters
+        ----------
+        x1 : `float`
+            Axis lower xlim.
+        x2 : `float`
+            Axis upper xlim.
+        y1 : `float`
+            Axis lower ylim.
+        y2 : `float`
+            Axis upper ylim.
+
+        Returns
+        -------
+        grid_info : `dict`
+            Dictionary with ``extremes``, ``bbox``, ``lon``, and ``lat``.
         """
         extremes = self._extreme_finder(self.inv_transform_xy, x1, y1, x2, y2)
 
@@ -374,13 +408,61 @@ class SkyGridHelper:
         return lon_lines, lat_lines
 
     def transform_xy(self, lon, lat):
+        """Transform from lon/lat to x/y.
+
+        Parameters
+        ----------
+        lon : `np.ndarray`
+            Array of longitudes.
+        lat : `np.ndarray`
+            Array of latitudes.
+
+        Returns
+        -------
+        x : `np.ndarray`
+            Array of projected x values.
+        y : `np.ndarray`
+            Array of projected y values.
+        """
         return np.column_stack(self._transform_lonlat_to_xy(lon, lat)).T
 
     def inv_transform_xy(self, x, y):
+        """Transform from x/y to lon/lat.
+
+        Parameters
+        ----------
+        x : `np.ndarray`
+            Array of projected x values.
+        y : `np.ndarray`
+            Array of projected y values.
+
+        Returns
+        -------
+        lon : `np.ndarray`
+            Array of longitudes.
+        lat : `np.ndarray`
+            Array of latitudes.
+        """
         return np.column_stack(self._transform_xy_to_lonlat(x, y)).T
 
     def get_tick_iterator(self, lon_or_lat, axis_side):
-        """
+        """Get the tick iterator for a given axis/side.
+
+        Parameters
+        ----------
+        lon_or_lat : `str`
+            Must be ``lon`` or ``lat``.
+        axis_side : `str`
+            Must be ``left``, ``right``, ``top``, or ``bottom``.
+
+        Returns
+        -------
+        tick_iterator : `Iterator`
+            Iterator with xy (coordinate tuple), angle_normal (normal angle
+            to the axis at the coordinate location), angle_tangent (tangent
+            angle), label (label string), alignment (label alignment when
+            drawing), and outer (boolean to denote if this is a label
+            outside the boundary [True] or inside [False]).
         """
         angle_tangent = dict(left=90, right=90, bottom=0, top=0)[axis_side]
         if lon_or_lat == "lon":
@@ -392,7 +474,7 @@ class SkyGridHelper:
         tick_outers = [item["outer"] for item in self._grid_info[lon_or_lat]["ticks"][axis_side]]
 
         prev_xy = None
-        for ctr, ((xy, a, alignment), l, outer) in enumerate(zip(tick_locs, tick_labels, tick_outers)):
+        for ctr, ((xy, a, alignment), label, outer) in enumerate(zip(tick_locs, tick_labels, tick_outers)):
             if self._celestial:
                 angle_normal = 360.0 - a
             else:
@@ -403,7 +485,7 @@ class SkyGridHelper:
                 if abs(xy[0] - prev_xy[0])/delta_x < self._min_lon_ticklabel_delta:
                     continue
             prev_xy = xy
-            yield xy, angle_normal, angle_tangent, l, alignment, outer
+            yield xy, angle_normal, angle_tangent, label, alignment, outer
 
     def _compute_n_grid_from_extent(self, extent, n_grid_lat_default=None, n_grid_lon_default=None):
         """Compute the number of grid lines from the extent.
@@ -481,8 +563,11 @@ class SkyGridlines(matplotlib.collections.LineCollection):
         Returns
         -------
         tick_iterator : `Iterator`
-            Iterator with position, normal angle, tangent angle, label name,
-            alignment string, and boolean if it is inner or outer.
+            Iterator with xy (coordinate tuple), angle_normal (normal angle
+            to the axis at the coordinate location), angle_tangent (tangent
+            angle), label (label string), alignment (label alignment when
+            drawing), and outer (boolean to denote if this is a label
+            outside the boundary [True] or inside [False]).
         """
         return self._grid_helper.get_tick_iterator(lon_or_lat, axis_side)
 
