@@ -351,7 +351,7 @@ class SkyGridHelper:
                         gi["ticks"]["top"].append(
                             {
                                 "level": level,
-                                "loc": (xy, 0.0, ("right", "bottom")),
+                                "loc": (xy, 0.0, ("right", "center")),
                                 "outer": False,
                             },
                         )
