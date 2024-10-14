@@ -1187,7 +1187,8 @@ class _Skyproj():
 
     @property
     def _pole_clip(self):
-        # Allow clipping of the poles until Mollweide is fixed in proj
+        # Allow clipping of poles for full-sky projections; this
+        # can avoid inversion problems in (e.g.) Mollweide projections.
         return 0.0
 
     @property
