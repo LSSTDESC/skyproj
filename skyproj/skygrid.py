@@ -99,16 +99,25 @@ def _find_inner_crossings(line_x, line_y, lon_or_lat, min_x, max_x, min_y, max_y
             crossings[side] = ((line_x[0], line_y[0]), 0.0, ("", va))
     else:
         for side in ["top", "bottom"]:
-            # FIXME: radial labels
             if side == "top":
                 line_index = -1
+                va = "bottom"
             else:
                 line_index = 0
+                va = "top"
 
             if line_x[line_index] <= min_x or line_x[line_index] >= max_x or \
                line_y[line_index] <= min_y or line_y[line_index] >= max_y:
                 continue
-            crossings[side] = ((line_x[line_index], line_y[line_index]), 0.0, ("", ""))
+
+            if line_x[0] < 0.0:
+                ha = "left"
+            elif line_x[0] > 0.0:
+                ha = "right"
+            else:
+                ha = "center"
+
+            crossings[side] = ((line_x[line_index], line_y[line_index]), 0.0, (ha, va))
 
     return crossings
 
