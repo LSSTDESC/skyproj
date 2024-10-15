@@ -138,6 +138,9 @@ class SkyGridHelper:
     min_lon_ticklabel_delta : `float`, optional
         What is the minimal fraction of the total x axis size to allow
         a tick label to be plotted?
+    draw_inner_lon_labels : `bool`, optional
+        Draw "inner" longitude labels? Only necessary for certain
+        projections (e.g. Albers).
     """
     def __init__(
         self,
@@ -150,6 +153,7 @@ class SkyGridHelper:
         equatorial_labels=False,
         full_circle=False,
         min_lon_ticklabel_delta=0.1,
+        draw_inner_lon_labels=False,
     ):
         self._transform_lonlat_to_xy = functools.partial(proj, projection=projection, wrap=wrap)
         self._transform_xy_to_lonlat = functools.partial(proj_inverse, projection=projection)
@@ -171,6 +175,7 @@ class SkyGridHelper:
         else:
             self._delta_cut = 0.5*projection.radius
         self._min_lon_ticklabel_delta = min_lon_ticklabel_delta
+        self._draw_inner_lon_labels = draw_inner_lon_labels
 
         self._grid_info = None
         self._old_limits = None
@@ -370,7 +375,7 @@ class SkyGridHelper:
                     if lon_or_lat == "lat" and level in [-90.0, 90.0]:
                         continue
                     # Do not draw inner longitudes.
-                    if lon_or_lat == "lon":
+                    if lon_or_lat == "lon" and not self._draw_inner_lon_labels:
                         continue
 
                     inner_crossings = _find_inner_crossings(lx, ly, lon_or_lat, min_x, max_x, y1, y2)

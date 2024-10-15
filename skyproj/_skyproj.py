@@ -213,7 +213,8 @@ class _Skyproj():
                           celestial=self.do_celestial,
                           full_circle=self._full_circle,
                           wrap=self._wrap,
-                          min_lon_ticklabel_delta=self._min_lon_ticklabel_delta)
+                          min_lon_ticklabel_delta=self._min_lon_ticklabel_delta,
+                          draw_inner_lon_labels=self._inner_longitude_labels)
 
         self._extent_xy = self._ax.get_extent(lonlat=False)
         self._changed_x_axis = False
@@ -1204,6 +1205,11 @@ class _Skyproj():
     @property
     def _radial_labels(self):
         # Are there radial labels?
+        return False
+
+    @property
+    def _inner_longitude_labels(self):
+        # Are there inner longitude labels?
         return False
 
     @property
