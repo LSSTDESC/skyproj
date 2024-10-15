@@ -106,8 +106,8 @@ class _Skyproj():
         self._crs_orig = crs
         self._reprojected = False
 
-        self.do_celestial = celestial
-        self.do_gridlines = gridlines
+        self._celestial = celestial
+        self._gridlines = gridlines
         self._autorescale = autorescale
         self._galactic = galactic
 
@@ -205,15 +205,15 @@ class _Skyproj():
         """
         self._set_axes_limits(extent, extent_xy=extent_xy, invert=False)
         self._create_axes(extent)
-        self._set_axes_limits(extent, extent_xy=extent_xy, invert=self.do_celestial)
+        self._set_axes_limits(extent, extent_xy=extent_xy, invert=self._celestial)
 
         self._ax.set_frame_on(False)
-        if self.do_gridlines:
+        if self._gridlines:
             self._ax.grid(visible=True, linestyle=':', color='k', lw=0.5,
                           n_grid_lon=self._n_grid_lon, n_grid_lat=self._n_grid_lat,
                           longitude_ticks=self._longitude_ticks,
                           equatorial_labels=self._equatorial_labels,
-                          celestial=self.do_celestial,
+                          celestial=self._celestial,
                           full_circle=self._full_circle,
                           wrap=self._wrap,
                           min_lon_ticklabel_delta=self._min_lon_ticklabel_delta,
@@ -234,7 +234,7 @@ class _Skyproj():
         extent : array-like
             Extent as [lon_min, lon_max, lat_min, lat_max].
         """
-        self._set_axes_limits(extent, invert=self.do_celestial)
+        self._set_axes_limits(extent, invert=self._celestial)
         self._extent_xy = self._ax.get_extent(lonlat=False)
 
         self._draw_bounds()
