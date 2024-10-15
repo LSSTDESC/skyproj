@@ -84,8 +84,8 @@ class ExtremeFinderWrapped(ExtremeFinderSimple):
         # When we set this up we know the maximum possible range in x and y
         # and make sure that we don't go out of this range.
         lon, lat = np.meshgrid(
-            wrap_values(np.linspace(-180.0, 180.0, self.nx), wrap=self._wrap),
-            np.linspace(-90.0, 90.0, self.ny),
+            wrap_values(np.linspace(-180.0, 180.0 - self._eps, self.nx), wrap=self._wrap),
+            np.linspace(-90.0 + self._eps, 90.0 - self._eps, self.ny),
         )
         x, y = transform_lonlat_to_xy(np.ravel(lon), np.ravel(lat))
         self.xmin = np.nanmin(x)
