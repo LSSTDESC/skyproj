@@ -1,6 +1,6 @@
 import warnings
 
-import matplotlib.pyplot as plt
+import matplotlib
 
 import numpy as np
 import hpgeom as hpg
@@ -77,6 +77,9 @@ class _Skyproj():
         self._min_lon_ticklabel_delta = min_lon_ticklabel_delta
 
         if ax is None:
+            # If we don't have an axis, we need to ask the matplotlib
+            # caching system which involves an import of matplotlib.pyplot.
+            import matplotlib.pyplot as plt
             ax = plt.gca()
 
         fig = ax.figure
@@ -130,7 +133,7 @@ class _Skyproj():
         if "axes.labelsize" not in rcparams:
             rcparams["axes.labelsize"] = 16
 
-        with plt.rc_context(rcparams):
+        with matplotlib.rc_context(rcparams):
             self._initialize_axes(extent, extent_xy=extent_xy)
 
             # Set up callbacks on axis zoom.
@@ -253,7 +256,7 @@ class _Skyproj():
                                              'k-',
                                              lonlat=False,
                                              clip_on=False,
-                                             linewidth=plt.rcParams['axes.linewidth'])
+                                             linewidth=matplotlib.rcParams['axes.linewidth'])
 
     def get_extent(self):
         """Get the extent in lon/lat coordinates.
@@ -523,7 +526,7 @@ class _Skyproj():
             self._changed_y_axis = True
             self._change_axis(self._ax)
             self._add_change_axis_callbacks()
-            plt.draw()
+            self._ax.figure.canvas.draw()
 
             self._reprojected = True
 
@@ -878,7 +881,6 @@ class _Skyproj():
             rasterized=rasterized,
             **kwargs,
         )
-
         self._ax._sci(im)
 
         # Link up callbacks
@@ -949,7 +951,9 @@ class _Skyproj():
         """
         if ax is None:
             ax = self._ax
-        im = plt.gci()
+
+        im = ax._gci()
+
         cax = inset_axes(ax,
                          width=width,
                          height=height,
@@ -983,7 +987,15 @@ class _Skyproj():
             ticks = np.array([cmin, 0.85*cmax])
             format = '$%.0e$'
 
-        cbar = plt.colorbar(cax=cax, orientation=orientation, ticks=ticks, format=format, **kwargs)
+        cbar = ax.figure.colorbar(
+            im,
+            ax=ax,
+            cax=cax,
+            orientation=orientation,
+            ticks=ticks,
+            format=format,
+            **kwargs,
+        )
         cax.xaxis.set_ticks_position('top')
         cax.tick_params(axis='x', labelsize=fontsize)
 
@@ -998,7 +1010,7 @@ class _Skyproj():
             cbar.set_label(label, size=fontsize)
             cax.xaxis.set_label_position('top')
 
-        plt.sca(ax)
+        ax.figure.sca(ax)
 
         # Save reference to colorbar for zooming
         cbar_kwargs = kwargs
@@ -1048,8 +1060,15 @@ class _Skyproj():
         if ax is None:
             ax = self._ax
 
-        cbar = plt.colorbar(ax=ax, location=location, ticks=ticks,
-                            fraction=fraction, pad=pad, **kwargs)
+        cbar = ax.figure.colorbar(
+            ax._gci(),
+            ax=ax,
+            location=location,
+            ticks=ticks,
+            fraction=fraction,
+            pad=pad,
+            **kwargs,
+        )
 
         if location == 'right' or location == 'left':
             cbar_axis = 'y'
@@ -1061,13 +1080,10 @@ class _Skyproj():
         if label is not None:
             cbar.set_label(label, size=fontsize)
 
-        # if self._aa is not None:
-        #     self._aa.set_position(self._ax.get_position(), which='original')
-
         # Reset the "home" position because axis has been shifted.
         self._initial_extent_xy = self._ax.get_extent(lonlat=False)
 
-        plt.sca(ax)
+        ax.figure.sca(ax)
 
         # Save reference to colorbar for zooming
         cbar_kwargs = kwargs
