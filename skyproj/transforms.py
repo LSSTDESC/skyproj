@@ -19,7 +19,7 @@ class SkyTransform(matplotlib.transforms.Transform):
 
     Parameters
     ----------
-    proj : `skyproj.SkyProjection`
+    proj : `skyproj.SkyCRS`
         Sky projection to transform from/to.
     inverse : `bool`, optional
         If ``False``, the transform will convert from lon/lat to the
@@ -34,11 +34,11 @@ class SkyTransform(matplotlib.transforms.Transform):
     def __init__(self, proj, inverse=False):
         self._inverse = inverse
         if not inverse:
-            self.source_proj = PlateCarreeCRS()
+            self.source_proj = PlateCarreeCRS(celestial=proj.celestial)
             self.target_proj = proj
         else:
             self.source_proj = proj
-            self.target_proj = PlateCarreeCRS()
+            self.target_proj = PlateCarreeCRS(celestial=proj.celestial)
 
         # Number of geodesic sub-samples for paths.
         self._nsamp = 10

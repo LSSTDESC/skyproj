@@ -14,6 +14,7 @@ __all__ = ["SkyCRS", "PlateCarreeCRS", "McBrydeThomasFlatPolarQuarticCRS", "Moll
 
 
 RADIUS = 1.0
+CELESTIAL = True
 
 
 class SkyCRS(CRS):
@@ -30,11 +31,14 @@ class SkyCRS(CRS):
         Name of projection CRS type.
     radius : `float`, optional
         Radius of projected sphere.
+    celestial : `bool`, optional
+        Is this a celestial (inverted) projection?
     **kwargs : `dict`, optional
         Additional kwargs for PROJ4 parameters.
     """
-    def __init__(self, name=None, radius=RADIUS, **kwargs):
+    def __init__(self, name=None, radius=RADIUS, celestial=CELESTIAL, **kwargs):
         self._name = name
+        self._celestial = celestial
         self.proj4_params = {'ellps': 'sphere',
                              'R': radius}
         self.proj4_params.update(**kwargs)
@@ -60,7 +64,11 @@ class SkyCRS(CRS):
         if lat_0 is not None:
             proj4_params['lat_0'] = lat_0
 
-        return self.__class__(**proj4_params)
+        return self.__class__(**proj4_params, celestial=self._celestial)
+
+    @property
+    def celestial(self):
+        return self._celestial
 
     def transform_points(self, src_crs, x, y):
         """Transform points from a source coordinate reference system (CRS)
@@ -86,6 +94,8 @@ class SkyCRS(CRS):
         x = x.ravel()
         y = y.ravel()
 
+        sign = -1 if self._celestial else 1
+
         npts = x.shape[0]
 
         result = np.zeros([npts, 2], dtype=np.float64)
@@ -96,10 +106,10 @@ class SkyCRS(CRS):
             try:
                 transformer = Transformer.from_crs(src_crs, self, always_xy=True)
                 if len(x) == 1:
-                    _x = x[0]
+                    _x = sign * x[0]
                     _y = y[0]
                 else:
-                    _x = x
+                    _x = sign * x
                     _y = y
                 result[:, 0], result[:, 1] = transformer.transform(_x, _y, None, errcheck=False)
             except ProjError as err:
@@ -185,14 +195,14 @@ class PlateCarreeCRS(SkyCRS):
     **kwargs : `dict`, optional
         Additional kwargs for PROJ4 parameters.
     """
-    def __init__(self, name='cyl', lon_0=0.0, radius=RADIUS, **kwargs):
+    def __init__(self, name='cyl', lon_0=0.0, radius=RADIUS, celestial=CELESTIAL, **kwargs):
         proj4_params = {'proj': 'eqc',
                         'lon_0': lon_0,
                         'to_meter': math.radians(1)*radius,
                         'vto_meter': 1}
         proj4_params = {**proj4_params, **kwargs}
 
-        super().__init__(name=name, radius=radius, **proj4_params)
+        super().__init__(name=name, radius=radius, celestial=celestial, **proj4_params)
 
 
 class McBrydeThomasFlatPolarQuarticCRS(SkyCRS):
@@ -209,12 +219,12 @@ class McBrydeThomasFlatPolarQuarticCRS(SkyCRS):
     **kwargs : `dict`, optional
         Additional kwargs for PROJ4 parameters.
     """
-    def __init__(self, name='mbtfpq', lon_0=0.0, radius=RADIUS, **kwargs):
+    def __init__(self, name='mbtfpq', lon_0=0.0, radius=RADIUS, celestial=CELESTIAL, **kwargs):
         proj4_params = {'proj': 'mbtfpq',
                         'lon_0': lon_0}
         proj4_params = {**proj4_params, **kwargs}
 
-        super().__init__(name=name, radius=radius, **proj4_params)
+        super().__init__(name=name, radius=radius, celestial=celestial, **proj4_params)
 
 
 class MollweideCRS(SkyCRS):
@@ -231,12 +241,12 @@ class MollweideCRS(SkyCRS):
     **kwargs : `dict`, optional
         Additional kwargs for PROJ4 parameters.
     """
-    def __init__(self, name='moll', lon_0=0.0, radius=RADIUS, **kwargs):
+    def __init__(self, name='moll', lon_0=0.0, radius=RADIUS, celestial=CELESTIAL, **kwargs):
         proj4_params = {'proj': 'moll',
                         'lon_0': lon_0}
         proj4_params = {**proj4_params, **kwargs}
 
-        super().__init__(name=name, radius=radius, **proj4_params)
+        super().__init__(name=name, radius=radius, celestial=celestial, **proj4_params)
 
 
 class ObliqueMollweideCRS(SkyCRS):
@@ -257,7 +267,7 @@ class ObliqueMollweideCRS(SkyCRS):
     **kwargs : `dict`, optional
         Additional kwargs for PROJ4 parameters.
     """
-    def __init__(self, name='obmoll', lon_0=0.0, lat_p=90.0, lon_p=0.0, radius=RADIUS, **kwargs):
+    def __init__(self, name='obmoll', lon_0=0.0, lat_p=90.0, lon_p=0.0, radius=RADIUS, celestial=CELESTIAL, **kwargs):
         proj4_params = {'proj': 'ob_tran',
                         'o_proj': 'moll',
                         'o_lat_p': lat_p,
@@ -265,7 +275,7 @@ class ObliqueMollweideCRS(SkyCRS):
                         'lon_0': lon_0}
         proj4_params = {**proj4_params, **kwargs}
 
-        super().__init__(name=name, radius=radius, **proj4_params)
+        super().__init__(name=name, radius=radius, celestial=celestial, **proj4_params)
 
     @property
     def lon_0(self):
@@ -286,12 +296,12 @@ class HammerCRS(SkyCRS):
     **kwargs : `dict`, optional
         Additional kwargs for PROJ4 parameters.
     """
-    def __init__(self, name='hammer', lon_0=0.0, radius=RADIUS, **kwargs):
+    def __init__(self, name='hammer', lon_0=0.0, radius=RADIUS, celestial=CELESTIAL, **kwargs):
         proj4_params = {'proj': 'hammer',
                         'lon_0': lon_0}
         proj4_params = {**proj4_params, **kwargs}
 
-        super().__init__(name=name, radius=radius, **proj4_params)
+        super().__init__(name=name, radius=radius, celestial=celestial, **proj4_params)
 
 
 class EqualEarthCRS(SkyCRS):
@@ -308,12 +318,12 @@ class EqualEarthCRS(SkyCRS):
     **kwargs : `dict`, optional
         Additional kwargs for PROJ4 parameters.
     """
-    def __init__(self, name='eqearth', lon_0=0.0, radius=RADIUS, **kwargs):
+    def __init__(self, name='eqearth', lon_0=0.0, radius=RADIUS, celestial=CELESTIAL, **kwargs):
         proj4_params = {'proj': 'eqearth',
                         'lon_0': lon_0}
         proj4_params = {**proj4_params, **kwargs}
 
-        super().__init__(name=name, radius=radius, **proj4_params)
+        super().__init__(name=name, radius=radius, celestial=celestial, **proj4_params)
 
 
 class LambertAzimuthalEqualAreaCRS(SkyCRS):
@@ -332,13 +342,13 @@ class LambertAzimuthalEqualAreaCRS(SkyCRS):
     **kwargs : `dict`, optional
         Additional kwargs for PROJ4 parameters.
     """
-    def __init__(self, name='laea', lon_0=0.0, lat_0=0.0, radius=RADIUS, **kwargs):
+    def __init__(self, name='laea', lon_0=0.0, lat_0=0.0, radius=RADIUS, celestial=CELESTIAL, **kwargs):
         proj4_params = {'proj': 'laea',
                         'lon_0': lon_0,
                         'lat_0': lat_0}
         proj4_params = {**proj4_params, **kwargs}
 
-        super().__init__(name=name, radius=radius, **proj4_params)
+        super().__init__(name=name, radius=radius, celestial=celestial, **proj4_params)
 
 
 class GnomonicCRS(SkyCRS):
@@ -357,13 +367,13 @@ class GnomonicCRS(SkyCRS):
     **kwargs : `dict`, optional
         Additional kwargs for PROJ4 parameters.
     """
-    def __init__(self, name='gnom', lon_0=0.0, lat_0=0.0, radius=RADIUS, **kwargs):
+    def __init__(self, name='gnom', lon_0=0.0, lat_0=0.0, radius=RADIUS, celestial=CELESTIAL, **kwargs):
         proj4_params = {'proj': 'gnom',
                         'lon_0': lon_0,
                         'lat_0': lat_0}
         proj4_params = {**proj4_params, **kwargs}
 
-        super().__init__(name=name, radius=radius, **proj4_params)
+        super().__init__(name=name, radius=radius, celestial=celestial, **proj4_params)
 
 
 class AlbersEqualAreaCRS(SkyCRS):
@@ -384,14 +394,14 @@ class AlbersEqualAreaCRS(SkyCRS):
     **kwargs : `dict`, optional
         Additional kwargs for PROJ4 parameters.
     """
-    def __init__(self, name='aea', lon_0=0.0, lat_1=15.0, lat_2=45.0, radius=RADIUS, **kwargs):
+    def __init__(self, name='aea', lon_0=0.0, lat_1=15.0, lat_2=45.0, radius=RADIUS, celestial=CELESTIAL, **kwargs):
         proj4_params = {'proj': 'aea',
                         'lon_0': lon_0,
                         'lat_1': lat_1,
                         'lat_2': lat_2}
         proj4_params = {**proj4_params, **kwargs}
 
-        super().__init__(name=name, radius=radius, **proj4_params)
+        super().__init__(name=name, radius=radius, celestial=celestial, **proj4_params)
 
 
 _crss = {
@@ -407,7 +417,7 @@ _crss = {
 }
 
 
-def get_crs(name, **kwargs):
+def get_crs(name, celestial=CELESTIAL, **kwargs):
     """Return a skyproj CRS.
 
     For list of projections available, use skyproj.get_available_crs().
@@ -416,6 +426,8 @@ def get_crs(name, **kwargs):
     ----------
     name : `str`
         Skyproj name of projection CRS.
+    celestial : `bool`
+        Is this a celestial (inverted) projection?
     **kwargs :
         Additional kwargs appropriate for given projection CRS.
 
@@ -429,7 +441,7 @@ def get_crs(name, **kwargs):
 
     descr, crsclass = _crss[name]
 
-    return crsclass(name=name, **kwargs)
+    return crsclass(name=name, celestial=celestial, **kwargs)
 
 
 def get_available_crs():
@@ -447,9 +459,12 @@ def get_available_crs():
     return available_crs
 
 
-def proj(lon, lat, projection=None, pole_clip=None, wrap=None):
+def proj(lon, lat, projection=None, plate_carree=None, pole_clip=None, wrap=None):
     if projection is None:
         raise RuntimeError("Must specify a projection.")
+
+    if plate_carree is None:
+        plate_carree = PlateCarreeCRS(celestial=projection.celestial)
 
     lon = np.atleast_1d(lon)
     lat = np.atleast_1d(lat)
@@ -458,18 +473,21 @@ def proj(lon, lat, projection=None, pole_clip=None, wrap=None):
                | (lat > (90.0 - pole_clip)))
     if wrap is not None:
         lon[np.isclose(lon, wrap)] = wrap - 1e-10
-    proj_xy = projection.transform_points(PlateCarreeCRS(), lon, lat)
+    proj_xy = projection.transform_points(plate_carree, lon, lat)
     if pole_clip is not None:
         proj_xy[..., 1][out] = np.nan
 
     return proj_xy[..., 0], proj_xy[..., 1]
 
 
-def proj_inverse(x, y, projection=None):
+def proj_inverse(x, y, projection=None, plate_carree=None):
     if projection is None:
         raise RuntimeError("Must specify a projection.")
 
+    if plate_carree is None:
+        plate_carree = PlateCarreeCRS(celestial=projection.celestial)
+
     x = np.atleast_1d(x)
     y = np.atleast_1d(y)
-    proj_lonlat = PlateCarreeCRS().transform_points(projection, x, y)
+    proj_lonlat = plate_carree.transform_points(projection, x, y)
     return proj_lonlat[..., 0], proj_lonlat[..., 1]

@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.collections
 from matplotlib.transforms import Bbox
 
-from .skycrs import proj, proj_inverse
+from .skycrs import PlateCarreeCRS, proj, proj_inverse
 from .mpl_utils import ExtremeFinderWrapped, WrappedFormatterDMS
 import mpl_toolkits.axisartist.angle_helper as angle_helper
 
@@ -53,7 +53,7 @@ def _find_line_box_crossings(xys, bbox):
     return crossings
 
 
-def _find_inner_crossings(line_x, line_y, lon_or_lat, min_x, max_x, min_y, max_y):
+def _find_inner_crossings(line_x, line_y, lon_or_lat, min_x, max_x, min_y, max_y, invert_x):
     """
     Find projection boundary crossings that are inside the axis bounding box.
 
@@ -73,6 +73,8 @@ def _find_inner_crossings(line_x, line_y, lon_or_lat, min_x, max_x, min_y, max_y
         Minimum y value of the bounding box.
     max_y : `float`
         Maximum y value of the bounding box.
+    invert_x : `bool`
+       Invert x on the left side if True; invert x on the right if False.
 
     Returns
     -------
@@ -84,7 +86,7 @@ def _find_inner_crossings(line_x, line_y, lon_or_lat, min_x, max_x, min_y, max_y
     crossings = {}
     if lon_or_lat == "lat":
         for side in ["left", "right"]:
-            if side == "right":
+            if (side == "left" and invert_x) or (side == "right" and not invert_x):
                 line_x = line_x[::-1]
                 line_y = line_y[::-1]
             if line_x[0] <= min_x or line_x[0] >= max_x or \
@@ -138,8 +140,6 @@ class SkyGridHelper:
     longitude_ticks : `str`, optional
         If this is ``positive`` then longitudes will be from 0 to 360; if it
         is ``symmetric`` then the longitudes will be from -180 to 180.
-    celestial : `bool`, optional
-        Is this a celestial plot, inverting the latitude?
     equatorial_labels : `bool`, optional
         Should this map have longitude labels along the equator?
     full_circle : `bool`, optional
@@ -158,14 +158,23 @@ class SkyGridHelper:
         n_grid_lon_default=None,
         n_grid_lat_default=None,
         longitude_ticks="positive",
-        celestial=True,
         equatorial_labels=False,
         full_circle=False,
         min_lon_ticklabel_delta=0.1,
         draw_inner_lon_labels=False,
     ):
-        self._transform_lonlat_to_xy = functools.partial(proj, projection=projection, wrap=wrap)
-        self._transform_xy_to_lonlat = functools.partial(proj_inverse, projection=projection)
+        plate_carree = PlateCarreeCRS(celestial=projection.celestial)
+        self._transform_lonlat_to_xy = functools.partial(
+            proj,
+            projection=projection,
+            plate_carree=plate_carree,
+            wrap=wrap,
+        )
+        self._transform_xy_to_lonlat = functools.partial(
+            proj_inverse,
+            projection=projection,
+            plate_carree=plate_carree,
+        )
         self._wrap = wrap
         self._n_grid_lon_default = n_grid_lon_default
         self._n_grid_lat_default = n_grid_lat_default
@@ -176,7 +185,7 @@ class SkyGridHelper:
             "lon": WrappedFormatterDMS(180.0, longitude_ticks),
             "lat": angle_helper.FormatterDMS(),
         }
-        self._celestial = celestial
+        self._celestial = projection.celestial
         self._equatorial_labels = equatorial_labels
         self._full_circle = full_circle
         if projection.name == "cyl":
@@ -387,7 +396,16 @@ class SkyGridHelper:
                     if lon_or_lat == "lon" and not self._draw_inner_lon_labels:
                         continue
 
-                    inner_crossings = _find_inner_crossings(lx, ly, lon_or_lat, min_x, max_x, y1, y2)
+                    inner_crossings = _find_inner_crossings(
+                        lx,
+                        ly,
+                        lon_or_lat,
+                        min_x,
+                        max_x,
+                        y1,
+                        y2,
+                        self._celestial,
+                    )
 
                     for side in ["left", "right", "bottom", "top"]:
                         if side in inner_crossings:

@@ -9,7 +9,7 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.cm import ScalarMappable
 from matplotlib.colors import Normalize, LogNorm
 
-from .skycrs import get_crs, GnomonicCRS, proj, proj_inverse
+from .skycrs import get_crs, GnomonicCRS, PlateCarreeCRS, proj, proj_inverse
 from .hpx_utils import healpix_pixels_range, hspmap_to_xy, hpxmap_to_xy, healpix_to_xy, healpix_bin
 from .utils import wrap_values, _get_boundary_poly_xy, get_autoscale_vmin_vmax
 
@@ -101,10 +101,13 @@ class _Skyproj():
             lon_0 = 179.9999
 
         kwargs['lon_0'] = lon_0
-        crs = get_crs(projection_name, **kwargs)
+        crs = get_crs(projection_name, celestial=celestial, **kwargs)
+        # crs = get_crs(projection_name, **kwargs)
         self._ax = fig.add_subplot(subspec, projection=crs)
         self._crs_orig = crs
         self._reprojected = False
+
+        self._plate_carree = PlateCarreeCRS(celestial=celestial)
 
         self._celestial = celestial
         self._gridlines = gridlines
@@ -167,7 +170,7 @@ class _Skyproj():
         y : `np.ndarray`
             Array of y values.
         """
-        return proj(lon, lat, projection=self.crs, pole_clip=self._pole_clip)
+        return proj(lon, lat, projection=self.crs, plate_carree=self._plate_carree, pole_clip=self._pole_clip)
 
     def proj_inverse(self, x, y):
         """Apply inverse projection to a set of points.
@@ -188,7 +191,7 @@ class _Skyproj():
         lat : `np.ndarray`
             Array of latitudes (degrees).
         """
-        return proj_inverse(x, y, self.crs)
+        return proj_inverse(x, y, projection=self.crs, plate_carree=self._plate_carree)
 
     def _initialize_axes(self, extent, extent_xy=None):
         """Initialize the axes with a given extent.
@@ -205,7 +208,9 @@ class _Skyproj():
         """
         self._set_axes_limits(extent, extent_xy=extent_xy, invert=False)
         self._create_axes(extent)
-        self._set_axes_limits(extent, extent_xy=extent_xy, invert=self._celestial)
+        # self._set_axes_limits(extent, extent_xy=extent_xy, invert=self._celestial)
+        # Necessary?
+        # self._set_axes_limits(extent, extent_xy=extent_xy, invert=False)
 
         self._ax.set_frame_on(False)
         if self._gridlines:
@@ -213,7 +218,6 @@ class _Skyproj():
                           n_grid_lon=self._n_grid_lon, n_grid_lat=self._n_grid_lat,
                           longitude_ticks=self._longitude_ticks,
                           equatorial_labels=self._equatorial_labels,
-                          celestial=self._celestial,
                           full_circle=self._full_circle,
                           wrap=self._wrap,
                           min_lon_ticklabel_delta=self._min_lon_ticklabel_delta,
@@ -226,15 +230,12 @@ class _Skyproj():
     def set_extent(self, extent):
         """Set the extent.
 
-        Axes will be properly inverted if Skyproj was initialized with
-        ``celestial=True``.
-
         Parameters
         ----------
         extent : array-like
             Extent as [lon_min, lon_max, lat_min, lat_max].
         """
-        self._set_axes_limits(extent, invert=self._celestial)
+        self._set_axes_limits(extent)
         self._extent_xy = self._ax.get_extent(lonlat=False)
 
         self._draw_bounds()
@@ -249,7 +250,13 @@ class _Skyproj():
 
         extent_xy = self._ax.get_extent(lonlat=False)
         bounds_xy = self._compute_proj_boundary_xy()
-        bounds_xy_clipped = _get_boundary_poly_xy(bounds_xy, extent_xy, self.proj, self.proj_inverse)
+        bounds_xy_clipped = _get_boundary_poly_xy(
+            bounds_xy,
+            extent_xy,
+            self.proj,
+            self.proj_inverse,
+            self._celestial,
+        )
 
         self._boundary_lines = self._ax.plot(bounds_xy_clipped[:, 0],
                                              bounds_xy_clipped[:, 1],
@@ -278,7 +285,7 @@ class _Skyproj():
         """
         self._autorescale = autorescale
 
-    def _set_axes_limits(self, extent, extent_xy=None, invert=True):
+    def _set_axes_limits(self, extent, extent_xy=None, invert=False):
         """Set axis limits from an extent.
 
         Parameters

@@ -39,7 +39,7 @@ def wrap_values(values, wrap=180.0):
     return (values - wrap) % 360. + (wrap - 360.)
 
 
-def _get_boundary_poly_xy(bounds_xy, extent_xy, proj, proj_inverse):
+def _get_boundary_poly_xy(bounds_xy, extent_xy, proj, proj_inverse, celestial):
     """Get the boundary polygon in x/y space.
 
     Parameters
@@ -52,6 +52,8 @@ def _get_boundary_poly_xy(bounds_xy, extent_xy, proj, proj_inverse):
         Forward projection function.
     proj_inverse : `func`
         Inverse projection function.
+    celestial : `bool`
+        Is this a celestial (reversed) projection?
 
     Returns
     -------
@@ -80,14 +82,14 @@ def _get_boundary_poly_xy(bounds_xy, extent_xy, proj, proj_inverse):
             bounds_x = []
             bounds_y = []
 
-        if side == 'left':
-            box_x = np.linspace(extent_xy[x0_index], extent_xy[x0_index], nstep)
+        if (side == 'left' and celestial) or (side == 'right' and not celestial):
+            box_x = np.linspace(extent_xy[x1_index], extent_xy[x1_index], nstep)
             box_y = np.linspace(extent_xy[2], extent_xy[3], nstep)
         elif side == 'top':
             box_x = np.linspace(extent_xy[x0_index], extent_xy[x1_index], nstep)
             box_y = np.linspace(extent_xy[3], extent_xy[3], nstep)
-        elif side == 'right':
-            box_x = np.linspace(extent_xy[x1_index], extent_xy[x1_index], nstep)
+        elif (side == 'right' and celestial) or (side == 'left' and not celestial):
+            box_x = np.linspace(extent_xy[x0_index], extent_xy[x0_index], nstep)
             box_y = np.linspace(extent_xy[2], extent_xy[3], nstep)
         else:
             box_x = np.linspace(extent_xy[x1_index], extent_xy[x0_index], nstep)

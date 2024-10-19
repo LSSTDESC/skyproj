@@ -30,7 +30,7 @@ class SkyAxes(matplotlib.axes.Axes):
     def __init__(self, *args, **kwargs):
         self.projection = kwargs.pop("sky_crs")
 
-        self.plate_carree = PlateCarreeCRS()
+        self.plate_carree = PlateCarreeCRS(celestial=self.projection.celestial)
 
         # Would like to fix this up.
         self.gridlines = SkyGridlines([])
@@ -110,7 +110,7 @@ class SkyAxes(matplotlib.axes.Axes):
 
     def grid(self, visible=False, which="major", axis="both",
              n_grid_lon=None, n_grid_lat=None,
-             longitude_ticks="positive", equatorial_labels=False, celestial=True,
+             longitude_ticks="positive", equatorial_labels=False,
              full_circle=False, wrap=0.0, min_lon_ticklabel_delta=0.1,
              draw_inner_lon_labels=False,
              **kwargs):
@@ -127,7 +127,6 @@ class SkyAxes(matplotlib.axes.Axes):
                 n_grid_lon_default=n_grid_lon,
                 n_grid_lat_default=n_grid_lat,
                 longitude_ticks=longitude_ticks,
-                celestial=celestial,
                 equatorial_labels=equatorial_labels,
                 full_circle=full_circle,
                 min_lon_ticklabel_delta=min_lon_ticklabel_delta,
