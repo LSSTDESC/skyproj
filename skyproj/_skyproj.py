@@ -102,6 +102,11 @@ class _Skyproj():
 
         kwargs['lon_0'] = lon_0
         crs = get_crs(projection_name, **kwargs)
+
+        if len(rcparams) > 0:
+            warnings.warn("rcparams is deprecated as a keyword, and is now ignored. "
+                          "Please use skyproj.ax.tick_params() to set tick label parameters.")
+
         self._ax = fig.add_subplot(subspec, projection=crs)
         self._crs_orig = crs
         self._reprojected = False
@@ -130,23 +135,19 @@ class _Skyproj():
 
         self._boundary_lines = None
 
-        if "axes.labelsize" not in rcparams:
-            rcparams["axes.labelsize"] = 16
+        self._initialize_axes(extent, extent_xy=extent_xy)
 
-        with matplotlib.rc_context(rcparams):
-            self._initialize_axes(extent, extent_xy=extent_xy)
+        # Set up callbacks on axis zoom.
+        self._add_change_axis_callbacks()
 
-            # Set up callbacks on axis zoom.
-            self._add_change_axis_callbacks()
+        # Set up callback on figure resize.
+        self._dc = self.ax.figure.canvas.mpl_connect('draw_event', self._draw_callback)
+        self._initial_extent_xy = [0]*4
 
-            # Set up callback on figure resize.
-            self._dc = self.ax.figure.canvas.mpl_connect('draw_event', self._draw_callback)
-            self._initial_extent_xy = [0]*4
+        # Set up reproject callback.
+        self._rpc = self.ax.figure.canvas.mpl_connect('key_press_event', self._keypress_callback)
 
-            # Set up reproject callback.
-            self._rpc = self.ax.figure.canvas.mpl_connect('key_press_event', self._keypress_callback)
-
-            self._draw_bounds()
+        self._draw_bounds()
 
     def proj(self, lon, lat):
         """Apply forward projection to a set of lon/lat positions.

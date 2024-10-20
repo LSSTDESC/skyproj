@@ -43,9 +43,9 @@ galactic : `bool`, optional
     Plotting in Galactic coordinates?  Recommendation for Galactic plots
     is to have longitude_ticks set to ``symmetric`` and celestial = True.
 rcparams : `dict`, optional
-    Dictionary of matplotlib rc parameters to override.  In particular, the code will
-    use ``xtick.labelsize`` and ``ytick.labelsize`` for the x and y tick labels, and
-    ``axes.linewidth`` for the map boundary.
+    Deprecated; do not use. To set ``xtick.labelsize`` please use
+    ``SkyProj.ax.tick_params()``. To set the map boundary width,
+    please set ``matplotlib.rcParams["axes.linewidth"]`` directly.
 n_grid_lon : `int`, optional
     Number of gridlines to use in the longitude direction
     (default is axis_ratio * n_grid_lat).
