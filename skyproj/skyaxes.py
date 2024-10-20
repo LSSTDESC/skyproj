@@ -28,14 +28,32 @@ def _add_lonlat(func):
 class SkyAxes(matplotlib.axes.Axes):
     # docstring inherited
     def __init__(self, *args, **kwargs):
-        self.projection = kwargs.pop("sky_crs")
+        self.projection = kwargs.pop("sky_crs", None)
+
+        if self.projection is None:
+            raise RuntimeError("Must specify sky_crs for initializing SkyAxes.")
 
         self.plate_carree = PlateCarreeCRS()
 
-        # Would like to fix this up.
+        # We create empty gridlines and _ticklabels_visibility so that
+        # the super().__init() has placeholders on first initialization.
         self.gridlines = SkyGridlines([])
+        self._ticklabels_visibility = {}
+        self._ticklabels = []
 
         super().__init__(*args, **kwargs)
+
+        # The ``inherit`` name is special and means to use the same
+        # color as x/ytick.color.
+        if mpl.rcParams["xtick.labelcolor"] == "inherit":
+            self._xlabelcolor = mpl.rcParams["xtick.color"]
+        else:
+            self._xlabelcolor = mpl.rcParams["xtick.labelcolor"]
+
+        if mpl.rcParams["ytick.labelcolor"] == "inherit":
+            self._ylabelcolor = mpl.rcParams["ytick.color"]
+        else:
+            self._ylabelcolor = mpl.rcParams["ytick.labelcolor"]
 
         self._ticklabels = {
             "left": SkyTickLabels(
@@ -44,6 +62,7 @@ class SkyAxes(matplotlib.axes.Axes):
                 transform=self.transData,
                 fontsize=mpl.rcParams["ytick.labelsize"],
                 pad=mpl.rcParams["ytick.major.pad"],
+                color=self._ylabelcolor,
             ),
             "right": SkyTickLabels(
                 axis_direction="right",
@@ -51,6 +70,7 @@ class SkyAxes(matplotlib.axes.Axes):
                 transform=self.transData,
                 fontsize=mpl.rcParams["ytick.labelsize"],
                 pad=mpl.rcParams["ytick.major.pad"],
+                color=self._ylabelcolor,
             ),
             "top": SkyTickLabels(
                 axis_direction="top",
@@ -58,6 +78,7 @@ class SkyAxes(matplotlib.axes.Axes):
                 transform=self.transData,
                 fontsize=mpl.rcParams["xtick.labelsize"],
                 pad=mpl.rcParams["xtick.major.pad"],
+                color=self._xlabelcolor,
             ),
             "bottom": SkyTickLabels(
                 axis_direction="bottom",
@@ -65,6 +86,7 @@ class SkyAxes(matplotlib.axes.Axes):
                 transform=self.transData,
                 fontsize=mpl.rcParams["xtick.labelsize"],
                 pad=mpl.rcParams["xtick.major.pad"],
+                color=self._xlabelcolor,
             ),
         }
 
@@ -477,6 +499,78 @@ class SkyAxes(matplotlib.axes.Axes):
         """
         self._ylabelpad = kwargs.pop("labelpad", mpl.rcParams["axes.labelpad"])
         return super().set_ylabel(ylabel, labelpad=0, fontsize=fontsize, **kwargs)
+
+    def tick_params(self, axis="both", **kwargs):
+        # docstring inherited
+        if len(self._ticklabels) == 0:
+            # Nothing to do here since axis is not initialized.
+            return
+
+        if axis not in ("x", "y", "both"):
+            raise ValueError("axis keyword must be one of ``x``, ``y``, or ``both``.")
+        which = kwargs.pop("which", "major")
+        if which not in ("major", "both"):
+            raise ValueError("which keyword must be one of ``major``, ``minor``, or ``both``.")
+        if which == "minor":
+            # Nothing to do.
+            return
+        reset = kwargs.pop("reset", False)
+
+        axis_mapping = {
+            "x": ["top", "bottom"],
+            "y": ["left", "right"],
+        }
+
+        for _axis in ("x", "y"):
+            if axis not in (_axis, "both"):
+                continue
+
+            labelsize = kwargs.pop("labelsize", None)
+            labelcolor = kwargs.pop("labelcolor", None)
+            labelfontfamily = kwargs.pop("labelfontfamily", None)
+            labelbottom = kwargs.pop("labelbottom", None)
+            labeltop = kwargs.pop("labeltop", None)
+            labelleft = kwargs.pop("labelleft", None)
+            labelright = kwargs.pop("labelright", None)
+            pad = kwargs.pop("pad", None)
+
+            for side in axis_mapping[_axis]:
+                if labelsize is not None:
+                    self._ticklabels[side].set(fontsize=labelsize)
+                elif reset:
+                    self._ticklabels[side].set(fontsize=mpl.rcParams["ytick.labelsize"])
+                if labelcolor is not None:
+                    self._ticklabels[side].set(color=labelcolor)
+                elif reset:
+                    if _axis == "x":
+                        self._ticklabels[side].set(color=self._xlabelcolor)
+                    else:
+                        self._ticklabels[side].set(color=self._ylabelcolor)
+                if labelfontfamily is not None:
+                    self._ticklabels[side].set(fontfamily=labelfontfamily)
+                elif reset:
+                    self._ticklabels[side].set(fontfamily=None)
+                if pad is not None:
+                    self._ticklabels[side].set_pad(pad)
+                elif reset:
+                    self._ticklabels[side].set_pad(mpl.rcParams[f"{axis}tick.major.pad"])
+
+            if labelbottom is not None:
+                self._ticklabels_visibility["bottom"] = labelbottom
+            elif reset:
+                self._ticklabels_visibility["bottom"] = True
+            if labeltop is not None:
+                self._ticklabels_visibility["top"] = labeltop
+            elif reset:
+                self._ticklabels_visibility["top"] = True
+            if labelleft is not None:
+                self._ticklabels_visibility["left"] = labelleft
+            elif reset:
+                self._ticklabels_visibility["left"] = True
+            if labelright is not None:
+                self._ticklabels_visibility["right"] = labelright
+            elif reset:
+                self._ticklabels_visibility["right"] = False
 
     def update_projection(self, crs_new):
         """Update the projection central coordinate.
