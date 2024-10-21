@@ -40,6 +40,8 @@ class SkyCRS(CRS):
         self.proj4_params.update(**kwargs)
         super().__init__(self.proj4_params)
 
+        self._transformer_cache = {}
+
     def with_new_center(self, lon_0, lat_0=None):
         """Create a new SkyCRS with a new lon_0/lat_0.
 
@@ -93,14 +95,21 @@ class SkyCRS(CRS):
             if isinstance(src_crs, PlateCarreeCRS):
                 # We need to wrap to [-180, 180)
                 x = wrap_values(x)
-            try:
+
+            if src_crs in self._transformer_cache:
+                transformer = self._transformer_cache[src_crs]
+            else:
                 transformer = Transformer.from_crs(src_crs, self, always_xy=True)
-                if len(x) == 1:
-                    _x = x[0]
-                    _y = y[0]
-                else:
-                    _x = x
-                    _y = y
+                self._transformer_cache[src_crs] = transformer
+
+            if len(x) == 1:
+                _x = x[0]
+                _y = y[0]
+            else:
+                _x = x
+                _y = y
+
+            try:
                 result[:, 0], result[:, 1] = transformer.transform(_x, _y, None, errcheck=False)
             except ProjError as err:
                 msg = str(err).lower()
