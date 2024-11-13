@@ -490,11 +490,11 @@ class _Skyproj():
             else:
                 map_norm = norm
 
-            mappable = ScalarMappable(map_norm, cmap=self._redraw_dict['colorbar'].cmap)
-
             if redraw_colorbar:
+                mappable = ScalarMappable(map_norm, cmap=self._redraw_dict['colorbar'].cmap)
                 self._redraw_dict['colorbar'].update_normal(mappable)
             else:
+                mappable = ScalarMappable(map_norm, cmap=self._redraw_dict['inset_colorbar'].cmap)
                 self._redraw_dict['inset_colorbar'].update_normal(mappable)
 
     def _draw_callback(self, event):
