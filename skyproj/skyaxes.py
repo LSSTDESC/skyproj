@@ -6,7 +6,6 @@ import matplotlib as mpl
 import matplotlib.axes
 from pyproj import Geod
 
-from .skycrs import PlateCarreeCRS
 from .utils import wrap_values
 from .skygrid import SkyGridlines, SkyGridHelper
 from .mpl_utils import SkyTickLabels

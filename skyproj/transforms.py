@@ -3,7 +3,6 @@ from matplotlib.path import Path
 import numpy as np
 from pyproj import Geod
 
-from .skycrs import PlateCarreeCRS
 from .utils import wrap_values
 
 __all__ = ["SkyTransform"]
