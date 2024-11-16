@@ -238,15 +238,19 @@ Plotting Customization
 
 Much of the plotting functionality is decided by `SkyProj` itself.
 However, there is a lot of customization available.
-The fonts, font sizes, tick label sizes, etc, are all determined by the :code:`matplotlib` RC parameter dictionary.
-A few of these in particular should be highlighted:
+With `SkyProj` version 2 the customization is easier than ever.
 
-* :code:`xticks.labelsize`: Sets the label size for the x (longitude) ticks on the plot.
-* :code:`yticks.labelsize`: Sets the label size for the y (latitude) ticks on the plot.
+Most fonts, font sizes, tick label sizes, etc, are set with the usual :code:`matplotlib` interface.
+For example, you can set the tick label sizes and colors with :code:`sp.ax.tick_params(axis="x", labelsize=20, labelcolor="green")`.
+The axis label sizes and colors can be set with :code:`sp.ax.set_xlabel("New X Label", fontsize=10, fontcolor="red")`.
+
+Additional plot parameters are controlled via the :code:`matplotlib` RC parameter dictionary.
+In particular:
+
 * :code:`axes.linewidth`: Sets the width of the boundary of the full plot.
-* :code:`axes.labelsize`: Sets the size of the x/y (lon/lat) labels; this will default to 16 unless specifically overridden with an :code:`rcparams`.
 
-These values (and any others) can be overridden at the time of map instantiation with a temporary dictionary, like so:
+To override values, we recommend using a matplotlib RC context, like the following.
+Note that the internal use of the `rc_params` (from `SkyProj` version 1) has been deprecated and is no longer used.
 
 .. code-block :: python
 
@@ -254,12 +258,16 @@ These values (and any others) can be overridden at the time of map instantiation
     import skyproj
 
     # These values are comically exaggerated for effect.
-    rcparams = {'xtick.labelsize': 20,
-                'ytick.labelsize': 4,
-                'axes.linewidth': 5}
+    rcparams = {'axes.linewidth': 5}
 
-    fig, ax = plt.subplots(figsize=(8, 5))
-    sp = skyproj.McBrydeSkyproj(ax=ax, rcparams=rcparams)
+    with plt.rc_context(rcparams)
+        fig, ax = plt.subplots(figsize=(8, 5))
+        sp = skyproj.McBrydeSkyproj(ax=ax)
+
+    sp.ax.tick_params(axis="x", labelsize=20, labelcolor="green")
+    sp.ax.tick_params(axis="y", labelsize=4, labelcolor="blue")
+    sp.ax.set_xlabel("New X Label", fontsize=10, color="red")
+
     plt.show()
 
 .. image:: images/skyproj_full_override_sizes.png
