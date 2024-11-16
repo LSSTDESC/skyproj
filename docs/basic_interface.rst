@@ -129,7 +129,7 @@ The default is to plot a thick line along the Galactic equator, and two dashed l
     fig, ax = plt.subplots(figsize=(8, 5))
     sp = skyproj.McBrydeSkyproj(ax=ax)
     sp.draw_milky_way(label='Milky Way')
-    sp.legend()
+    sp.legend(loc="upper right")
     plt.show()
 
 .. image:: images/milky_way.png
@@ -148,7 +148,7 @@ When using :code:`draw_milky_way()`, it will plot in Galactic coordinates.
     fig, ax = plt.subplots(figsize=(8, 5))
     sp = skyproj.McBrydeSkyproj(ax=ax, galactic=True, longitude_ticks='symmetric')
     sp.draw_milky_way(label='Milky Way')
-    sp.legend()
+    sp.legend(loc="upper right")
     plt.show()
 
 .. image:: images/milky_way_galactic.png
