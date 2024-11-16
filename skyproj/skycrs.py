@@ -40,6 +40,11 @@ class SkyCRS(CRS):
         self.proj4_params.update(**kwargs)
         super().__init__(self.proj4_params)
 
+        _plate_carree = CRS(proj="eqc", lon_0=0.0, ellps="sphere", R=radius, to_meter=math.radians(1)*radius)
+
+        self._transformer_fwd = Transformer.from_crs(_plate_carree, self, always_xy=True)
+        self._transformer_inv = Transformer.from_crs(self, _plate_carree, always_xy=True)
+
         self._transformer_cache = {}
 
     def with_new_center(self, lon_0, lat_0=None):
@@ -64,18 +69,17 @@ class SkyCRS(CRS):
 
         return self.__class__(**proj4_params)
 
-    def transform_points(self, src_crs, x, y):
-        """Transform points from a source coordinate reference system (CRS)
-        to this CRS.
+    def transform_points(self, x, y, inverse=False):
+        """Transform points from lon/lat to this CRS or the inverse.
 
         Parameters
         ----------
-        src_crs : `skyproj.SkyCRS`
-            Source coordinate reference system describing x/y points.
         x : `np.ndarray`
             Array of x values, may be any number of dimensions.
         y : `np.ndarray`
             Array of y values, may be any number of dimensions.
+        inverse : `bool`
+            Apply inverse transformation (CRS to lon/lat)?
 
         Returns
         -------
@@ -83,6 +87,8 @@ class SkyCRS(CRS):
             Array of transformed points. Dimensions are [dim_x, 2]
             such that the final index gives the transformed x_prime, y_prime.
         """
+        x = np.atleast_1d(x)
+        y = np.atleast_1d(y)
         result_shape = tuple(x.shape[i] for i in range(x.ndim)) + (2, )
 
         x = x.ravel()
@@ -92,15 +98,9 @@ class SkyCRS(CRS):
 
         result = np.zeros([npts, 2], dtype=np.float64)
         if npts:
-            if isinstance(src_crs, PlateCarreeCRS):
+            if not inverse:
                 # We need to wrap to [-180, 180)
                 x = wrap_values(x)
-
-            if src_crs in self._transformer_cache:
-                transformer = self._transformer_cache[src_crs]
-            else:
-                transformer = Transformer.from_crs(src_crs, self, always_xy=True)
-                self._transformer_cache[src_crs] = transformer
 
             if len(x) == 1:
                 _x = x[0]
@@ -110,7 +110,10 @@ class SkyCRS(CRS):
                 _y = y
 
             try:
-                result[:, 0], result[:, 1] = transformer.transform(_x, _y, None, errcheck=False)
+                if inverse:
+                    result[:, 0], result[:, 1] = self._transformer_inv.transform(_x, _y, None, errcheck=False)
+                else:
+                    result[:, 0], result[:, 1] = self._transformer_fwd.transform(_x, _y, None, errcheck=False)
             except ProjError as err:
                 msg = str(err).lower()
                 if (
@@ -467,7 +470,7 @@ def proj(lon, lat, projection=None, pole_clip=None, wrap=None):
                | (lat > (90.0 - pole_clip)))
     if wrap is not None:
         lon[np.isclose(lon, wrap)] = wrap - 1e-10
-    proj_xy = projection.transform_points(PlateCarreeCRS(), lon, lat)
+    proj_xy = projection.transform_points(lon, lat)
     if pole_clip is not None:
         proj_xy[..., 1][out] = np.nan
 
@@ -480,5 +483,5 @@ def proj_inverse(x, y, projection=None):
 
     x = np.atleast_1d(x)
     y = np.atleast_1d(y)
-    proj_lonlat = PlateCarreeCRS().transform_points(projection, x, y)
+    proj_lonlat = projection.transform_points(x, y, inverse=True)
     return proj_lonlat[..., 0], proj_lonlat[..., 1]

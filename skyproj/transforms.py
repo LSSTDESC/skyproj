@@ -33,19 +33,14 @@ class SkyTransform(matplotlib.transforms.Transform):
 
     def __init__(self, proj, inverse=False):
         self._inverse = inverse
-        if not inverse:
-            self.source_proj = PlateCarreeCRS()
-            self.target_proj = proj
-        else:
-            self.source_proj = proj
-            self.target_proj = PlateCarreeCRS()
+        self._proj = proj
 
         # Number of geodesic sub-samples for paths.
         self._nsamp = 10
         self._nsamp_resolve = 50
-        self._geod = Geod(a=self.source_proj.radius)
+        self._geod = Geod(a=self._proj.radius)
 
-        self._lon_0 = self.target_proj.proj4_params['lon_0']
+        self._lon_0 = self._proj.proj4_params['lon_0']
         self._wrap = (self._lon_0 + 180.) % 360.
 
         super().__init__()
@@ -61,8 +56,9 @@ class SkyTransform(matplotlib.transforms.Transform):
 
     def transform_non_affine(self, xy):
         # docstring inherited
-        res = self.target_proj.transform_points(self.source_proj,
-                                                xy[:, 0], xy[:, 1])
+        # The forward transformation is x/y to the target projection.
+        # The inverse transformation is target projection to x/y.
+        res = self._proj.transform_points(xy[:, 0], xy[:, 1], inverse=self._inverse)
 
         return res
 
@@ -72,7 +68,7 @@ class SkyTransform(matplotlib.transforms.Transform):
             # Just send this upstream if we're not computing geodesics.
             return super().transform_path_non_affine(path)
 
-        if self.target_proj.name == 'obmoll':
+        if self._proj.name == 'obmoll':
             return self._transform_path_non_affine_oblique(path)
 
         lonlats = []
@@ -117,8 +113,7 @@ class SkyTransform(matplotlib.transforms.Transform):
                 # If this is a polygon we need to add extra edges.
                 lonlats, codes = self._complete_cut_polygons(lonlats, codes)
 
-        vertices_xform = self.target_proj.transform_points(self.source_proj,
-                                                           lonlats[:, 0], lonlats[:, 1])
+        vertices_xform = self._proj.transform_points(lonlats[:, 0], lonlats[:, 1], inverse=self._inverse)
 
         new_path = Path(vertices_xform, codes)
 
@@ -263,9 +258,7 @@ class SkyTransform(matplotlib.transforms.Transform):
         last_vertex = None
         for vertex, code in path.iter_segments(simplify=False):
             if code == Path.MOVETO:
-                vertex_xform = self.target_proj.transform_points(self.source_proj,
-                                                                 vertex[0],
-                                                                 vertex[1])
+                vertex_xform = self._proj.transform_points(vertex[0], vertex[1], inverse=self._inverse)
                 vertices_xform.extend([(vertex_xform[0][0], vertex_xform[0][1])])
                 codes.append(Path.MOVETO)
                 last_vertex = vertex
@@ -275,9 +268,11 @@ class SkyTransform(matplotlib.transforms.Transform):
                                                         vertex[0], vertex[1], self._nsamp + 1,
                                                         initial_idx=0, terminus_idx=0))
 
-                lonlats_step_xform = self.target_proj.transform_points(self.source_proj,
-                                                                       lonlats_step[:, 0],
-                                                                       lonlats_step[:, 1])
+                lonlats_step_xform = self._proj.transform_points(
+                    lonlats_step[:, 0],
+                    lonlats_step[:, 1],
+                    inverse=self._inverse,
+                )
 
                 dxdy = lonlats_step_xform[1:, :] - lonlats_step_xform[0: -1, :]
                 split, = (np.hypot(dxdy[:, 0], dxdy[:, 1]) > 0.5*self.target_proj.radius).nonzero()
@@ -294,9 +289,11 @@ class SkyTransform(matplotlib.transforms.Transform):
                                                             lonlats_step[index, 1],
                                                             self._nsamp_resolve + 1,
                                                             initial_idx=1, terminus_idx=0))
-                    lonlats_temp_xform = self.target_proj.transform_points(self.source_proj,
-                                                                           lonlats_temp[:, 0],
-                                                                           lonlats_temp[:, 1])
+                    lonlats_temp_xform = self._proj.transform_points(
+                        lonlats_temp[:, 0],
+                        lonlats_temp[:, 1],
+                        inverse=self._inverse,
+                    )
                     dxdy_temp = lonlats_temp_xform[1:, :] - lonlats_temp_xform[0: -1, :]
                     split_temp, = (np.hypot(dxdy_temp[:, 0], dxdy_temp[:, 1])
                                    > 0.5*self.target_proj.radius).nonzero()

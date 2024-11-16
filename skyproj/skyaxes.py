@@ -33,8 +33,6 @@ class SkyAxes(matplotlib.axes.Axes):
         if self.projection is None:
             raise RuntimeError("Must specify sky_crs for initializing SkyAxes.")
 
-        self.plate_carree = PlateCarreeCRS()
-
         # We create empty gridlines and _ticklabels_visibility so that
         # the super().__init() has placeholders on first initialization.
         self.gridlines = SkyGridlines([])
@@ -235,7 +233,7 @@ class SkyAxes(matplotlib.axes.Axes):
                     # Make sure we have the equator included
                     lat_steps.append(0.0)
                 lon, lat = np.meshgrid(np.linspace(0, 360.0, 360), lat_steps)
-                xy = self.projection.transform_points(self.plate_carree, lon.ravel(), lat.ravel())
+                xy = self.projection.transform_points(lon.ravel(), lat.ravel())
                 # Need to offset this by some small amount to ensure we don't get
                 # out-of-bounds transformations.
                 eps = 1e-5
@@ -250,7 +248,7 @@ class SkyAxes(matplotlib.axes.Axes):
                 lat_pts = np.linspace(lat0, lat1, npt)
                 lon = np.concatenate((lon_pts, lon_pts, np.repeat(lon0, npt), np.repeat(lon1, npt)))
                 lat = np.concatenate((np.repeat(lat0, npt), np.repeat(lat1, npt), lat_pts, lat_pts))
-                xy = self.projection.transform_points(self.plate_carree, lon, lat)
+                xy = self.projection.transform_points(lon, lat)
                 # FIXME NOTE NEED TO KNOW LON_0/WRAP OF PROJECTION...
                 x0 = np.min(xy[:, 0])
                 x1 = np.max(xy[:, 0])
@@ -282,10 +280,10 @@ class SkyAxes(matplotlib.axes.Axes):
             y_pts = np.linspace(y0, y1, npt)
             x = np.concatenate((x_pts, x_pts, np.repeat(x0, npt), np.repeat(x1, npt)))
             y = np.concatenate((np.repeat(y0, npt), np.repeat(y1, npt), y_pts, y_pts))
-            lonlat = self.plate_carree.transform_points(self.projection, x, y)
+            lonlat = self.projection.transform_points(x, y, inverse=True)
 
             # Check for out-of-bounds by reverse-projecting
-            xy = self.projection.transform_points(self.plate_carree, lonlat[:, 0], lonlat[:, 1])
+            xy = self.projection.transform_points(lonlat[:, 0], lonlat[:, 1])
             bad = ((~np.isclose(xy[:, 0], x)) | (~np.isclose(xy[:, 1], y)))
             lonlat[bad, :] = np.nan
 
@@ -341,7 +339,7 @@ class SkyAxes(matplotlib.axes.Axes):
 
         if kwargs.get('lonlat', True):
             # Check for wrapping by projecting and looking for jumps.
-            proj_xy = self.projection.transform_points(self.plate_carree, X, Y)
+            proj_xy = self.projection.transform_points(X, Y)
             X_proj = proj_xy[..., 0]
             Y_proj = proj_xy[..., 1]
 
@@ -349,8 +347,9 @@ class SkyAxes(matplotlib.axes.Axes):
                             Y_proj[1:, 1:] - Y_proj[0: -1, 0: -1])
 
             # If we have a jump of 10% of the radius, assume it's bad,
-            # except if we are using PlateCarree which doesn't use the radius.
-            if self.projection == self.plate_carree:
+            # except if we are using PlateCarree/cyl which doesn't use the
+            # radius.
+            if self.projection.name == "cyl":
                 max_dist = 90.0
             else:
                 max_dist = 0.1*self.projection.radius
