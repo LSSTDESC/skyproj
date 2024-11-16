@@ -186,15 +186,17 @@ def test_skyproj_override_sizes(tmp_path):
     """Test overriding the label/width sizes."""
     plt.rcParams.update(plt.rcParamsDefault)
 
-    rcparams = {'xtick.labelsize': 20,
-                'ytick.labelsize': 4,
-                'axes.linewidth': 5}
+    rcparams = {"axes.linewidth": 5}
 
     # Full image
     fig = plt.figure(1, figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
-    _ = skyproj.McBrydeSkyproj(ax=ax, rcparams=rcparams)
+    with plt.rc_context(rcparams):
+        sp = skyproj.McBrydeSkyproj(ax=ax)
+
+    sp.ax.tick_params(axis="x", labelsize=20)
+    sp.ax.tick_params(axis="y", labelsize=4)
     fname = 'skyproj_full_override_sizes.png'
     fig.savefig(tmp_path / fname)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 15.0)
