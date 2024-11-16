@@ -524,10 +524,15 @@ class SkyGridHelper:
         """
         if n_grid_lat_default is None:
             n_grid_lat = 6
+        else:
+            n_grid_lat = n_grid_lat_default
+
         if n_grid_lon_default is None:
             latscale = np.cos(np.deg2rad(np.mean(extent[2:])))
             ratio = np.clip(np.abs(extent[1] - extent[0])*latscale/(extent[3] - extent[2]), 1./3., 5./3.)
             n_grid_lon = int(np.ceil(ratio * n_grid_lat))
+        else:
+            n_grid_lon = n_grid_lon_default
 
         return n_grid_lon, n_grid_lat
 
