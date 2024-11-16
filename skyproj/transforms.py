@@ -274,7 +274,7 @@ class SkyTransform(matplotlib.transforms.Transform):
                 )
 
                 dxdy = lonlats_step_xform[1:, :] - lonlats_step_xform[0: -1, :]
-                split, = (np.hypot(dxdy[:, 0], dxdy[:, 1]) > 0.5*self.target_proj.radius).nonzero()
+                split, = (np.hypot(dxdy[:, 0], dxdy[:, 1]) > 0.5*self._proj.radius).nonzero()
 
                 if split.size > 0:
                     if split.size > 1:
@@ -295,7 +295,7 @@ class SkyTransform(matplotlib.transforms.Transform):
                     )
                     dxdy_temp = lonlats_temp_xform[1:, :] - lonlats_temp_xform[0: -1, :]
                     split_temp, = (np.hypot(dxdy_temp[:, 0], dxdy_temp[:, 1])
-                                   > 0.5*self.target_proj.radius).nonzero()
+                                   > 0.5*self._proj.radius).nonzero()
 
                     index_temp = split_temp[0] + 1
 
