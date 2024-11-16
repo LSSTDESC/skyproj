@@ -197,6 +197,7 @@ def test_skyproj_override_sizes(tmp_path):
 
     sp.ax.tick_params(axis="x", labelsize=20, labelcolor="green")
     sp.ax.tick_params(axis="y", labelsize=4, labelcolor="blue")
+    sp.ax.set_xlabel("New X Label", fontsize=10, color="red")
     fname = 'skyproj_full_override_sizes.png'
     fig.savefig(tmp_path / fname)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 15.0)
