@@ -689,6 +689,9 @@ class _Skyproj():
         nside = hpg.npixel_to_nside(hpxmap.size)
         pixels, = np.where(hpxmap != hpg.UNSEEN)
 
+        lon_range_set = lon_range is not None
+        lat_range_set = lat_range is not None
+
         if lon_range is None or lat_range is None:
             if zoom:
                 _lon_range, _lat_range = healpix_pixels_range(nside,
@@ -697,8 +700,8 @@ class _Skyproj():
                                                               nest=nest)
             else:
                 extent = self.get_extent()
-                lon_range = [min(extent[0], extent[1]), max(extent[0], extent[1])]
-                lat_range = [extent[2], extent[3]]
+                _lon_range = [min(extent[0], extent[1]), max(extent[0], extent[1])]
+                _lat_range = [extent[2], extent[3]]
 
             if lon_range is None:
                 lon_range = _lon_range
@@ -726,6 +729,8 @@ class _Skyproj():
             extent = self.compute_extent(lon_raster[:-1, :-1][~values_raster.mask],
                                          lat_raster[:-1, :-1][~values_raster.mask])
             self.set_extent(extent)
+        elif lon_range_set and lat_range_set:
+            self.set_extent([lon_range[1], lon_range[0], lat_range[0], lat_range[1]])
 
         im = self.pcolormesh(
             lon_raster,
@@ -760,6 +765,10 @@ class _Skyproj():
                     vmin=None, vmax=None,
                     rasterized=True, lon_range=None, lat_range=None,
                     norm="linear", **kwargs):
+
+        lon_range_set = lon_range is not None
+        lat_range_set = lat_range is not None
+
         if lon_range is None or lat_range is None:
             if zoom:
                 _lon_range, _lat_range = healpix_pixels_range(nside,
@@ -768,8 +777,8 @@ class _Skyproj():
                                                               nest=nest)
             else:
                 extent = self.get_extent()
-                lon_range = [min(extent[0], extent[1]), max(extent[0], extent[1])]
-                lat_range = [extent[2], extent[3]]
+                _lon_range = [min(extent[0], extent[1]), max(extent[0], extent[1])]
+                _lat_range = [extent[2], extent[3]]
 
             if lon_range is None:
                 lon_range = _lon_range
@@ -801,6 +810,8 @@ class _Skyproj():
             extent = self.compute_extent(lon_raster[:-1, :-1][~values_raster.mask],
                                          lat_raster[:-1, :-1][~values_raster.mask])
             self.set_extent(extent)
+        elif lon_range_set and lat_range_set:
+            self.set_extent([lon_range[1], lon_range[0], lat_range[0], lat_range[1]])
 
         im = self.pcolormesh(
             lon_raster,
@@ -823,6 +834,9 @@ class _Skyproj():
         self._hspmap = hspmap
         self._hpxmap = None
 
+        lon_range_set = lon_range is not None
+        lat_range_set = lat_range is not None
+
         if lon_range is None or lat_range is None:
             if zoom:
                 # Using the coverage map is much faster even if approximate.
@@ -832,8 +846,8 @@ class _Skyproj():
                                                               nest=True)
             else:
                 extent = self.get_extent()
-                lon_range = [min(extent[0], extent[1]), max(extent[0], extent[1])]
-                lat_range = [extent[2], extent[3]]
+                _lon_range = [min(extent[0], extent[1]), max(extent[0], extent[1])]
+                _lat_range = [extent[2], extent[3]]
 
             if lon_range is None:
                 lon_range = _lon_range
@@ -871,6 +885,8 @@ class _Skyproj():
             extent = self.compute_extent(lon_raster[:-1, :-1][~values_raster.mask],
                                          lat_raster[:-1, :-1][~values_raster.mask])
             self.set_extent(extent)
+        elif lon_range_set and lat_range_set:
+            self.set_extent([lon_range[1], lon_range[0], lat_range[0], lat_range[1]])
 
         im = self.pcolormesh(
             lon_raster,
