@@ -67,7 +67,8 @@ skyproj_kwargs_par = """
 
 draw_map_common_pars = """
 zoom : `bool`, optional
-    Optimally zoom in projection to computed map.
+    Optimally zoom in projection to computed map. This will override
+    lon_range/lat_range if these are larger than the map.
 xsize : `int`, optional
     Number of rasterized pixels in the x direction.
 vmin : `float`, optional
@@ -77,9 +78,13 @@ vmax : `float`, optional
 rasterized : `bool`, optional
     Plot with rasterized graphics.
 lon_range : `tuple` [`float`, `float`], optional
-    Longitude range to plot [``lon_min``, ``lon_max``].
+    Longitude range to plot [``lon_min``, ``lon_max``]. Map will
+    be truncated to this range prior to computing optimal zoom
+    (if zoom is ``True``).
 lat_range : `tuple` [`float`, `float`], optional
-    Latitude range to plot [``lat_min``, ``lat_max``].
+    Latitude range to plot [``lat_min``, ``lat_max``]. Map will
+    be truncated to this range prior to computing optimal zoom
+    (if zoom is ``True``).
 norm : `str` or `matplotlib.colors.Normalize`, optional
     The normalization method used to scale the data. By default a
     linear scaling is used. This may be an instance of `Normalize` or
