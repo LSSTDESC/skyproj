@@ -22,7 +22,8 @@ jobs:
         channel-priority: strict
         show-channel-urls: true
         miniforge-version: latest
-        miniforge-variant: Mambaforge
+        miniforge-variant: Miniforge
+        use-mamba: true
 
     - name: Configure conda and install code
       shell: bash -l {0}
