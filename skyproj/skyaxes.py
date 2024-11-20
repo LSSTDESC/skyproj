@@ -578,3 +578,7 @@ class SkyAxes(matplotlib.axes.Axes):
         crs_new : `skyproj.SkyCRS`
         """
         self.projection = crs_new
+
+    def minorticks_on(self):
+        """This is a no-op; skyproj does not support minor ticks."""
+        warnings.warn("Skyproj does not support minor ticks.")

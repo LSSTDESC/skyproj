@@ -107,7 +107,14 @@ class _Skyproj():
             warnings.warn("rcparams is deprecated as a keyword, and is now ignored. "
                           "Please use skyproj.ax.tick_params() to set tick label parameters.")
 
-        self._ax = fig.add_subplot(subspec, projection=crs)
+        with matplotlib.rc_context(
+            {
+                "xtick.minor.visible": False,
+                "ytick.minor.visible": False
+            },
+        ):
+            self._ax = fig.add_subplot(subspec, projection=crs)
+
         self._crs_orig = crs
         self._reprojected = False
 
