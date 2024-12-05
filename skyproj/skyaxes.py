@@ -14,6 +14,9 @@ from .mpl_utils import SkyTickLabels
 __all__ = ["SkyAxes"]
 
 
+GRIDLINES_ZORDER_DEFAULT = 10
+
+
 def _add_lonlat(func):
     """Decorator to add lonlat option."""
     @functools.wraps(func)
@@ -35,6 +38,7 @@ class SkyAxes(matplotlib.axes.Axes):
         # We create empty gridlines and _ticklabels_visibility so that
         # the super().__init() has placeholders on first initialization.
         self.gridlines = SkyGridlines([])
+        self.gridlines.set_zorder(GRIDLINES_ZORDER_DEFAULT)
         self._ticklabels_visibility = {}
         self._ticklabels = []
 
@@ -191,11 +195,14 @@ class SkyAxes(matplotlib.axes.Axes):
         self.xaxis.labelpad = xaxis_pad/renderer.points_to_pixels(1.0) + self._xlabelpad
         self.yaxis.labelpad = yaxis_pad/renderer.points_to_pixels(1.0) + self._ylabelpad
 
+        if self._grid_visible:
+            self.add_artist(self.gridlines)
+
         super().draw(renderer)
 
         if self._grid_visible:
-            # Gridlines and ra/dec labels must be drawn on top.
-            self.gridlines.draw(renderer)
+            # RA/Dec labels must be drawn on top, after everything else
+            # is rendered.
             for label_to_draw in labels_to_draw:
                 label_to_draw.draw(renderer)
 
