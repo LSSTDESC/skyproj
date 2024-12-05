@@ -9,6 +9,7 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.cm import ScalarMappable
 from matplotlib.colors import Normalize, LogNorm
 
+from .skyaxes import GRIDLINES_ZORDER_DEFAULT
 from .skycrs import get_crs, GnomonicCRS, proj, proj_inverse
 from .hpx_utils import (
     healpix_pixels_range,
@@ -626,9 +627,15 @@ class _Skyproj():
     def ellipse(self, *args, **kwargs):
         return self._ax.ellipse(*args, **kwargs)
 
-    def legend(self, *args, loc='upper left', **kwargs):
-        """Add legend to the axis with ax.legend(*args, **kwargs)."""
-        return self._ax.legend(*args, loc=loc, **kwargs)
+    def legend(self, *args, loc='upper left', zorder=GRIDLINES_ZORDER_DEFAULT + 1, **kwargs):
+        """Add legend to the axis with ax.legend(*args, **kwargs, zorder=zorder).
+
+        By default the legend will be placed on top of all other elements. This
+        can be adjusted with the zorder parameter.
+        """
+        legend = self._ax.legend(*args, loc=loc, **kwargs)
+        legend.set_zorder(zorder)
+        return legend
 
     def draw_polygon(self, lon, lat, edgecolor='red', linestyle='solid',
                      facecolor=None, **kwargs):
