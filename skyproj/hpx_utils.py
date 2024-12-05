@@ -4,7 +4,11 @@ import hpgeom as hpg
 from .utils import wrap_values
 
 __all__ = ['healpix_pixels_range', 'hspmap_to_xy', 'hpxmap_to_xy', 'healpix_to_xy',
-           'healpix_bin']
+           'healpix_bin', 'NoValidPixelsError']
+
+
+class NoValidPixelsError(RuntimeError):
+    pass
 
 
 def healpix_pixels_range(nside, pixels, wrap, nest=False):
@@ -28,6 +32,10 @@ def healpix_pixels_range(nside, pixels, wrap, nest=False):
     lat_range : `tuple` [`float`, `float`]
         Latitude range of pixels (min, max)
     """
+    if len(pixels) == 0:
+        # There are no valid pixels; auto-zoom is not possible.
+        raise NoValidPixelsError("No valid pixels; zoom is not available.")
+
     lon, lat = hpg.pixel_to_angle(nside, pixels, nest=nest)
 
     eps = hpg.max_pixel_radius(nside)

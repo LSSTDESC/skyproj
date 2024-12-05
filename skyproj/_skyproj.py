@@ -10,7 +10,14 @@ from matplotlib.cm import ScalarMappable
 from matplotlib.colors import Normalize, LogNorm
 
 from .skycrs import get_crs, GnomonicCRS, proj, proj_inverse
-from .hpx_utils import healpix_pixels_range, hspmap_to_xy, hpxmap_to_xy, healpix_to_xy, healpix_bin
+from .hpx_utils import (
+    healpix_pixels_range,
+    hspmap_to_xy,
+    hpxmap_to_xy,
+    healpix_to_xy,
+    healpix_bin,
+    NoValidPixelsError,
+)
 from .utils import wrap_values, _get_boundary_poly_xy, get_autoscale_vmin_vmax
 
 from ._docstrings import skyproj_init_parameters, skyproj_kwargs_par
@@ -847,11 +854,18 @@ class _Skyproj():
         if lon_range is None or lat_range is None:
             if zoom:
                 # Using the coverage map is much faster even if approximate.
-                _lon_range, _lat_range = healpix_pixels_range(hspmap.nside_coverage,
-                                                              np.where(hspmap.coverage_mask)[0],
-                                                              self._wrap,
-                                                              nest=True)
-            else:
+                try:
+                    _lon_range, _lat_range = healpix_pixels_range(
+                        hspmap.nside_coverage,
+                        np.where(hspmap.coverage_mask)[0],
+                        self._wrap,
+                        nest=True,
+                    )
+                except NoValidPixelsError:
+                    warnings.warn("No valid pixels found; auto-zoom not possible.")
+                    zoom = False
+
+            if not zoom:
                 extent = self.get_extent()
                 _lon_range = [min(extent[0], extent[1]), max(extent[0], extent[1])]
                 _lat_range = [extent[2], extent[3]]

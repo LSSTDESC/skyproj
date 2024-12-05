@@ -328,6 +328,13 @@ def test_healsparse_empty(tmp_path):
         zoom=False,
     )
 
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    sp = skyproj.McBrydeSkyproj(ax=ax)
+    with pytest.warns(UserWarning):
+        _ = sp.draw_hspmap(hspmap, zoom=True)
+
 
 def test_healpix(tmp_path):
     """Test plotting a healpix map."""
