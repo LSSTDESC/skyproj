@@ -107,7 +107,7 @@ class WrappedFormatterDMS(angle_helper.FormatterDMS):
         else:
             # Additional test to set -180 to positive 180
             _values[np.isclose(_values, -180.0)] = 180.0
-        return factor*_values
+        return np.round(factor*_values).astype(np.int64)
 
     def __call__(self, direction, factor, values):
         return super().__call__(direction, factor, self._wrap_values(factor, values))
