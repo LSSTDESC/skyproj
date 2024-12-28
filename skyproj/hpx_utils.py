@@ -39,6 +39,7 @@ def healpix_pixels_range(nside, pixels, wrap, nest=False):
     lon, lat = hpg.pixel_to_angle(nside, pixels, nest=nest)
 
     eps = hpg.max_pixel_radius(nside)
+    eps_lon = eps / np.cos(np.deg2rad(np.median(lat)))
 
     lat_range = (np.clip(np.min(lat) - eps, -90.0 + 1e-5, None),
                  np.clip(np.max(lat) + eps, None, 90.0 - 1e-5))
@@ -46,7 +47,7 @@ def healpix_pixels_range(nside, pixels, wrap, nest=False):
     # FIXME: the wrap logic here is wrong.
 
     lon_wrap = (lon + wrap) % 360. - wrap
-    lon_range = (np.min(lon_wrap) - eps, np.max(lon_wrap) + eps)
+    lon_range = (np.min(lon_wrap) - eps_lon, np.max(lon_wrap) + eps_lon)
 
     # Check if we have overrun and need to do the full range
     full_range = False
