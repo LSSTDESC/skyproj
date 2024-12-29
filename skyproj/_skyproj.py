@@ -589,7 +589,7 @@ class _Skyproj():
         enclosed = False
         lon_min = lon_cent - lon_step
         while not enclosed and lon_min > (self.lon_0 - 180.0):
-            e_x, e_y = self.proj([lon_min, lon_min], [lat_min, lat_max])
+            e_x, e_y = self.proj([lon_min + lon_step/2., lon_min + lon_step/2.], [lat_min, lat_max])
             n_out = np.sum(x < e_x.min())
             if n_out == 0:
                 enclosed = True
@@ -600,7 +600,7 @@ class _Skyproj():
         enclosed = False
         lon_max = lon_cent + lon_step
         while not enclosed and lon_max < (self.lon_0 + 180.0):
-            e_x, e_y = self.proj([lon_max, lon_max], [lat_min, lat_max])
+            e_x, e_y = self.proj([lon_max - lon_step/2., lon_max - lon_step/2.], [lat_min, lat_max])
             n_out = np.sum(x > e_x.max())
             if n_out == 0:
                 enclosed = True
