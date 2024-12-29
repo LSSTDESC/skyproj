@@ -3,6 +3,7 @@ import pytest
 
 import numpy as np
 import healsparse as hsp
+import hpgeom as hpg
 
 import matplotlib
 matplotlib.use("Agg")
@@ -769,3 +770,30 @@ def test_healsparse_gnomonic(tmp_path, lon_0):
     ax = fig.add_subplot(111)
     sp = skyproj.GnomonicSkyproj(ax=ax, lon_0=lon_0, lat_0=0.0)
     im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(hspmap, zoom=True)
+
+
+@pytest.mark.parametrize("lat_cent", [0.0, 75.0])
+def test_healsparse_single_pixel(tmp_path, lat_cent):
+    """Test drawing a single pixel (Issue 64)"""
+
+    plt.rcParams.update(plt.rcParamsDefault)
+
+    nside = 256
+
+    pixelnum = hpg.angle_to_pixel(nside, 50.0, lat_cent)
+
+    hspmap = hsp.HealSparseMap.make_empty(32, nside, np.float32)
+    hspmap[pixelnum] = 1.0
+
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    sp = skyproj.McBrydeSkyproj(ax=ax, lon_0=0)
+    _ = sp.draw_hspmap(hspmap)
+    sp.draw_inset_colorbar()
+
+    fname = f"healsparse_single_pixel_{lat_cent}.png"
+    fig.savefig(tmp_path / fname)
+    err = compare_images(os.path.join(ROOT, "data", fname), tmp_path / fname, 40.0)
+    if err:
+        raise ImageComparisonFailure(err)
