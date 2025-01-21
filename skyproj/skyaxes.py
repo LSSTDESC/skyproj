@@ -2,13 +2,19 @@ import functools
 import numpy as np
 import warnings
 
+import matplotlib as mpl
 import matplotlib.axes
 from pyproj import Geod
 
-from .skycrs import PlateCarreeCRS
 from .utils import wrap_values
+from .skygrid import SkyGridlines, SkyGridHelper
+from .mpl_utils import SkyTickLabels
+
 
 __all__ = ["SkyAxes"]
+
+
+GRIDLINES_ZORDER_DEFAULT = 10
 
 
 def _add_lonlat(func):
@@ -24,26 +30,191 @@ def _add_lonlat(func):
 class SkyAxes(matplotlib.axes.Axes):
     # docstring inherited
     def __init__(self, *args, **kwargs):
-        self.projection = kwargs.pop("sky_crs")
+        self.projection = kwargs.pop("sky_crs", None)
 
-        self.plate_carree = PlateCarreeCRS()
+        if self.projection is None:
+            raise RuntimeError("Must specify sky_crs for initializing SkyAxes.")
 
-        self._artist = None
+        # We create empty gridlines and _ticklabels_visibility so that
+        # the super().__init() has placeholders on first initialization.
+        self.gridlines = SkyGridlines([])
+        self.gridlines.set_zorder(GRIDLINES_ZORDER_DEFAULT)
+        self._ticklabels_visibility = {}
+        self._ticklabels = []
 
         super().__init__(*args, **kwargs)
+
+        # The ``inherit`` name is special and means to use the same
+        # color as x/ytick.color.
+        if mpl.rcParams["xtick.labelcolor"] == "inherit":
+            self._xlabelcolor = mpl.rcParams["xtick.color"]
+        else:
+            self._xlabelcolor = mpl.rcParams["xtick.labelcolor"]
+
+        if mpl.rcParams["ytick.labelcolor"] == "inherit":
+            self._ylabelcolor = mpl.rcParams["ytick.color"]
+        else:
+            self._ylabelcolor = mpl.rcParams["ytick.labelcolor"]
+
+        self._ticklabels = {
+            "left": SkyTickLabels(
+                axis_direction="left",
+                figure=self.figure,
+                transform=self.transData,
+                fontsize=mpl.rcParams["ytick.labelsize"],
+                pad=mpl.rcParams["ytick.major.pad"],
+                color=self._ylabelcolor,
+            ),
+            "right": SkyTickLabels(
+                axis_direction="right",
+                figure=self.figure,
+                transform=self.transData,
+                fontsize=mpl.rcParams["ytick.labelsize"],
+                pad=mpl.rcParams["ytick.major.pad"],
+                color=self._ylabelcolor,
+            ),
+            "top": SkyTickLabels(
+                axis_direction="top",
+                figure=self.figure,
+                transform=self.transData,
+                fontsize=mpl.rcParams["xtick.labelsize"],
+                pad=mpl.rcParams["xtick.major.pad"],
+                color=self._xlabelcolor,
+            ),
+            "bottom": SkyTickLabels(
+                axis_direction="bottom",
+                figure=self.figure,
+                transform=self.transData,
+                fontsize=mpl.rcParams["xtick.labelsize"],
+                pad=mpl.rcParams["xtick.major.pad"],
+                color=self._xlabelcolor,
+            ),
+        }
+
+        self._ticklabels_visibility = {
+            "left": True,
+            "right": False,
+            "top": True,
+            "bottom": True,
+        }
+
+        self._xlabelpad = mpl.rcParams["axes.labelpad"]
+        self._ylabelpad = mpl.rcParams["axes.labelpad"]
+
+        # This needs to happen to make sure that it's all set correctly.
+        self.clear()
 
     def clear(self):
         """Clear the current axes."""
         result = super().clear()
-        self.xaxis.set_visible(False)
-        self.yaxis.set_visible(False)
+
+        # This will turn off all the built-in ticks.
+        tick_param_dict = {
+            "left": False,
+            "right": False,
+            "top": False,
+            "bottom": False,
+            "labelleft": False,
+            "labelright": False,
+            "labelbottom": False,
+            "labeltop": False,
+        }
+        self.xaxis.set_tick_params(**tick_param_dict)
+        self.yaxis.set_tick_params(**tick_param_dict)
 
         self.set_frame_on(False)
 
         # Always equal aspect ratio.
         self.set_aspect('equal')
 
+        self._set_artist_props(self.gridlines)
+
         return result
+
+    def grid(self, visible=False, which="major", axis="both",
+             n_grid_lon=None, n_grid_lat=None,
+             longitude_ticks="positive", equatorial_labels=False, celestial=True,
+             full_circle=False, wrap=0.0, min_lon_ticklabel_delta=0.1,
+             draw_inner_lon_labels=False,
+             **kwargs):
+        # docstring inherited
+
+        self._grid_visible = visible
+
+        if visible:
+            # Set up grid finder and grid lines.
+
+            grid_helper = SkyGridHelper(
+                self.projection,
+                wrap,
+                n_grid_lon_default=n_grid_lon,
+                n_grid_lat_default=n_grid_lat,
+                longitude_ticks=longitude_ticks,
+                celestial=celestial,
+                equatorial_labels=equatorial_labels,
+                full_circle=full_circle,
+                min_lon_ticklabel_delta=min_lon_ticklabel_delta,
+                draw_inner_lon_labels=draw_inner_lon_labels,
+            )
+            grid_helper.update_lim(self)
+
+            self.gridlines.set_grid_helper(grid_helper)
+
+        # We don't want the projection here because the gridlines
+        # are all in projected coordinates.
+        self.gridlines.set(**kwargs)
+
+    def draw(self, renderer):
+        # docstring inherited
+
+        # Note that we first need to compute all the lon/lat label locations
+        # and sizes to know the correct padding for the axis label.  But
+        # we need to defer drawing of the labels until the end to ensure that
+        # they end up on top.
+        xaxis_pad, yaxis_pad = 0.0, 0.0
+
+        labels_to_draw = []
+        if self._grid_visible:
+            # We need to update the limits and ensure the gridlines know
+            # about the limits for clipping.
+            self.gridlines._grid_helper.update_lim(self)
+            self.gridlines.set_clip_box(self.bbox)
+
+            # We only do labels if we have grid lines.
+            for lon_or_lat, side in [("lon", "top"), ("lon", "bottom"), ("lat", "left"), ("lat", "right")]:
+                if self._ticklabels_visibility[self._ticklabels[side]._axis_direction]:
+                    tick_iter = self.gridlines.get_tick_iterator(lon_or_lat, side)
+                    self._ticklabels[side].set_from_tick_iterator(tick_iter)
+                    self._ticklabels[side].compute_padding(renderer)
+                    labels_to_draw.append(self._ticklabels[side])
+                    if side == "top" or side == "bottom":
+                        xaxis_pad = max(xaxis_pad, self._ticklabels[side]._axislabel_pad)
+                    else:
+                        yaxis_pad = max(yaxis_pad, self._ticklabels[side]._axislabel_pad)
+
+        self.xaxis.labelpad = xaxis_pad/renderer.points_to_pixels(1.0) + self._xlabelpad
+        self.yaxis.labelpad = yaxis_pad/renderer.points_to_pixels(1.0) + self._ylabelpad
+
+        if self._grid_visible:
+            self.add_artist(self.gridlines)
+
+        super().draw(renderer)
+
+        if self._grid_visible:
+            # RA/Dec labels must be drawn on top, after everything else
+            # is rendered.
+            for label_to_draw in labels_to_draw:
+                label_to_draw.draw(renderer)
+
+    def invert_xaxis(self):
+        super().invert_xaxis()
+
+        if self.xaxis_inverted():
+            self._ticklabels["left"].set_axis_direction("right")
+            self._ticklabels["right"].set_axis_direction("left")
+        else:
+            self._ticklabels["left"].set_axis_direction("left")
+            self._ticklabels["right"].set_axis_direction("right")
 
     def set_extent(self, extent, lonlat=True):
         """Set the extent of the axes.
@@ -68,7 +239,7 @@ class SkyAxes(matplotlib.axes.Axes):
                     # Make sure we have the equator included
                     lat_steps.append(0.0)
                 lon, lat = np.meshgrid(np.linspace(0, 360.0, 360), lat_steps)
-                xy = self.projection.transform_points(self.plate_carree, lon.ravel(), lat.ravel())
+                xy = self.projection.transform_points(lon.ravel(), lat.ravel())
                 # Need to offset this by some small amount to ensure we don't get
                 # out-of-bounds transformations.
                 eps = 1e-5
@@ -83,7 +254,7 @@ class SkyAxes(matplotlib.axes.Axes):
                 lat_pts = np.linspace(lat0, lat1, npt)
                 lon = np.concatenate((lon_pts, lon_pts, np.repeat(lon0, npt), np.repeat(lon1, npt)))
                 lat = np.concatenate((np.repeat(lat0, npt), np.repeat(lat1, npt), lat_pts, lat_pts))
-                xy = self.projection.transform_points(self.plate_carree, lon, lat)
+                xy = self.projection.transform_points(lon, lat)
                 # FIXME NOTE NEED TO KNOW LON_0/WRAP OF PROJECTION...
                 x0 = np.min(xy[:, 0])
                 x1 = np.max(xy[:, 0])
@@ -92,6 +263,8 @@ class SkyAxes(matplotlib.axes.Axes):
 
         self.set_xlim([x0, x1])
         self.set_ylim([y0, y1])
+
+        # FIXME: do automatic inversion here.
 
     def get_extent(self, lonlat=True):
         """Get the extent of the axes.
@@ -113,10 +286,10 @@ class SkyAxes(matplotlib.axes.Axes):
             y_pts = np.linspace(y0, y1, npt)
             x = np.concatenate((x_pts, x_pts, np.repeat(x0, npt), np.repeat(x1, npt)))
             y = np.concatenate((np.repeat(y0, npt), np.repeat(y1, npt), y_pts, y_pts))
-            lonlat = self.plate_carree.transform_points(self.projection, x, y)
+            lonlat = self.projection.transform_points(x, y, inverse=True)
 
             # Check for out-of-bounds by reverse-projecting
-            xy = self.projection.transform_points(self.plate_carree, lonlat[:, 0], lonlat[:, 1])
+            xy = self.projection.transform_points(lonlat[:, 0], lonlat[:, 1])
             bad = ((~np.isclose(xy[:, 0], x)) | (~np.isclose(xy[:, 1], y)))
             lonlat[bad, :] = np.nan
 
@@ -172,7 +345,7 @@ class SkyAxes(matplotlib.axes.Axes):
 
         if kwargs.get('lonlat', True):
             # Check for wrapping by projecting and looking for jumps.
-            proj_xy = self.projection.transform_points(self.plate_carree, X, Y)
+            proj_xy = self.projection.transform_points(X, Y)
             X_proj = proj_xy[..., 0]
             Y_proj = proj_xy[..., 1]
 
@@ -180,8 +353,9 @@ class SkyAxes(matplotlib.axes.Axes):
                             Y_proj[1:, 1:] - Y_proj[0: -1, 0: -1])
 
             # If we have a jump of 10% of the radius, assume it's bad,
-            # except if we are using PlateCarree which doesn't use the radius.
-            if self.projection == self.plate_carree:
+            # except if we are using PlateCarree/cyl which doesn't use the
+            # radius.
+            if self.projection.name == "cyl":
                 max_dist = 90.0
             else:
                 max_dist = 0.1*self.projection.radius
@@ -301,39 +475,107 @@ class SkyAxes(matplotlib.axes.Axes):
     def lat_0(self):
         return self.projection.lat_0
 
-    def set_xlabel(self, text, side='bottom', **kwargs):
+    def set_xlabel(self, xlabel, fontsize="xx-large", **kwargs):
         """Set the label on the x axis.
 
         Parameters
         ----------
-        text : `str`
+        xlabel : `str`
             x label string.
-        side : `str`, optional
-            Side to set the label.  Can be ``bottom`` or ``top``.
+        fontsize : `int` or `str`, optional
+            Font size for label.
         **kwargs : `dict`
             Additional keyword arguments accepted by ax.set_xlabel().
         """
-        if self._artist is None:
-            raise RuntimeError("set_xlabel run without initialization of map.")
+        self._xlabelpad = kwargs.pop("labelpad", mpl.rcParams["axes.labelpad"])
+        return super().set_xlabel(xlabel, labelpad=0, fontsize=fontsize, **kwargs)
 
-        return self._artist.axis[side].label.set(text=text, **kwargs)
-
-    def set_ylabel(self, text, side='left', **kwargs):
+    def set_ylabel(self, ylabel, fontsize="xx-large", **kwargs):
         """Set the label on the y axis.
 
         Parameters
         ----------
-        text : `str`
-            x label string.
-        side : `str`, optional
-            Side to set the label.  Can be ``left`` or ``right``.
+        ylabel : `str`
+            y label string.
+        fontsize : `int` or `str`, optional
+            Font size for label.
         **kwargs : `dict`
-            Additional keyword arguments accepted by ax.set_xlabel().
+            Additional keyword arguments accepted by ax.set_ylabel().
         """
-        if self._artist is None:
-            raise RuntimeError("set_xlabel run without initialization of map.")
+        self._ylabelpad = kwargs.pop("labelpad", mpl.rcParams["axes.labelpad"])
+        return super().set_ylabel(ylabel, labelpad=0, fontsize=fontsize, **kwargs)
 
-        return self._artist.axis[side].label.set(text=text, **kwargs)
+    def tick_params(self, axis="both", **kwargs):
+        # docstring inherited
+        if len(self._ticklabels) == 0:
+            # Nothing to do here since axis is not initialized.
+            return
+
+        if axis not in ("x", "y", "both"):
+            raise ValueError("axis keyword must be one of ``x``, ``y``, or ``both``.")
+        which = kwargs.pop("which", "major")
+        if which not in ("major", "both"):
+            raise ValueError("which keyword must be one of ``major``, ``minor``, or ``both``.")
+        if which == "minor":
+            # Nothing to do.
+            return
+        reset = kwargs.pop("reset", False)
+
+        axis_mapping = {
+            "x": ["top", "bottom"],
+            "y": ["left", "right"],
+        }
+
+        for _axis in ("x", "y"):
+            if axis not in (_axis, "both"):
+                continue
+
+            labelsize = kwargs.pop("labelsize", None)
+            labelcolor = kwargs.pop("labelcolor", None)
+            labelfontfamily = kwargs.pop("labelfontfamily", None)
+            labelbottom = kwargs.pop("labelbottom", None)
+            labeltop = kwargs.pop("labeltop", None)
+            labelleft = kwargs.pop("labelleft", None)
+            labelright = kwargs.pop("labelright", None)
+            pad = kwargs.pop("pad", None)
+
+            for side in axis_mapping[_axis]:
+                if labelsize is not None:
+                    self._ticklabels[side].set(fontsize=labelsize)
+                elif reset:
+                    self._ticklabels[side].set(fontsize=mpl.rcParams["ytick.labelsize"])
+                if labelcolor is not None:
+                    self._ticklabels[side].set(color=labelcolor)
+                elif reset:
+                    if _axis == "x":
+                        self._ticklabels[side].set(color=self._xlabelcolor)
+                    else:
+                        self._ticklabels[side].set(color=self._ylabelcolor)
+                if labelfontfamily is not None:
+                    self._ticklabels[side].set(fontfamily=labelfontfamily)
+                elif reset:
+                    self._ticklabels[side].set(fontfamily=None)
+                if pad is not None:
+                    self._ticklabels[side].set_pad(pad)
+                elif reset:
+                    self._ticklabels[side].set_pad(mpl.rcParams[f"{axis}tick.major.pad"])
+
+            if labelbottom is not None:
+                self._ticklabels_visibility["bottom"] = labelbottom
+            elif reset:
+                self._ticklabels_visibility["bottom"] = True
+            if labeltop is not None:
+                self._ticklabels_visibility["top"] = labeltop
+            elif reset:
+                self._ticklabels_visibility["top"] = True
+            if labelleft is not None:
+                self._ticklabels_visibility["left"] = labelleft
+            elif reset:
+                self._ticklabels_visibility["left"] = True
+            if labelright is not None:
+                self._ticklabels_visibility["right"] = labelright
+            elif reset:
+                self._ticklabels_visibility["right"] = False
 
     def update_projection(self, crs_new):
         """Update the projection central coordinate.
@@ -343,3 +585,7 @@ class SkyAxes(matplotlib.axes.Axes):
         crs_new : `skyproj.SkyCRS`
         """
         self.projection = crs_new
+
+    def minorticks_on(self):
+        """This is a no-op; skyproj does not support minor ticks."""
+        warnings.warn("Skyproj does not support minor ticks.")

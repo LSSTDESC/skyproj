@@ -97,3 +97,28 @@ def test_lines_polygons_obmoll(tmp_path, lonlatplonp):
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 15.0)
     if err:
         raise ImageComparisonFailure(err)
+
+
+def test_lines_polygons_mcbryde_opaque_legend(tmp_path):
+    """Test drawing lines and polygons with an opaque legend."""
+    plt.rcParams.update(plt.rcParamsDefault)
+
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    sp = skyproj.McBrydeSkyproj(ax=ax, lon_0=0.0)
+
+    sp.plot([-10., 45.], [-10., 45.], 'r-', label='One')
+    sp.plot([170., 210.], [-10., 45.], 'b--', label='Two')
+
+    sp.draw_polygon([-20, 20, 20, -20], [20, 20, 40, 40],
+                    edgecolor='magenta', label='Three')
+    sp.draw_polygon([160, 200, 200, 160], [20, 20, 40, 40],
+                    edgecolor='black', label='Four')
+
+    sp.legend(loc='lower right', framealpha=1.0)
+    fname = 'lines_and_polygons_opaque_legend.png'
+    fig.savefig(tmp_path / fname)
+    err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 15.0)
+    if err:
+        raise ImageComparisonFailure(err)

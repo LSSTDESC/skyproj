@@ -15,14 +15,14 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - uses: conda-incubator/setup-miniconda@v2
+    - uses: conda-incubator/setup-miniconda@v3
       with:
         python-version: ${{ matrix.python-version }}
         channels: conda-forge,defaults
         channel-priority: strict
         show-channel-urls: true
         miniforge-version: latest
-        miniforge-variant: Mambaforge
+        use-mamba: true
 
     - name: Configure conda and install code
       shell: bash -l {0}

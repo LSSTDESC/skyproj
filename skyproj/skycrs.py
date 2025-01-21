@@ -9,7 +9,8 @@ from .utils import wrap_values
 
 __all__ = ["SkyCRS", "PlateCarreeCRS", "McBrydeThomasFlatPolarQuarticCRS", "MollweideCRS",
            "HammerCRS", "EqualEarthCRS", "LambertAzimuthalEqualAreaCRS", "GnomonicCRS",
-           "ObliqueMollweideCRS", "AlbersEqualAreaCRS", "get_crs", "get_available_crs"]
+           "ObliqueMollweideCRS", "AlbersEqualAreaCRS", "get_crs", "get_available_crs",
+           "proj", "proj_inverse"]
 
 
 RADIUS = 1.0
@@ -39,6 +40,13 @@ class SkyCRS(CRS):
         self.proj4_params.update(**kwargs)
         super().__init__(self.proj4_params)
 
+        _plate_carree = CRS(proj="eqc", lon_0=0.0, ellps="sphere", R=radius, to_meter=math.radians(1)*radius)
+
+        self._transformer_fwd = Transformer.from_crs(_plate_carree, self, always_xy=True)
+        self._transformer_inv = Transformer.from_crs(self, _plate_carree, always_xy=True)
+
+        self._transformer_cache = {}
+
     def with_new_center(self, lon_0, lat_0=None):
         """Create a new SkyCRS with a new lon_0/lat_0.
 
@@ -61,18 +69,17 @@ class SkyCRS(CRS):
 
         return self.__class__(**proj4_params)
 
-    def transform_points(self, src_crs, x, y):
-        """Transform points from a source coordinate reference system (CRS)
-        to this CRS.
+    def transform_points(self, x, y, inverse=False):
+        """Transform points from lon/lat to this CRS or the inverse.
 
         Parameters
         ----------
-        src_crs : `skyproj.SkyCRS`
-            Source coordinate reference system describing x/y points.
         x : `np.ndarray`
             Array of x values, may be any number of dimensions.
         y : `np.ndarray`
             Array of y values, may be any number of dimensions.
+        inverse : `bool`
+            Apply inverse transformation (CRS to lon/lat)?
 
         Returns
         -------
@@ -80,6 +87,8 @@ class SkyCRS(CRS):
             Array of transformed points. Dimensions are [dim_x, 2]
             such that the final index gives the transformed x_prime, y_prime.
         """
+        x = np.atleast_1d(x)
+        y = np.atleast_1d(y)
         result_shape = tuple(x.shape[i] for i in range(x.ndim)) + (2, )
 
         x = x.ravel()
@@ -89,18 +98,22 @@ class SkyCRS(CRS):
 
         result = np.zeros([npts, 2], dtype=np.float64)
         if npts:
-            if isinstance(src_crs, PlateCarreeCRS):
+            if not inverse:
                 # We need to wrap to [-180, 180)
                 x = wrap_values(x)
+
+            if len(x) == 1:
+                _x = x[0]
+                _y = y[0]
+            else:
+                _x = x
+                _y = y
+
             try:
-                transformer = Transformer.from_crs(src_crs, self, always_xy=True)
-                if len(x) == 1:
-                    _x = x[0]
-                    _y = y[0]
+                if inverse:
+                    result[:, 0], result[:, 1] = self._transformer_inv.transform(_x, _y, None, errcheck=False)
                 else:
-                    _x = x
-                    _y = y
-                result[:, 0], result[:, 1] = transformer.transform(_x, _y, None, errcheck=False)
+                    result[:, 0], result[:, 1] = self._transformer_fwd.transform(_x, _y, None, errcheck=False)
             except ProjError as err:
                 msg = str(err).lower()
                 if (
@@ -444,3 +457,31 @@ def get_available_crs():
         available_crs[name] = descr
 
     return available_crs
+
+
+def proj(lon, lat, projection=None, pole_clip=None, wrap=None):
+    if projection is None:
+        raise RuntimeError("Must specify a projection.")
+
+    lon = np.atleast_1d(lon)
+    lat = np.atleast_1d(lat)
+    if pole_clip is not None:
+        out = ((lat < (-90.0 + pole_clip))
+               | (lat > (90.0 - pole_clip)))
+    if wrap is not None:
+        lon[np.isclose(lon, wrap)] = wrap - 1e-10
+    proj_xy = projection.transform_points(lon, lat)
+    if pole_clip is not None:
+        proj_xy[..., 1][out] = np.nan
+
+    return proj_xy[..., 0], proj_xy[..., 1]
+
+
+def proj_inverse(x, y, projection=None):
+    if projection is None:
+        raise RuntimeError("Must specify a projection.")
+
+    x = np.atleast_1d(x)
+    y = np.atleast_1d(y)
+    proj_lonlat = projection.transform_points(x, y, inverse=True)
+    return proj_lonlat[..., 0], proj_lonlat[..., 1]

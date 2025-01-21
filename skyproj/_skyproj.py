@@ -1,19 +1,24 @@
 import warnings
 
-import matplotlib.pyplot as plt
+import matplotlib
 
 import numpy as np
 import hpgeom as hpg
 
-import mpl_toolkits.axisartist as axisartist
-import mpl_toolkits.axisartist.angle_helper as angle_helper
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.cm import ScalarMappable
 from matplotlib.colors import Normalize, LogNorm
 
-from .skycrs import get_crs, PlateCarreeCRS, GnomonicCRS
-from .hpx_utils import healpix_pixels_range, hspmap_to_xy, hpxmap_to_xy, healpix_to_xy, healpix_bin
-from .mpl_utils import ExtremeFinderWrapped, WrappedFormatterDMS, GridHelperSkyproj
+from .skyaxes import GRIDLINES_ZORDER_DEFAULT
+from .skycrs import get_crs, GnomonicCRS, proj, proj_inverse
+from .hpx_utils import (
+    healpix_pixels_range,
+    hspmap_to_xy,
+    hpxmap_to_xy,
+    healpix_to_xy,
+    healpix_bin,
+    NoValidPixelsError,
+)
 from .utils import wrap_values, _get_boundary_poly_xy, get_autoscale_vmin_vmax
 
 from ._docstrings import skyproj_init_parameters, skyproj_kwargs_par
@@ -80,6 +85,9 @@ class _Skyproj():
         self._min_lon_ticklabel_delta = min_lon_ticklabel_delta
 
         if ax is None:
+            # If we don't have an axis, we need to ask the matplotlib
+            # caching system which involves an import of matplotlib.pyplot.
+            import matplotlib.pyplot as plt
             ax = plt.gca()
 
         fig = ax.figure
@@ -102,14 +110,24 @@ class _Skyproj():
 
         kwargs['lon_0'] = lon_0
         crs = get_crs(projection_name, **kwargs)
-        self._ax = fig.add_subplot(subspec, projection=crs)
+
+        if len(rcparams) > 0:
+            warnings.warn("rcparams is deprecated as a keyword, and is now ignored. "
+                          "Please use skyproj.ax.tick_params() to set tick label parameters.")
+
+        with matplotlib.rc_context(
+            {
+                "xtick.minor.visible": False,
+                "ytick.minor.visible": False
+            },
+        ):
+            self._ax = fig.add_subplot(subspec, projection=crs)
+
         self._crs_orig = crs
         self._reprojected = False
 
-        self._aa = None
-
-        self.do_celestial = celestial
-        self.do_gridlines = gridlines
+        self._celestial = celestial
+        self._gridlines = gridlines
         self._autorescale = autorescale
         self._galactic = galactic
 
@@ -131,26 +149,20 @@ class _Skyproj():
             extent_xy = None
 
         self._boundary_lines = None
-        self._boundary_labels = []
 
-        if "axes.labelsize" not in rcparams:
-            rcparams["axes.labelsize"] = 16
+        self._initialize_axes(extent, extent_xy=extent_xy)
 
-        with plt.rc_context(rcparams):
-            self._initialize_axes(extent, extent_xy=extent_xy)
+        # Set up callbacks on axis zoom.
+        self._add_change_axis_callbacks()
 
-            # Set up callbacks on axis zoom.
-            self._add_change_axis_callbacks()
+        # Set up callback on figure resize.
+        self._dc = self.ax.figure.canvas.mpl_connect('draw_event', self._draw_callback)
+        self._initial_extent_xy = [0]*4
 
-            # Set up callback on figure resize.
-            self._frc = self.ax.figure.canvas.mpl_connect('resize_event', self._change_size)
-            self._dc = self.ax.figure.canvas.mpl_connect('draw_event', self._draw_callback)
-            self._initial_extent_xy = [0]*4
+        # Set up reproject callback.
+        self._rpc = self.ax.figure.canvas.mpl_connect('key_press_event', self._keypress_callback)
 
-            # Set up reproject callback.
-            self._rpc = self.ax.figure.canvas.mpl_connect('key_press_event', self._keypress_callback)
-
-            self._draw_aa_bounds_and_labels()
+        self._draw_bounds()
 
     def proj(self, lon, lat):
         """Apply forward projection to a set of lon/lat positions.
@@ -171,14 +183,7 @@ class _Skyproj():
         y : `np.ndarray`
             Array of y values.
         """
-        lon = np.atleast_1d(lon)
-        lat = np.atleast_1d(lat)
-        out = ((lat < (-90.0 + self._pole_clip))
-               | (lat > (90.0 - self._pole_clip)))
-        proj_xy = self.crs.transform_points(PlateCarreeCRS(), lon, lat)
-        # FIXME I don't like this, look at the get_extent code instead/as well?
-        proj_xy[..., 1][out] = np.nan
-        return proj_xy[..., 0], proj_xy[..., 1]
+        return proj(lon, lat, projection=self.crs, pole_clip=self._pole_clip)
 
     def proj_inverse(self, x, y):
         """Apply inverse projection to a set of points.
@@ -199,10 +204,7 @@ class _Skyproj():
         lat : `np.ndarray`
             Array of latitudes (degrees).
         """
-        x = np.atleast_1d(x)
-        y = np.atleast_1d(y)
-        proj_lonlat = PlateCarreeCRS().transform_points(self.crs, x, y)
-        return proj_lonlat[..., 0], proj_lonlat[..., 1]
+        return proj_inverse(x, y, self.crs)
 
     def _initialize_axes(self, extent, extent_xy=None):
         """Initialize the axes with a given extent.
@@ -217,27 +219,25 @@ class _Skyproj():
             Extent in xy space [x_min, x_max, y_min, y_max].
             Used for full-sky initialization.
         """
-        # Reset any axis artist if necessary
-        if self._aa is not None:
-            self._aa.remove()
-            self._aa = None
-
         self._set_axes_limits(extent, extent_xy=extent_xy, invert=False)
         self._create_axes(extent)
-        self._set_axes_limits(extent, extent_xy=extent_xy, invert=self.do_celestial)
+        self._set_axes_limits(extent, extent_xy=extent_xy, invert=self._celestial)
 
         self._ax.set_frame_on(False)
-        if self.do_gridlines:
-            self._aa.grid(True, linestyle=':', color='k', lw=0.5)
-
-        self._aa.axis[:].line.set_visible(False)
-        self._aa.axis[:].major_ticks.set_visible(False)
+        if self._gridlines:
+            self._ax.grid(visible=True, linestyle=':', color='k', lw=0.5,
+                          n_grid_lon=self._n_grid_lon, n_grid_lat=self._n_grid_lat,
+                          longitude_ticks=self._longitude_ticks,
+                          equatorial_labels=self._equatorial_labels,
+                          celestial=self._celestial,
+                          full_circle=self._full_circle,
+                          wrap=self._wrap,
+                          min_lon_ticklabel_delta=self._min_lon_ticklabel_delta,
+                          draw_inner_lon_labels=self._inner_longitude_labels)
 
         self._extent_xy = self._ax.get_extent(lonlat=False)
         self._changed_x_axis = False
         self._changed_y_axis = False
-
-        self._ax._artist = self._aa
 
     def set_extent(self, extent):
         """Set the extent.
@@ -250,71 +250,13 @@ class _Skyproj():
         extent : array-like
             Extent as [lon_min, lon_max, lat_min, lat_max].
         """
-        self._set_axes_limits(extent, invert=self.do_celestial)
+        self._set_axes_limits(extent, invert=self._celestial)
         self._extent_xy = self._ax.get_extent(lonlat=False)
 
-        if self._n_grid_lon is None or self._n_grid_lat is None:
-            n_grid_lon, n_grid_lat = self._compute_n_grid_from_extent(extent)
+        self._draw_bounds()
 
-            self._update_grid_locators(n_grid_lon, n_grid_lat)
-
-        self._draw_aa_bounds_and_labels()
-
-    def _compute_n_grid_from_extent(self, extent):
-        """Compute the number of grid lines from the extent.
-
-        This will respect values that were set at initialization time.
-
-        Parameters
-        ----------
-        extent : array-like
-            Extent as [lon_min, lon_max, lat_min, lat_max].
-
-        Returns
-        -------
-        n_grid_lon : `int`
-            Number of gridlines in the longitude direction.
-        n_grid_lat : `int`
-            Number of gridlines in the latitude direction.
-        """
-        n_grid_lat = self._n_grid_lat if self._n_grid_lat is not None else 6
-        if self._n_grid_lon is None:
-            latscale = np.cos(np.deg2rad(np.mean(extent[2:])))
-            ratio = np.clip(np.abs(extent[1] - extent[0])*latscale/(extent[3] - extent[2]), 1./3., 5./3.)
-            n_grid_lon = int(np.ceil(ratio * n_grid_lat))
-        else:
-            n_grid_lon = self._n_grid_lon
-
-        return n_grid_lon, n_grid_lat
-
-    def _update_grid_locators(self, n_grid_lon, n_grid_lat):
-        """Update the grid locators.
-
-        Parameters
-        ----------
-        n_grid_lon : `int`
-            Number of gridlines in the longitude direction.
-        n_grid_lat : `int`
-            Number of gridlines in the latitude direction.
-        """
-        if self._wrap == 180.0 and not self._full_circle:
-            include_last_lon = True
-        else:
-            include_last_lon = False
-
-        if n_grid_lon != self._grid_helper.grid_finder.grid_locator1.nbins:
-            self._grid_helper.grid_finder.grid_locator1 = angle_helper.LocatorD(
-                n_grid_lon,
-                include_last=include_last_lon,
-            )
-        if n_grid_lat != self._grid_helper.grid_finder.grid_locator2.nbins:
-            self._grid_helper.grid_finder.grid_locator2 = angle_helper.LocatorD(
-                n_grid_lat,
-                include_last=True,
-            )
-
-    def _draw_aa_bounds_and_labels(self):
-        """Set the axisartist bounds and labels."""
+    def _draw_bounds(self):
+        """Draw the map boundary."""
         # Remove any previous lines
         if self._boundary_lines:
             for line in self._boundary_lines:
@@ -330,249 +272,7 @@ class _Skyproj():
                                              'k-',
                                              lonlat=False,
                                              clip_on=False,
-                                             linewidth=plt.rcParams['axes.linewidth'])
-
-        self._aa.axis[:].line.set_visible(False)
-        self._aa.axis[:].major_ticks.set_visible(False)
-
-        # Remove any previous labels
-        if self._boundary_labels:
-            for label in self._boundary_labels:
-                label.remove()
-            self._boundary_labels = []
-
-        grid_finder = self._grid_helper.grid_finder
-        grid_info = grid_finder.get_grid_info(
-            extent_xy[0],
-            extent_xy[2],
-            extent_xy[1],
-            extent_xy[3]
-        )
-
-        # Recover lon_level, lat_level
-        extremes = grid_finder.extreme_finder(
-            grid_finder.inv_transform_xy,
-            extent_xy[0],
-            extent_xy[2],
-            extent_xy[1],
-            extent_xy[3]
-        )
-        _, _, lon_factor = grid_finder.grid_locator1(extremes[0], extremes[1])
-        _, _, lat_factor = grid_finder.grid_locator2(extremes[2], extremes[3])
-
-        self._boundary_labels.extend(self._draw_aa_lat_labels(extent_xy, grid_info, lat_factor))
-        self._boundary_labels.extend(self._draw_aa_lon_labels(extent_xy, grid_info, lon_factor))
-
-    def _draw_aa_lat_labels(self, extent_xy, grid_info, factor):
-        """Draw axis artist latitude labels.
-
-        Parameters
-        ----------
-        extent_xy : `list`
-            Extent in x/y space
-        grid_info : `dict`
-            Grid info to determine label locations
-        factor : `float`
-            Multiplicative factor to convert ticks to values.
-
-        Returns
-        -------
-        labels : `list` [`matplotlib.Text`]
-        """
-        levels = grid_info['lat']['levels']
-        lines = grid_info['lat']['lines']
-
-        inverted = (extent_xy[1] < extent_xy[0])
-
-        # The grid_info will be reversed left/right if the axis is inverted.
-        if inverted:
-            gi_side_map = {'left': 'right',
-                           'right': 'left'}
-            x0_index = 1
-            x1_index = 0
-        else:
-            gi_side_map = {side: side for side in ['left', 'right']}
-            x0_index = 0
-            x1_index = 1
-
-        boundary_labels = []
-
-        for axis_side in ['left', 'right']:
-            if not self._aa.axis[axis_side].major_ticklabels.get_visible():
-                continue
-
-            tick_levels = grid_info['lat']['tick_levels'][gi_side_map[axis_side]]
-
-            for lat_level, lat_line in zip(levels, lines):
-                if np.abs(np.abs(lat_level) - 90.0) < 1.0:
-                    continue
-
-                if int(lat_level*factor) in tick_levels:
-                    continue
-
-                lat_line_x = lat_line[0][0]
-                lat_line_y = lat_line[0][1]
-
-                if gi_side_map[axis_side] == 'right':
-                    lat_line_x = lat_line_x[::-1]
-                    lat_line_y = lat_line_y[::-1]
-
-                if axis_side == 'left':
-                    ha = 'right'
-                else:
-                    ha = 'left'
-
-                if lat_level < 0.0:
-                    va = 'top'
-                else:
-                    va = 'bottom'
-
-                # Skip any that are out of the y bounding box.
-                if lat_line_y[0] < extent_xy[2] or lat_line_y[0] > extent_xy[3]:
-                    continue
-
-                if lat_line_x[0] < extent_xy[x0_index] or lat_line_x[0] > extent_xy[x1_index]:
-                    continue
-
-                label = self._tick_formatter2(axis_side, factor, [lat_level])[0]
-
-                boundary_labels.append(self._ax.text(lat_line_x[0],
-                                                     lat_line_y[0],
-                                                     label,
-                                                     size=plt.rcParams['ytick.labelsize'],
-                                                     lonlat=False,
-                                                     clip_on=False,
-                                                     ha=ha,
-                                                     va=va))
-        return boundary_labels
-
-    def _draw_aa_lon_labels(self, extent_xy, grid_info, factor):
-        """Draw axis artist latitude labels.
-
-        Parameters
-        ----------
-        extent_xy : `list`
-            Extent in x/y space
-        grid_info : `dict`
-            Grid info to determine label locations
-        factor : `float`
-            Multiplicative factor to convert ticks to values.
-
-        Returns
-        -------
-        labels : `list` [`matplotlib.Text`]
-        """
-        levels = grid_info['lon']['levels']
-        lines = grid_info['lon']['lines']
-
-        # Need to compute maximum extent in the x direction
-        x_min = 1e100
-        x_max = -1e100
-        for line in grid_info['lon_lines']:
-            x_min = min((x_min, np.min(line[0])))
-            x_max = max((x_max, np.max(line[0])))
-        delta_x = x_max - x_min
-
-        # The grid_info will be reversed left/right if the axis is inverted.
-        inverted = (extent_xy[1] < extent_xy[0])
-        if inverted:
-            x0_index = 1
-            x1_index = 0
-        else:
-            x0_index = 0
-            x1_index = 1
-
-        boundary_labels = []
-
-        draw_equatorial_labels = False
-        if self._equatorial_labels:
-            min_lat = np.min(grid_info['lat']['levels'])
-            max_lat = np.max(grid_info['lat']['levels'])
-            if min_lat < -89.0 and max_lat > 89.0:
-                draw_equatorial_labels = True
-
-        if draw_equatorial_labels:
-            levels = np.array(grid_info['lon']['levels'])
-
-            x, y = self.proj(levels, np.zeros(len(levels)))
-
-            ok, = np.where((x > extent_xy[x0_index]) & (x < extent_xy[x1_index])
-                           & (y > extent_xy[2]) & (y < extent_xy[3]))
-
-            prev_x = None
-            for i in ok:
-                if prev_x is not None:
-                    # Check if too close to last label.
-                    if abs(x[i] - prev_x)/delta_x < self._min_lon_ticklabel_delta:
-                        continue
-                prev_x = x[i]
-
-                label = self._tick_formatter1('top', factor, [levels[i]])[0]
-
-                boundary_labels.append(self._ax.text(x[i],
-                                                     y[i],
-                                                     label,
-                                                     size=plt.rcParams['xtick.labelsize'],
-                                                     lonlat=False,
-                                                     clip_on=False,
-                                                     ha='right',
-                                                     va='bottom'))
-        else:
-            for axis_side in ['top', 'bottom']:
-                if not self._aa.axis[axis_side].major_ticklabels.get_visible():
-                    continue
-
-                if self._radial_labels and axis_side == 'bottom':
-                    continue
-
-                if axis_side == 'top':
-                    line_index = -1
-                else:
-                    line_index = 0
-
-                tick_levels = grid_info['lon']['tick_levels'][axis_side]
-
-                prev_x = None
-                for lon_level, lon_line in zip(levels, lines):
-                    if int(lon_level*factor) in tick_levels:
-                        continue
-
-                    lon_line_x = lon_line[0][0]
-                    lon_line_y = lon_line[0][1]
-
-                    if lon_line_x[line_index] < extent_xy[x0_index] or \
-                       lon_line_x[line_index] > extent_xy[x1_index] \
-                       or lon_line_y[line_index] < extent_xy[2] or \
-                       lon_line_y[line_index] > extent_xy[3]:
-                        continue
-
-                    if axis_side == 'top':
-                        va = 'bottom'
-                        index = -1
-                        y_offset = 0.02*(lon_line_y[-1] - lon_line_y[0])
-                    else:
-                        va = 'top'
-                        index = 0
-                        y_offset = -0.02*(lon_line_y[-1] - lon_line_y[0])
-
-                    if prev_x is not None:
-                        # check if too close to last label.
-                        if abs(lon_line_x[index] - prev_x)/delta_x < self._min_lon_ticklabel_delta:
-                            continue
-
-                    prev_x = lon_line_x[index]
-
-                    label = self._tick_formatter1(axis_side, factor, [lon_level])[0]
-                    boundary_labels.append(self._ax.text(lon_line_x[index],
-                                                         lon_line_y[index] + y_offset,
-                                                         label,
-                                                         size=plt.rcParams['xtick.labelsize'],
-                                                         lonlat=False,
-                                                         clip_on=False,
-                                                         ha='center',
-                                                         va=va))
-
-        return boundary_labels
+                                             linewidth=matplotlib.rcParams['axes.linewidth'])
 
     def get_extent(self):
         """Get the extent in lon/lat coordinates.
@@ -616,82 +316,32 @@ class _Skyproj():
         else:
             self._ax.set_extent(extent, lonlat=True)
 
-        if self._aa is not None:
-            self._aa.set_xlim(self._ax.get_xlim())
-            self._aa.set_ylim(self._ax.get_ylim())
-
         if invert:
+            # This should probably be done inside the axes.
+            # Okay, so the act of setting the extent will reset the inversion.
+            # We want our set_extent to automatically do the inversion if it
+            # is set to be inverted, I think.
+            # And can use ax.xaxis_inverted() to check if it already is.
+            # FIXME
             self._ax.invert_xaxis()
-            if self._aa is not None:
-                self._aa.invert_xaxis()
 
         return self._ax.get_xlim(), self._ax.get_ylim()
 
     def _create_axes(self, extent):
-        """Create axes and axis artist.
+        """Create axes.
 
         Parameters
         ----------
         extent : `list`
             Axis extent [lon_min, lon_max, lat_min, lat_max] (degrees).
         """
-        extreme_finder = ExtremeFinderWrapped(20, 20, self._wrap)
-        if self._wrap == 180.0 and not self._full_circle:
-            include_last_lon = True
-        else:
-            include_last_lon = False
-
-        n_grid_lon, n_grid_lat = self._compute_n_grid_from_extent(extent)
-
-        grid_locator1 = angle_helper.LocatorD(n_grid_lon, include_last=include_last_lon)
-        grid_locator2 = angle_helper.LocatorD(n_grid_lat, include_last=True)
-
-        # We always want the formatting to be wrapped at 180 (-180 to 180)
-        self._tick_formatter1 = WrappedFormatterDMS(180.0, self._longitude_ticks)
-        self._tick_formatter2 = angle_helper.FormatterDMS()
-
-        def proj_wrap(lon, lat):
-            lon = np.atleast_1d(lon)
-            lat = np.atleast_1d(lat)
-            lon[np.isclose(lon, self._wrap)] = self._wrap - 1e-10
-            proj_xy = self.crs.transform_points(PlateCarreeCRS(), lon, lat)
-            return proj_xy[..., 0], proj_xy[..., 1]
-
-        if self.crs.name == 'cyl':
-            delta_cut = 80.0
-        else:
-            delta_cut = 0.5*self.crs.radius
-
-        grid_helper = GridHelperSkyproj(
-            (proj_wrap, self.proj_inverse),
-            extreme_finder=extreme_finder,
-            grid_locator1=grid_locator1,
-            grid_locator2=grid_locator2,
-            tick_formatter1=self._tick_formatter1,
-            tick_formatter2=self._tick_formatter2,
-            celestial=self.do_celestial,
-            equatorial_labels=self._equatorial_labels,
-            delta_cut=delta_cut,
-            min_lon_ticklabel_delta=self._min_lon_ticklabel_delta,
-        )
-
-        self._grid_helper = grid_helper
-
+        # FIXME simplify.
         fig = self._ax.figure
-        rect = self._ax.get_position()
-        self._aa = axisartist.Axes(fig, rect, grid_helper=grid_helper, frameon=False, aspect=1.0)
-        fig.add_axes(self._aa)
-
-        self._aa.format_coord = self._format_coord
-        self._aa.axis['left'].major_ticklabels.set_visible(True)
-        self._aa.axis['right'].major_ticklabels.set_visible(False)
-        self._aa.axis['bottom'].major_ticklabels.set_visible(True)
-        self._aa.axis['top'].major_ticklabels.set_visible(True)
-
-        self._ax._artist = self._aa
 
         self._ax.set_xlabel(self._default_xy_labels[0])
         self._ax.set_ylabel(self._default_xy_labels[1])
+
+        self._ax.format_coord = self._format_coord
 
         fig.sca(self._ax)
 
@@ -786,11 +436,7 @@ class _Skyproj():
         self._changed_y_axis = False
         self._extent_xy = extent_xy
 
-        # This synchronizes the axis artist to the plot axes after zoom.
-        if self._aa is not None:
-            self._aa.set_position(self._ax.get_position(), which='original')
-
-        self._draw_aa_bounds_and_labels()
+        self._draw_bounds()
 
         if gone_home:
             lon_range = self._redraw_dict['lon_range_home']
@@ -798,13 +444,6 @@ class _Skyproj():
         else:
             lon_range = [min(extent[0], extent[1]), max(extent[0], extent[1])]
             lat_range = [extent[2], extent[3]]
-
-        if self._n_grid_lon is None or self._n_grid_lat is None:
-            n_grid_lon, n_grid_lat = self._compute_n_grid_from_extent(
-                [lon_range[0], lon_range[1], lat_range[0], lat_range[1]]
-            )
-
-            self._update_grid_locators(n_grid_lon, n_grid_lat)
 
         if self._redraw_dict['hpxmap'] is not None:
             lon_raster, lat_raster, values_raster = hpxmap_to_xy(self._redraw_dict['hpxmap'],
@@ -866,29 +505,14 @@ class _Skyproj():
             else:
                 map_norm = norm
 
-            mappable = ScalarMappable(map_norm, cmap=self._redraw_dict['colorbar'].cmap)
-
             if redraw_colorbar:
+                mappable = ScalarMappable(map_norm, cmap=self._redraw_dict['colorbar'].cmap)
                 self._redraw_dict['colorbar'].update_normal(mappable)
             else:
+                mappable = ScalarMappable(map_norm, cmap=self._redraw_dict['inset_colorbar'].cmap)
                 self._redraw_dict['inset_colorbar'].update_normal(mappable)
 
-    def _change_size(self, event):
-        """Callback for figure resize.
-
-        Parameters
-        ----------
-        event : `matplotlib.backend_bases.Event`
-        """
-        # This synchronizes the axis artist to the plot axes after zoom.
-        if self._aa is not None:
-            self._aa.set_position(self._ax.get_position(), which='original')
-
     def _draw_callback(self, event):
-        # On draw it's sometimes necessary to synchronize the axisartist.
-        if self._aa is not None:
-            self._aa.set_position(self._ax.get_position(), which='original')
-
         # We need to set the initial extent on first draw
         if np.allclose(self._initial_extent_xy, 0):
             self._initial_extent_xy = self._ax.get_extent(lonlat=False)
@@ -918,53 +542,13 @@ class _Skyproj():
             self._changed_y_axis = True
             self._change_axis(self._ax)
             self._add_change_axis_callbacks()
-            plt.draw()
+            self._ax.figure.canvas.draw()
 
             self._reprojected = True
-
-    def set_xlabel(self, text, side='bottom', **kwargs):
-        """Set the label on the x axis.
-
-        Parameters
-        ----------
-        text : `str`
-            x label string.
-        side : `str`, optional
-            Side to set the label.  Can be ``bottom`` or ``top``.
-        **kwargs : `dict`
-            Additional keyword arguments accepted by ax.set_xlabel().
-        """
-        warnings.warn("Usage of set_xlabel on a skyproj map has been deprecated. "
-                      "Please use sp.ax.set_xlabel() instead.",
-                      FutureWarning)
-
-        return self._ax.set_xlabel(text, side=side, **kwargs)
-
-    def set_ylabel(self, text, side='left', **kwargs):
-        """Set the label on the y axis.
-
-        Parameters
-        ----------
-        text : `str`
-            x label string.
-        side : `str`, optional
-            Side to set the label.  Can be ``left`` or ``right``.
-        **kwargs : `dict`
-            Additional keyword arguments accepted by ax.set_xlabel().
-        """
-        warnings.warn("Usage of set_ylabel on a skyproj map has been deprecated. "
-                      "Please use sp.ax.set_ylabel() instead.",
-                      FutureWarning)
-
-        return self._ax.set_ylabel(text, side=side, **kwargs)
 
     @property
     def ax(self):
         return self._ax
-
-    @property
-    def aa(self):
-        return self._aa
 
     def compute_extent(self, lon, lat):
         """Compute plotting extent for a set of lon/lat points.
@@ -1005,7 +589,7 @@ class _Skyproj():
         enclosed = False
         lon_min = lon_cent - lon_step
         while not enclosed and lon_min > (self.lon_0 - 180.0):
-            e_x, e_y = self.proj([lon_min, lon_min], [lat_min, lat_max])
+            e_x, e_y = self.proj([lon_min + lon_step/2., lon_min + lon_step/2.], [lat_min, lat_max])
             n_out = np.sum(x < e_x.min())
             if n_out == 0:
                 enclosed = True
@@ -1016,7 +600,7 @@ class _Skyproj():
         enclosed = False
         lon_max = lon_cent + lon_step
         while not enclosed and lon_max < (self.lon_0 + 180.0):
-            e_x, e_y = self.proj([lon_max, lon_max], [lat_min, lat_max])
+            e_x, e_y = self.proj([lon_max - lon_step/2., lon_max - lon_step/2.], [lat_min, lat_max])
             n_out = np.sum(x > e_x.max())
             if n_out == 0:
                 enclosed = True
@@ -1043,9 +627,15 @@ class _Skyproj():
     def ellipse(self, *args, **kwargs):
         return self._ax.ellipse(*args, **kwargs)
 
-    def legend(self, *args, loc='upper left', **kwargs):
-        """Add legend to the axis with ax.legend(*args, **kwargs)."""
-        return self._ax.legend(*args, loc=loc, **kwargs)
+    def legend(self, *args, loc='upper left', zorder=GRIDLINES_ZORDER_DEFAULT + 1, **kwargs):
+        """Add legend to the axis with ax.legend(*args, **kwargs, zorder=zorder).
+
+        By default the legend will be placed on top of all other elements. This
+        can be adjusted with the zorder parameter.
+        """
+        legend = self._ax.legend(*args, loc=loc, **kwargs)
+        legend.set_zorder(zorder)
+        return legend
 
     def draw_polygon(self, lon, lat, edgecolor='red', linestyle='solid',
                      facecolor=None, **kwargs):
@@ -1120,6 +710,9 @@ class _Skyproj():
         nside = hpg.npixel_to_nside(hpxmap.size)
         pixels, = np.where(hpxmap != hpg.UNSEEN)
 
+        lon_range_set = lon_range is not None
+        lat_range_set = lat_range is not None
+
         if lon_range is None or lat_range is None:
             if zoom:
                 _lon_range, _lat_range = healpix_pixels_range(nside,
@@ -1128,8 +721,8 @@ class _Skyproj():
                                                               nest=nest)
             else:
                 extent = self.get_extent()
-                lon_range = [min(extent[0], extent[1]), max(extent[0], extent[1])]
-                lat_range = [extent[2], extent[3]]
+                _lon_range = [min(extent[0], extent[1]), max(extent[0], extent[1])]
+                _lat_range = [extent[2], extent[3]]
 
             if lon_range is None:
                 lon_range = _lon_range
@@ -1157,6 +750,8 @@ class _Skyproj():
             extent = self.compute_extent(lon_raster[:-1, :-1][~values_raster.mask],
                                          lat_raster[:-1, :-1][~values_raster.mask])
             self.set_extent(extent)
+        elif lon_range_set and lat_range_set:
+            self.set_extent([lon_range[1], lon_range[0], lat_range[0], lat_range[1]])
 
         im = self.pcolormesh(
             lon_raster,
@@ -1191,6 +786,10 @@ class _Skyproj():
                     vmin=None, vmax=None,
                     rasterized=True, lon_range=None, lat_range=None,
                     norm="linear", **kwargs):
+
+        lon_range_set = lon_range is not None
+        lat_range_set = lat_range is not None
+
         if lon_range is None or lat_range is None:
             if zoom:
                 _lon_range, _lat_range = healpix_pixels_range(nside,
@@ -1199,8 +798,8 @@ class _Skyproj():
                                                               nest=nest)
             else:
                 extent = self.get_extent()
-                lon_range = [min(extent[0], extent[1]), max(extent[0], extent[1])]
-                lat_range = [extent[2], extent[3]]
+                _lon_range = [min(extent[0], extent[1]), max(extent[0], extent[1])]
+                _lat_range = [extent[2], extent[3]]
 
             if lon_range is None:
                 lon_range = _lon_range
@@ -1232,6 +831,8 @@ class _Skyproj():
             extent = self.compute_extent(lon_raster[:-1, :-1][~values_raster.mask],
                                          lat_raster[:-1, :-1][~values_raster.mask])
             self.set_extent(extent)
+        elif lon_range_set and lat_range_set:
+            self.set_extent([lon_range[1], lon_range[0], lat_range[0], lat_range[1]])
 
         im = self.pcolormesh(
             lon_raster,
@@ -1254,17 +855,27 @@ class _Skyproj():
         self._hspmap = hspmap
         self._hpxmap = None
 
+        lon_range_set = lon_range is not None
+        lat_range_set = lat_range is not None
+
         if lon_range is None or lat_range is None:
             if zoom:
                 # Using the coverage map is much faster even if approximate.
-                _lon_range, _lat_range = healpix_pixels_range(hspmap.nside_coverage,
-                                                              np.where(hspmap.coverage_mask)[0],
-                                                              self._wrap,
-                                                              nest=True)
-            else:
+                try:
+                    _lon_range, _lat_range = healpix_pixels_range(
+                        hspmap.nside_coverage,
+                        np.where(hspmap.coverage_mask)[0],
+                        self._wrap,
+                        nest=True,
+                    )
+                except NoValidPixelsError:
+                    warnings.warn("No valid pixels found; auto-zoom not possible.")
+                    zoom = False
+
+            if not zoom:
                 extent = self.get_extent()
-                lon_range = [min(extent[0], extent[1]), max(extent[0], extent[1])]
-                lat_range = [extent[2], extent[3]]
+                _lon_range = [min(extent[0], extent[1]), max(extent[0], extent[1])]
+                _lat_range = [extent[2], extent[3]]
 
             if lon_range is None:
                 lon_range = _lon_range
@@ -1302,6 +913,8 @@ class _Skyproj():
             extent = self.compute_extent(lon_raster[:-1, :-1][~values_raster.mask],
                                          lat_raster[:-1, :-1][~values_raster.mask])
             self.set_extent(extent)
+        elif lon_range_set and lat_range_set:
+            self.set_extent([lon_range[1], lon_range[0], lat_range[0], lat_range[1]])
 
         im = self.pcolormesh(
             lon_raster,
@@ -1313,7 +926,6 @@ class _Skyproj():
             rasterized=rasterized,
             **kwargs,
         )
-
         self._ax._sci(im)
 
         # Link up callbacks
@@ -1384,7 +996,9 @@ class _Skyproj():
         """
         if ax is None:
             ax = self._ax
-        im = plt.gci()
+
+        im = ax._gci()
+
         cax = inset_axes(ax,
                          width=width,
                          height=height,
@@ -1418,7 +1032,15 @@ class _Skyproj():
             ticks = np.array([cmin, 0.85*cmax])
             format = '$%.0e$'
 
-        cbar = plt.colorbar(cax=cax, orientation=orientation, ticks=ticks, format=format, **kwargs)
+        cbar = ax.figure.colorbar(
+            im,
+            ax=ax,
+            cax=cax,
+            orientation=orientation,
+            ticks=ticks,
+            format=format,
+            **kwargs,
+        )
         cax.xaxis.set_ticks_position('top')
         cax.tick_params(axis='x', labelsize=fontsize)
 
@@ -1433,7 +1055,7 @@ class _Skyproj():
             cbar.set_label(label, size=fontsize)
             cax.xaxis.set_label_position('top')
 
-        plt.sca(ax)
+        ax.figure.sca(ax)
 
         # Save reference to colorbar for zooming
         cbar_kwargs = kwargs
@@ -1483,8 +1105,15 @@ class _Skyproj():
         if ax is None:
             ax = self._ax
 
-        cbar = plt.colorbar(ax=ax, location=location, ticks=ticks,
-                            fraction=fraction, pad=pad, **kwargs)
+        cbar = ax.figure.colorbar(
+            ax._gci(),
+            ax=ax,
+            location=location,
+            ticks=ticks,
+            fraction=fraction,
+            pad=pad,
+            **kwargs,
+        )
 
         if location == 'right' or location == 'left':
             cbar_axis = 'y'
@@ -1496,13 +1125,10 @@ class _Skyproj():
         if label is not None:
             cbar.set_label(label, size=fontsize)
 
-        if self._aa is not None:
-            self._aa.set_position(self._ax.get_position(), which='original')
-
         # Reset the "home" position because axis has been shifted.
         self._initial_extent_xy = self._ax.get_extent(lonlat=False)
 
-        plt.sca(ax)
+        ax.figure.sca(ax)
 
         # Save reference to colorbar for zooming
         cbar_kwargs = kwargs
@@ -1623,7 +1249,8 @@ class _Skyproj():
 
     @property
     def _pole_clip(self):
-        # Allow clipping of the poles until Mollweide is fixed in proj
+        # Allow clipping of poles for full-sky projections; this
+        # can avoid inversion problems in (e.g.) Mollweide projections.
         return 0.0
 
     @property
@@ -1639,6 +1266,11 @@ class _Skyproj():
     @property
     def _radial_labels(self):
         # Are there radial labels?
+        return False
+
+    @property
+    def _inner_longitude_labels(self):
+        # Are there inner longitude labels?
         return False
 
     @property

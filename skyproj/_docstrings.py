@@ -43,9 +43,9 @@ galactic : `bool`, optional
     Plotting in Galactic coordinates?  Recommendation for Galactic plots
     is to have longitude_ticks set to ``symmetric`` and celestial = True.
 rcparams : `dict`, optional
-    Dictionary of matplotlib rc parameters to override.  In particular, the code will
-    use ``xtick.labelsize`` and ``ytick.labelsize`` for the x and y tick labels, and
-    ``axes.linewidth`` for the map boundary.
+    Deprecated; do not use. To set ``xtick.labelsize`` please use
+    ``SkyProj.ax.tick_params()``. To set the map boundary width,
+    please set ``matplotlib.rcParams["axes.linewidth"]`` directly.
 n_grid_lon : `int`, optional
     Number of gridlines to use in the longitude direction
     (default is axis_ratio * n_grid_lat).
@@ -67,7 +67,8 @@ skyproj_kwargs_par = """
 
 draw_map_common_pars = """
 zoom : `bool`, optional
-    Optimally zoom in projection to computed map.
+    Optimally zoom in projection to computed map. This will override
+    lon_range/lat_range if these are larger than the map.
 xsize : `int`, optional
     Number of rasterized pixels in the x direction.
 vmin : `float`, optional
@@ -77,9 +78,13 @@ vmax : `float`, optional
 rasterized : `bool`, optional
     Plot with rasterized graphics.
 lon_range : `tuple` [`float`, `float`], optional
-    Longitude range to plot [``lon_min``, ``lon_max``].
+    Longitude range to plot [``lon_min``, ``lon_max``]. Map will
+    be truncated to this range prior to computing optimal zoom
+    (if zoom is ``True``).
 lat_range : `tuple` [`float`, `float`], optional
-    Latitude range to plot [``lat_min``, ``lat_max``].
+    Latitude range to plot [``lat_min``, ``lat_max``]. Map will
+    be truncated to this range prior to computing optimal zoom
+    (if zoom is ``True``).
 norm : `str` or `matplotlib.colors.Normalize`, optional
     The normalization method used to scale the data. By default a
     linear scaling is used. This may be an instance of `Normalize` or

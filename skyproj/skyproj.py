@@ -584,3 +584,7 @@ lat_2 : `float`, optional
     @property
     def _default_xy_labels(self):
         return ("", "")
+
+    @property
+    def _inner_longitude_labels(self):
+        return True
