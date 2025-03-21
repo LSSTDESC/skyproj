@@ -84,6 +84,7 @@ def test_healsparse(tmp_path):
     sp.draw_inset_colorbar()
     fname = 'healsparse_one.png'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
     if err:
         raise ImageComparisonFailure(err)
@@ -97,6 +98,7 @@ def test_healsparse(tmp_path):
     sp.draw_colorbar()
     fname = 'healsparse_two.png'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
     if err:
         raise ImageComparisonFailure(err)
@@ -109,6 +111,7 @@ def test_healsparse(tmp_path):
     sp.draw_inset_colorbar()
     fname = 'healsparse_three.png'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
     if err:
         raise ImageComparisonFailure(err)
@@ -121,6 +124,7 @@ def test_healsparse(tmp_path):
     sp.draw_inset_colorbar()
     fname = 'healsparse_valid_pixels.png'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
     if err:
         raise ImageComparisonFailure(err)
@@ -133,6 +137,7 @@ def test_healsparse(tmp_path):
     sp.draw_inset_colorbar()
     fname = 'healsparse_four.png'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
     if err:
         raise ImageComparisonFailure(err)
@@ -153,6 +158,7 @@ def test_healsparse_log_scale(tmp_path):
     with pytest.raises(ValueError, match="Invalid vmin or vmax"):
         im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(hspmap, norm="log")
         sp.draw_colorbar()
+    plt.close(fig)
 
     # Offset the map so that we can use a log scale.
     hspmap += 10.0
@@ -165,6 +171,7 @@ def test_healsparse_log_scale(tmp_path):
     sp.draw_colorbar()
     fname = 'healsparse_five.png'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
     if err:
         raise ImageComparisonFailure(err)
@@ -196,6 +203,7 @@ def test_healsparse_input_norm(tmp_path):
     sp.draw_colorbar()
     fname = 'healsparse_five.png'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
     if err:
         raise ImageComparisonFailure(err)
@@ -217,6 +225,7 @@ def test_healsparse_nanval(tmp_path):
     sp.draw_inset_colorbar()
     fname = 'healsparse_one.png'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
     if err:
         raise ImageComparisonFailure(err)
@@ -238,6 +247,7 @@ def test_healsparse_rasterize(tmp_path):
     sp.draw_inset_colorbar()
     fname = 'healsparse_rasterized_on.pdf'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
 
     size_rasterized_on = os.path.getsize(tmp_path / fname)
 
@@ -254,6 +264,7 @@ def test_healsparse_rasterize(tmp_path):
     sp.draw_inset_colorbar()
     fname = 'healsparse_rasterized_off.pdf'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
 
     size_rasterized_off = os.path.getsize(tmp_path / fname)
 
@@ -270,6 +281,7 @@ def test_healsparse_rasterize(tmp_path):
     sp.draw_inset_colorbar()
     fname = 'healsparse_rasterized_on2.pdf'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
 
     size_rasterized_on2 = os.path.getsize(tmp_path / fname)
 
@@ -292,6 +304,7 @@ def test_healsparse_bool(tmp_path):
     sp.draw_inset_colorbar()
     fname = 'healsparse_bool.png'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
     if err:
         raise ImageComparisonFailure(err)
@@ -304,6 +317,7 @@ def test_healsparse_bool(tmp_path):
     sp.draw_inset_colorbar()
     fname = 'healsparse_bool_valid_pixels.png'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
     if err:
         raise ImageComparisonFailure(err)
@@ -328,6 +342,7 @@ def test_healsparse_empty(tmp_path):
         lat_range=[10, 20],
         zoom=False,
     )
+    plt.close(fig)
 
     fig = plt.figure(1, figsize=(8, 5))
     fig.clf()
@@ -335,6 +350,7 @@ def test_healsparse_empty(tmp_path):
     sp = skyproj.McBrydeSkyproj(ax=ax)
     with pytest.warns(UserWarning):
         _ = sp.draw_hspmap(hspmap, zoom=True)
+    plt.close(fig)
 
 
 def test_healpix(tmp_path):
@@ -353,6 +369,7 @@ def test_healpix(tmp_path):
     # These should match the healsparse maps, so we can use the same comparison.
     fname = 'healsparse_one.png'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
     if err:
         raise ImageComparisonFailure(err)
@@ -366,6 +383,7 @@ def test_healpix(tmp_path):
     sp.draw_colorbar()
     fname = 'healsparse_two.png'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
     if err:
         raise ImageComparisonFailure(err)
@@ -378,6 +396,7 @@ def test_healpix(tmp_path):
     sp.draw_inset_colorbar()
     fname = 'healsparse_four.png'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
     if err:
         raise ImageComparisonFailure(err)
@@ -398,6 +417,7 @@ def test_healpix_log_scale(tmp_path):
     sp.draw_colorbar()
     fname = 'healsparse_five.png'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
     if err:
         raise ImageComparisonFailure(err)
@@ -434,6 +454,7 @@ def test_healpix_input_norm(tmp_path):
     sp.draw_colorbar()
     fname = 'healsparse_five.png'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
     if err:
         raise ImageComparisonFailure(err)
@@ -456,6 +477,7 @@ def test_healpix_rasterized(tmp_path):
     sp.draw_inset_colorbar()
     fname = 'healpix_rasterized_on.pdf'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
 
     size_rasterized_on = os.path.getsize(tmp_path / fname)
 
@@ -467,6 +489,7 @@ def test_healpix_rasterized(tmp_path):
     sp.draw_inset_colorbar()
     fname = 'healpix_rasterized_off.pdf'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
 
     size_rasterized_off = os.path.getsize(tmp_path / fname)
 
@@ -483,11 +506,31 @@ def test_healpix_rasterized(tmp_path):
     sp.draw_inset_colorbar()
     fname = 'healsparse_rasterized_on2.pdf'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
 
     size_rasterized_on2 = os.path.getsize(tmp_path / fname)
 
     # The rasterized map will be smaller than the non-rasterized map.
     assert size_rasterized_on2 < size_rasterized_off
+
+
+def test_healpix_laea(tmp_path):
+    """Test plotting healpix with Lambert Azimuthal Equal Area."""
+    # This tests a failure mode with the MaglitesSkyproj
+    plt.rcParams.update(plt.rcParamsDefault)
+
+    hpxmap = np.arange(hpg.nside_to_npixel(128))
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    sp = skyproj.LaeaSkyproj(ax, extent=[-150, 70, -85, -50], lon_0=0.0, lat_0=-90.0)
+    _ = sp.draw_hpxmap(hpxmap, zoom=False)
+    fname = 'healpix_laea.png'
+    fig.savefig(tmp_path / fname)
+    plt.close(fig)
+    err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
+    if err:
+        raise ImageComparisonFailure(err)
 
 
 def test_healsparse_widemask(tmp_path):
@@ -511,6 +554,7 @@ def test_healsparse_widemask(tmp_path):
     sp.draw_inset_colorbar()
     fname = 'healsparse_wide_one.png'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
     if err:
         raise ImageComparisonFailure(err)
@@ -532,6 +576,7 @@ def test_healsparse_widemask(tmp_path):
     sp.draw_inset_colorbar()
     fname2 = 'healsparse_wide_one_alt.png'
     fig.savefig(tmp_path / fname2)
+    plt.close(fig)
     # Compare to the previoues one.
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname2, 40.0)
     if err:
@@ -553,6 +598,7 @@ def test_healsparse_rec_array(tmp_path):
     sp.draw_inset_colorbar()
     fname = 'healsparse_rec_array.png'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
     if err:
         raise ImageComparisonFailure(err)
@@ -566,6 +612,7 @@ def test_healsparse_rec_array(tmp_path):
     sp.draw_inset_colorbar()
     fname = 'healsparse_valid_pixels.png'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
     if err:
         raise ImageComparisonFailure(err)
@@ -588,6 +635,7 @@ def test_healsparse_rec_array_failover(tmp_path):
     sp.draw_inset_colorbar()
     fname = 'healsparse_valid_pixels.png'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
     if err:
         raise ImageComparisonFailure(err)
@@ -612,6 +660,7 @@ def test_hpxpix(tmp_path):
     sp.draw_inset_colorbar()
     fname = 'healsparse_one.png'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
     if err:
         raise ImageComparisonFailure(err)
@@ -626,6 +675,7 @@ def test_hpxpix(tmp_path):
     sp.draw_colorbar()
     fname = 'healsparse_two.png'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
     if err:
         raise ImageComparisonFailure(err)
@@ -638,6 +688,7 @@ def test_hpxpix(tmp_path):
     sp.draw_inset_colorbar()
     fname = 'healsparse_four.png'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
     if err:
         raise ImageComparisonFailure(err)
@@ -663,6 +714,7 @@ def test_hpxpix_log_scale(tmp_path):
     sp.draw_colorbar()
     fname = 'healsparse_five.png'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
     if err:
         raise ImageComparisonFailure(err)
@@ -705,6 +757,7 @@ def test_hpxpix_input_norm(tmp_path):
     sp.draw_colorbar()
     fname = 'healsparse_five.png'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
     if err:
         raise ImageComparisonFailure(err)
@@ -733,6 +786,7 @@ def test_hpxpix_rasterized(tmp_path):
     sp.draw_inset_colorbar()
     fname = 'hpxpix_rasterized_on.pdf'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
 
     size_rasterized_on = os.path.getsize(tmp_path / fname)
 
@@ -751,6 +805,7 @@ def test_hpxpix_rasterized(tmp_path):
     sp.draw_inset_colorbar()
     fname = 'hpxpix_rasterized_off.pdf'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
 
     size_rasterized_off = os.path.getsize(tmp_path / fname)
 
@@ -770,6 +825,7 @@ def test_healsparse_gnomonic(tmp_path, lon_0):
     ax = fig.add_subplot(111)
     sp = skyproj.GnomonicSkyproj(ax=ax, lon_0=lon_0, lat_0=0.0)
     im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(hspmap, zoom=True)
+    plt.close(fig)
 
 
 @pytest.mark.parametrize("lat_cent", [0.0, 75.0])
@@ -794,6 +850,7 @@ def test_healsparse_single_pixel(tmp_path, lat_cent):
 
     fname = f"healsparse_single_pixel_{lat_cent}.png"
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
     err = compare_images(os.path.join(ROOT, "data", fname), tmp_path / fname, 40.0)
     if err:
         raise ImageComparisonFailure(err)
