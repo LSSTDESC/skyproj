@@ -514,6 +514,25 @@ def test_healpix_rasterized(tmp_path):
     assert size_rasterized_on2 < size_rasterized_off
 
 
+def test_healpix_laea(tmp_path):
+    """Test plotting healpix with Lambert Azimuthal Equal Area."""
+    # This tests a failure mode with the MaglitesSkyproj
+    plt.rcParams.update(plt.rcParamsDefault)
+
+    hpxmap = np.arange(hpg.nside_to_npixel(128))
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    sp = skyproj.LaeaSkyproj(ax, extent=[-150, 70, -85, -50], lon_0=0.0, lat_0=-90.0)
+    _ = sp.draw_hpxmap(hpxmap, zoom=False)
+    fname = 'healpix_laea.png'
+    fig.savefig(tmp_path / fname)
+    plt.close(fig)
+    err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
+    if err:
+        raise ImageComparisonFailure(err)
+
+
 def test_healsparse_widemask(tmp_path):
     """Test plotting a healsparse wide mask."""
     plt.rcParams.update(plt.rcParamsDefault)
