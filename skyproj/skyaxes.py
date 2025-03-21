@@ -280,12 +280,28 @@ class SkyAxes(matplotlib.axes.Axes):
         if not lonlat:
             extent = (x0, x1, y0, y1)
         else:
-            # Make a ring of points and check their extent.
+            # Make a ring of points + center and check their extent.
             npt = 500
             x_pts = np.linspace(x0, x1, npt)
             y_pts = np.linspace(y0, y1, npt)
-            x = np.concatenate((x_pts, x_pts, np.repeat(x0, npt), np.repeat(x1, npt)))
-            y = np.concatenate((np.repeat(y0, npt), np.repeat(y1, npt), y_pts, y_pts))
+            # The Lambert Azimuthal Equal Area projection needs the center point.
+            if self.projection.name == "laea":
+                # Also ensure we have the center point, and 0, 0 if that is
+                # contained.
+                x_center = (x0 + x1) / 2.
+                y_center = (y0 + y1) / 2.
+                if (y0 < 0.0 and y1 > 0.0) and \
+                   ((x0 < 0.0 and x1 > 0.0) or (x0 > 0.0 and x1 < 0.0)):
+                    x_centers = [x_center, 0.0]
+                    y_centers = [y_center, 0.0]
+                else:
+                    x_centers = [x_center]
+                    y_centers = [y_center]
+            else:
+                x_centers = []
+                y_centers = []
+            x = np.concatenate((x_pts, x_pts, np.repeat(x0, npt), np.repeat(x1, npt), x_centers))
+            y = np.concatenate((np.repeat(y0, npt), np.repeat(y1, npt), y_pts, y_pts, y_centers))
             lonlat = self.projection.transform_points(x, y, inverse=True)
 
             # Check for out-of-bounds by reverse-projecting
@@ -307,12 +323,22 @@ class SkyAxes(matplotlib.axes.Axes):
                 lon0 = np.nanmin(lon_wrap)
                 lon1 = np.nanmax(lon_wrap)
 
+                if np.isclose(lon0, -180.0, atol=1.0):
+                    lon0 = -180.0 + 1e-5
+                if np.isclose(lon1, 180.0, atol=1.0):
+                    lon1 = 180.0 - 1e-5
+
             if np.all(np.isnan(lonlat[:, 1])):
                 lat0 = -90.0 + 1e-5
                 lat1 = 90.0 - 1e-5
             else:
                 lat0 = np.nanmin(lonlat[:, 1])
                 lat1 = np.nanmax(lonlat[:, 1])
+
+                if np.isclose(lat0, -90.0, atol=1.0):
+                    lat0 = -90.0 + 1e-5
+                if np.isclose(lat1, 90.0, atol=1.0):
+                    lat1 = 90.0 - 1e-5
 
             if self.xaxis_inverted():
                 extent = (lon1, lon0, lat0, lat1)
