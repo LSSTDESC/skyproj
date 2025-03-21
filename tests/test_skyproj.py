@@ -33,6 +33,7 @@ def test_skyproj_basic(tmp_path, skyproj, lon_0):
     sp = skyproj(ax=ax, lon_0=lon_0)
     fname = f'{sp.projection_name}_full_{lon_0}.png'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 15.0)
     if err:
         raise ImageComparisonFailure(err)
@@ -55,6 +56,7 @@ def test_skyproj_zoom(tmp_path, skyproj):
     sp = skyproj(ax=ax, extent=[0, 50, 0, 50])
     fname = f'{sp.projection_name}_zoom.png'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 15.0)
     if err:
         raise ImageComparisonFailure(err)
@@ -82,6 +84,7 @@ def test_skyproj_gnom(tmp_path, lonlat):
     )
     fname = f'gnom_{lon_0}_{lat_0}.png'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 15.0)
     if err:
         raise ImageComparisonFailure(err)
@@ -101,6 +104,7 @@ def test_skyproj_obmoll(tmp_path, lonlatplonp):
     sp = skyproj.ObliqueMollweideSkyproj(ax=ax, lon_0=lon_0, lat_p=lat_p, lon_p=lon_p)
     fname = f'{sp.projection_name}_{lon_0}_{lat_p}_{lon_p}.png'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 15.0)
     if err:
         raise ImageComparisonFailure(err)
@@ -121,6 +125,7 @@ def test_skyproj_albers(tmp_path, lat1lat2):
     sp = skyproj.AlbersSkyproj(ax=ax, lat_1=lat_1, lat_2=lat_2)
     fname = f'{sp.projection_name}_{lat_1}_{lat_2}.png'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 15.0)
     if err:
         raise ImageComparisonFailure(err)
@@ -154,6 +159,7 @@ def test_skyproj_fullsky_extent(skyproj, lon_0):
     # And the rotated start is close to -180?
     rot = (lon0 - lon_0 + 180.0) % 360.0 - 180.0
     assert rot < (-180.0 + 1.0)
+    plt.close(fig)
 
 
 @pytest.mark.parametrize("skyproj", [skyproj.McBrydeSkyproj,
@@ -177,6 +183,7 @@ def test_skyproj_nogap_180(tmp_path, skyproj):
     sp.draw_hspmap(testmap, zoom=False)
     fname = f'{sp.projection_name}_gaptest.png'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 15.0)
     if err:
         raise ImageComparisonFailure(err)
@@ -203,6 +210,7 @@ def test_skyproj_override_sizes(tmp_path):
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 15.0)
     if err:
         raise ImageComparisonFailure(err)
+    plt.close(fig)
 
     # And confirm that the changes do not carry over to another plot.
     fig = plt.figure(1, figsize=(8, 5))
@@ -211,6 +219,7 @@ def test_skyproj_override_sizes(tmp_path):
     _ = skyproj.McBrydeSkyproj(ax=ax)
     fname = 'mbtfpq_full_0.0.png'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 15.0)
     if err:
         raise ImageComparisonFailure(err)
