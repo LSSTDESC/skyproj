@@ -489,10 +489,16 @@ class _Skyproj():
             self._redraw_dict['im'].remove()
             self._redraw_dict['im'] = None
 
-        im = self.pcolormesh(lon_raster, lat_raster, values_raster,
-                             norm=norm, vmin=vmin, vmax=vmax,
-                             rasterized=self._redraw_dict['rasterized'],
-                             **self._redraw_dict['kwargs_pcolormesh'])
+        im = self._ax.pcolormesh(
+            lon_raster,
+            lat_raster,
+            values_raster,
+            norm=norm,
+            vmin=vmin,
+            vmax=vmax,
+            rasterized=self._redraw_dict['rasterized'],
+            **self._redraw_dict['kwargs_pcolormesh'],
+        )
         self._redraw_dict['im'] = im
         self._ax._sci(im)
 
@@ -610,21 +616,51 @@ class _Skyproj():
         return [lon_max, lon_min, lat_min, lat_max]
 
     def plot(self, *args, **kwargs):
+        warnings.warn(
+            "skyproj.plot() has been deprecated and will be removed in v2.5. "
+            "Please access via skyproj.ax.plot()",
+            FutureWarning,
+        )
         return self._ax.plot(*args, **kwargs)
 
     def scatter(self, *args, **kwargs):
+        warnings.warn(
+            "skyproj.scatter() has been deprecated and will be removed in v2.5. "
+            "Please access via skyproj.ax.scatter()",
+            FutureWarning,
+        )
         return self._ax.scatter(*args, **kwargs)
 
     def pcolormesh(self, *args, **kwargs):
+        warnings.warn(
+            "skyproj.pcolormesh() has been deprecated and will be removed in v2.5. "
+            "Please access via skyproj.ax.pcolormesh()",
+            FutureWarning,
+        )
         return self._ax.pcolormesh(*args, **kwargs)
 
     def fill(self, *args, **kwargs):
+        warnings.warn(
+            "skyproj.fill() has been deprecated and will be removed in v2.5. "
+            "Please access via skyproj.ax.fill()",
+            FutureWarning,
+        )
         return self._ax.fill(*args, **kwargs)
 
     def circle(self, *args, **kwargs):
+        warnings.warn(
+            "skyproj.circle() has been deprecated and will be removed in v2.5. "
+            "Please access via skyproj.ax.circle()",
+            FutureWarning,
+        )
         return self._ax.circle(*args, **kwargs)
 
     def ellipse(self, *args, **kwargs):
+        warnings.warn(
+            "skyproj.ellipse() has been deprecated and will be removed in v2.5. "
+            "Please access via skyproj.ax.ellipse()",
+            FutureWarning,
+        )
         return self._ax.ellipse(*args, **kwargs)
 
     def legend(self, *args, loc='upper left', zorder=GRIDLINES_ZORDER_DEFAULT + 1, **kwargs):
@@ -633,6 +669,11 @@ class _Skyproj():
         By default the legend will be placed on top of all other elements. This
         can be adjusted with the zorder parameter.
         """
+        warnings.warn(
+            "skyproj.legend() has been deprecated and will be removed in v2.5. "
+            "Please access via skyproj.ax.legend()",
+            FutureWarning,
+        )
         legend = self._ax.legend(*args, loc=loc, **kwargs)
         legend.set_zorder(zorder)
         return legend
@@ -660,11 +701,11 @@ class _Skyproj():
             Additional keywords passed to plot.
         """
         if linestyle is not None and edgecolor is not None:
-            self.plot(np.append(lon, lon[0]),
-                      np.append(lat, lat[0]),
-                      color=edgecolor, linestyle=linestyle, **kwargs)
+            self._ax.plot(np.append(lon, lon[0]),
+                          np.append(lat, lat[0]),
+                          color=edgecolor, linestyle=linestyle, **kwargs)
         if facecolor is not None:
-            self.fill(lon, lat, color=facecolor, **kwargs)
+            self.ax.fill(lon, lat, color=facecolor, **kwargs)
 
     def draw_polygon_file(self, filename, reverse=True,
                           edgecolor='red', linestyle='solid', **kwargs):
@@ -753,7 +794,7 @@ class _Skyproj():
         elif lon_range_set and lat_range_set:
             self.set_extent([lon_range[1], lon_range[0], lat_range[0], lat_range[1]])
 
-        im = self.pcolormesh(
+        im = self._ax.pcolormesh(
             lon_raster,
             lat_raster,
             values_raster,
@@ -834,7 +875,7 @@ class _Skyproj():
         elif lon_range_set and lat_range_set:
             self.set_extent([lon_range[1], lon_range[0], lat_range[0], lat_range[1]])
 
-        im = self.pcolormesh(
+        im = self._ax.pcolormesh(
             lon_raster,
             lat_raster,
             values_raster,
@@ -916,7 +957,7 @@ class _Skyproj():
         elif lon_range_set and lat_range_set:
             self.set_extent([lon_range[1], lon_range[0], lat_range[0], lat_range[1]])
 
-        im = self.pcolormesh(
+        im = self._ax.pcolormesh(
             lon_raster,
             lat_raster,
             values_raster,
@@ -1174,7 +1215,7 @@ class _Skyproj():
             lon = glon
             lat = glat
 
-        self.plot(lon, lat, linewidth=linewidth, color=color, linestyle=linestyle, **kwargs)
+        self._ax.plot(lon, lat, linewidth=linewidth, color=color, linestyle=linestyle, **kwargs)
         # pop any labels
         kwargs.pop('label', None)
         if width > 0:
@@ -1187,8 +1228,8 @@ class _Skyproj():
                 else:
                     lon = glon
                     lat = glat + delta
-                self.plot(lon, lat, linewidth=1.0, color=color,
-                          linestyle='--', **kwargs)
+                self._ax.plot(lon, lat, linewidth=1.0, color=color,
+                              linestyle='--', **kwargs)
 
     def tissot_indicatrices(self, radius=5.0, num_lon=9, num_lat=5, color='red', alpha=0.5):
         """Draw Tissot indicatrices.

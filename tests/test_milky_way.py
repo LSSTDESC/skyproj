@@ -21,7 +21,7 @@ def test_draw_milky_way(tmp_path):
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
     sp.draw_milky_way(label='Milky Way')
-    sp.legend()
+    sp.ax.legend()
     fname = 'milky_way.png'
     fig.savefig(tmp_path / fname)
     plt.close(fig)
@@ -39,7 +39,7 @@ def test_draw_milky_way_galactic(tmp_path):
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax, galactic=True, longitude_ticks='symmetric')
     sp.draw_milky_way(label='Milky Way')
-    sp.legend()
+    sp.ax.legend()
     fname = 'milky_way_galactic.png'
     fig.savefig(tmp_path / fname)
     plt.close(fig)
