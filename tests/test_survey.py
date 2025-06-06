@@ -37,7 +37,7 @@ def test_survey_outlines(tmp_path, survey_tuple):
         sp.draw_maglites(label=name)
     elif name == 'DECaLS':
         sp.draw_decals(label=name)
-    sp.legend()
+    sp.ax.legend()
     fname = f'{name}_survey.png'
     fig.savefig(tmp_path / fname)
     plt.close(fig)

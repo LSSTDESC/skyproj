@@ -50,7 +50,7 @@ def test_lines_polygons_mcbryde(tmp_path, lon_0):
     sp.ellipse(60, 15, 10, 4, 0, color='green', label='Nine')
     sp.ellipse(300, 15, 15, 2, 45, fill=True, color='red', label='Ten')
 
-    sp.legend()
+    sp.ax.legend()
     fname = f'lines_and_polygons_{lon_0}.png'
     fig.savefig(tmp_path / fname)
     plt.close(fig)
@@ -92,7 +92,7 @@ def test_lines_polygons_obmoll(tmp_path, lonlatplonp):
     sp.draw_polygon([160, 200, 200, 160], [-20, -20, -40, -40],
                     edgecolor='red', facecolor='black', linestyle='-', label='Six')
 
-    sp.legend()
+    sp.ax.legend()
     fname = f'lines_and_polygons_obmoll_{lon_0}_{lat_p}_{lon_p}.png'
     fig.savefig(tmp_path / fname)
     plt.close(fig)
@@ -118,7 +118,7 @@ def test_lines_polygons_mcbryde_opaque_legend(tmp_path):
     sp.draw_polygon([160, 200, 200, 160], [20, 20, 40, 40],
                     edgecolor='black', label='Four')
 
-    sp.legend(loc='lower right', framealpha=1.0)
+    sp.ax.legend(loc='lower right', framealpha=1.0)
     fname = 'lines_and_polygons_opaque_legend.png'
     fig.savefig(tmp_path / fname)
     plt.close(fig)

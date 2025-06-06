@@ -409,6 +409,12 @@ class SkyAxes(matplotlib.axes.Axes):
 
         return result
 
+    def legend(self, *args, loc="upper left", zorder=GRIDLINES_ZORDER_DEFAULT + 1, **kwargs):
+        legend = super().legend(*args, loc=loc, **kwargs)
+        legend.set_zorder(zorder)
+
+        return legend
+
     @_add_lonlat
     def circle(self, lon, lat, radius, nsamp=100, fill=False, **kwargs):
         """Draw a geodesic circle centered at given position.
