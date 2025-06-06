@@ -27,8 +27,8 @@ def test_lines_polygons_mcbryde(tmp_path, lon_0):
     sp = skyproj.McBrydeSkyproj(ax=ax, lon_0=lon_0)
 
     # Draw two geodesics, one of which will wrap around.
-    sp.plot([-10., 45.], [-10., 45.], 'r-', label='One')
-    sp.plot([170., 210.], [-10., 45.], 'b--', label='Two')
+    sp.ax.plot([-10., 45.], [-10., 45.], 'r-', label='One')
+    sp.ax.plot([170., 210.], [-10., 45.], 'b--', label='Two')
 
     # Draw two unfilled polygons, one of which will wrap around.
     sp.draw_polygon([-20, 20, 20, -20], [20, 20, 40, 40],
@@ -43,12 +43,12 @@ def test_lines_polygons_mcbryde(tmp_path, lon_0):
                     edgecolor='red', facecolor='black', linestyle='-', label='Six')
 
     # Draw two circles, one empty, one filled.
-    sp.circle(40.0, -40.0, 5.0, color='blue', label='Seven')
-    sp.circle(-40.0, -40.0, 5.0, color='orange', label='Eight', fill=True)
+    sp.ax.circle(40.0, -40.0, 5.0, color='blue', label='Seven')
+    sp.ax.circle(-40.0, -40.0, 5.0, color='orange', label='Eight', fill=True)
 
     # Test ``ellipse``.  We can only plot one point per call
-    sp.ellipse(60, 15, 10, 4, 0, color='green', label='Nine')
-    sp.ellipse(300, 15, 15, 2, 45, fill=True, color='red', label='Ten')
+    sp.ax.ellipse(60, 15, 10, 4, 0, color='green', label='Nine')
+    sp.ax.ellipse(300, 15, 15, 2, 45, fill=True, color='red', label='Ten')
 
     sp.ax.legend()
     fname = f'lines_and_polygons_{lon_0}.png'
@@ -76,8 +76,8 @@ def test_lines_polygons_obmoll(tmp_path, lonlatplonp):
     sp = skyproj.ObliqueMollweideSkyproj(ax=ax, lon_0=lon_0, lat_p=lat_p, lon_p=lon_p)
 
     # Draw two geodesics, one of which will wrap around.
-    sp.plot([-10., 45.], [-10., 45.], 'r-', label='One')
-    sp.plot([170., 210.], [-10., 45.], 'b--', label='Two')
+    sp.ax.plot([-10., 45.], [-10., 45.], 'r-', label='One')
+    sp.ax.plot([170., 210.], [-10., 45.], 'b--', label='Two')
 
     # Draw two unfilled polygons, one of which will wrap around.
     sp.draw_polygon([-20, 20, 20, -20], [20, 20, 40, 40],
@@ -110,8 +110,8 @@ def test_lines_polygons_mcbryde_opaque_legend(tmp_path):
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax, lon_0=0.0)
 
-    sp.plot([-10., 45.], [-10., 45.], 'r-', label='One')
-    sp.plot([170., 210.], [-10., 45.], 'b--', label='Two')
+    sp.ax.plot([-10., 45.], [-10., 45.], 'r-', label='One')
+    sp.ax.plot([170., 210.], [-10., 45.], 'b--', label='Two')
 
     sp.draw_polygon([-20, 20, 20, -20], [20, 20, 40, 40],
                     edgecolor='magenta', label='Three')
