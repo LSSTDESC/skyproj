@@ -38,6 +38,7 @@ def test_healpix_binning(tmp_path):
 
     fname = 'hpxbin.png'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
     if err:
         raise ImageComparisonFailure(err)
@@ -51,6 +52,7 @@ def test_healpix_binning(tmp_path):
 
     # Spot-check the pixel
     np.testing.assert_approx_equal(hpxmap[671795], np.mean(C[test]))
+    plt.close(fig)
 
     # And do with a survey
     fig = plt.figure(1, figsize=(8, 5))
@@ -60,6 +62,7 @@ def test_healpix_binning(tmp_path):
     hpxmap, im, lon_raster, lat_raster, values_raster = sp.draw_hpxbin(ra, dec)
     fname = 'hpxbin_two.png'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
     if err:
         raise ImageComparisonFailure(err)

@@ -40,6 +40,7 @@ def test_survey_outlines(tmp_path, survey_tuple):
     sp.legend()
     fname = f'{name}_survey.png'
     fig.savefig(tmp_path / fname)
+    plt.close(fig)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 15.0)
     if err:
         raise ImageComparisonFailure(err)
