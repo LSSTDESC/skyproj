@@ -616,21 +616,51 @@ class _Skyproj():
         return [lon_max, lon_min, lat_min, lat_max]
 
     def plot(self, *args, **kwargs):
+        warnings.warn(
+            "skyproj.plot() has been deprecated and will be removed in v2.5. "
+            "Please access via skyproj.ax.plot()",
+            FutureWarning,
+        )
         return self._ax.plot(*args, **kwargs)
 
     def scatter(self, *args, **kwargs):
+        warnings.warn(
+            "skyproj.scatter() has been deprecated and will be removed in v2.5. "
+            "Please access via skyproj.ax.scatter()",
+            FutureWarning,
+        )
         return self._ax.scatter(*args, **kwargs)
 
     def pcolormesh(self, *args, **kwargs):
+        warnings.warn(
+            "skyproj.pcolormesh() has been deprecated and will be removed in v2.5. "
+            "Please access via skyproj.ax.pcolormesh()",
+            FutureWarning,
+        )
         return self._ax.pcolormesh(*args, **kwargs)
 
     def fill(self, *args, **kwargs):
+        warnings.warn(
+            "skyproj.fill() has been deprecated and will be removed in v2.5. "
+            "Please access via skyproj.ax.fill()",
+            FutureWarning,
+        )
         return self._ax.fill(*args, **kwargs)
 
     def circle(self, *args, **kwargs):
+        warnings.warn(
+            "skyproj.circle() has been deprecated and will be removed in v2.5. "
+            "Please access via skyproj.ax.circle()",
+            FutureWarning,
+        )
         return self._ax.circle(*args, **kwargs)
 
     def ellipse(self, *args, **kwargs):
+        warnings.warn(
+            "skyproj.ellipse() has been deprecated and will be removed in v2.5. "
+            "Please access via skyproj.ax.ellipse()",
+            FutureWarning,
+        )
         return self._ax.ellipse(*args, **kwargs)
 
     def legend(self, *args, loc='upper left', zorder=GRIDLINES_ZORDER_DEFAULT + 1, **kwargs):
@@ -639,6 +669,11 @@ class _Skyproj():
         By default the legend will be placed on top of all other elements. This
         can be adjusted with the zorder parameter.
         """
+        warnings.warn(
+            "skyproj.legend() has been deprecated and will be removed in v2.5. "
+            "Please access via skyproj.ax.legend()",
+            FutureWarning,
+        )
         legend = self._ax.legend(*args, loc=loc, **kwargs)
         legend.set_zorder(zorder)
         return legend
