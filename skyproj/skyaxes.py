@@ -364,6 +364,26 @@ class SkyAxes(matplotlib.axes.Axes):
 
         return result
 
+#######################################
+# Adding a few more plotting functions
+#######################################
+
+    @_add_lonlat
+    def arrow(self, *args, **kwargs):
+        # docstring inherited
+        result = super().arrow(*args, **kwargs)
+
+        return result
+
+#    @_add_lonlat
+#    def add_patch(self, *args, **kwargs):
+#        # docstring inherited
+#        result = super().add_patch(*args, **kwargs)
+#
+#        return result
+
+#######################################
+
     @_add_lonlat
     def pcolormesh(self, X, Y, C, **kwargs):
         # docstring inherited
