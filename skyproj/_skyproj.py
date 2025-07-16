@@ -464,7 +464,8 @@ class _Skyproj():
         redraw_inset_colorbar = False
         norm = self._redraw_dict["norm"]
         if not isinstance(norm, str):
-            pass
+            vmin = None
+            vmax = None
         elif self._autorescale:
             # Recompute scaling
             try:
