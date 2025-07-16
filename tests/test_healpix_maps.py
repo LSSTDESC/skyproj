@@ -208,6 +208,29 @@ def test_healsparse_input_norm(tmp_path):
     if err:
         raise ImageComparisonFailure(err)
 
+    # And test set_extent after setting the norm.
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    sp = skyproj.McBrydeSkyproj(ax=ax)
+    # This should ignore the input vmin/vmax if we set the norm.
+    im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(hspmap, norm=norm, vmin=-100.0, vmax=-50.0)
+    extent_orig = sp.get_extent()
+    extent = list(extent_orig)
+    extent[0] += 1.0
+    extent[-1] += 1.0
+    # This was a crash fixed on the extentnorm branch.
+    sp.set_extent(extent)
+    # Back to original for image comparison.
+    sp.set_extent(extent_orig)
+    sp.draw_colorbar()
+    fname = 'healsparse_five.png'
+    fig.savefig(tmp_path / fname)
+    plt.close(fig)
+    err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
+    if err:
+        raise ImageComparisonFailure(err)
+
 
 def test_healsparse_nanval(tmp_path):
     """Test plotting a healsparse map that has a nan value."""
