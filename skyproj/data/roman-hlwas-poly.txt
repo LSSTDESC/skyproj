@@ -1,4 +1,5 @@
 # Roman HLWAS polygon corners as defined by the Roman HLWAS CCS
+# Corners from https://github.com/hirata10/RomanHLWASTools
 # RA Dec POLY
 172.5732421875 -23.20629983365643 1
 174.7705078125 -23.023788761649328 1
