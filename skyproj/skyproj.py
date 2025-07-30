@@ -243,7 +243,7 @@ lat_0 : `float`, optional
 
     @property
     def _init_extent_xy(self):
-        return True
+        return False
 
     @property
     def _radial_labels(self):
