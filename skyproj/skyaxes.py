@@ -181,6 +181,9 @@ class SkyAxes(matplotlib.axes.Axes):
             self.gridlines._grid_helper.update_lim(self)
             self.gridlines.set_clip_box(self.bbox)
 
+            for side in ["left", "right", "bottom", "top"]:
+                self._ticklabels[side].reset_tick_iterator()
+
             # We only do labels if we have grid lines.
             for lon_or_lat, side in [("lon", "top"), ("lon", "bottom"), ("lat", "left"), ("lat", "right")]:
                 if self._ticklabels_visibility[self._ticklabels[side]._axis_direction]:
