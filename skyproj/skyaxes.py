@@ -135,7 +135,7 @@ class SkyAxes(matplotlib.axes.Axes):
              n_grid_lon=None, n_grid_lat=None,
              longitude_ticks="positive", equatorial_labels=False, celestial=True,
              full_circle=False, wrap=0.0, min_lon_ticklabel_delta=0.1,
-             draw_inner_lon_labels=False,
+             draw_inner_lon_labels=False, extreme_finder_steps=20,
              **kwargs):
         # docstring inherited
 
@@ -155,6 +155,7 @@ class SkyAxes(matplotlib.axes.Axes):
                 full_circle=full_circle,
                 min_lon_ticklabel_delta=min_lon_ticklabel_delta,
                 draw_inner_lon_labels=draw_inner_lon_labels,
+                extreme_finder_steps=extreme_finder_steps,
             )
             grid_helper.update_lim(self)
 

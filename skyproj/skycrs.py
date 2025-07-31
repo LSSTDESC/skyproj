@@ -7,10 +7,23 @@ from pyproj.exceptions import ProjError
 
 from .utils import wrap_values
 
-__all__ = ["SkyCRS", "PlateCarreeCRS", "McBrydeThomasFlatPolarQuarticCRS", "MollweideCRS",
-           "HammerCRS", "EqualEarthCRS", "LambertAzimuthalEqualAreaCRS", "GnomonicCRS",
-           "ObliqueMollweideCRS", "AlbersEqualAreaCRS", "get_crs", "get_available_crs",
-           "proj", "proj_inverse"]
+__all__ = [
+    "SkyCRS",
+    "PlateCarreeCRS",
+    "McBrydeThomasFlatPolarQuarticCRS",
+    "MollweideCRS",
+    "HammerCRS",
+    "EqualEarthCRS",
+    "LambertAzimuthalEqualAreaCRS",
+    "GnomonicCRS",
+    "ObliqueMollweideCRS",
+    "AlbersEqualAreaCRS",
+    "OrthographicCRS",
+    "get_crs",
+    "get_available_crs",
+    "proj",
+    "proj_inverse",
+]
 
 
 RADIUS = 1.0
@@ -406,6 +419,31 @@ class AlbersEqualAreaCRS(SkyCRS):
         super().__init__(name=name, radius=radius, **proj4_params)
 
 
+class OrthographicCRS(SkyCRS):
+    """Orthographic sky CRS.
+
+    Parameters
+    ----------
+    name : `str`, optional
+        Name of projection CRS. Must be ``ortho``.
+    lon_0 : `float`, optional
+        Central longitude of projection.
+    lat_0 : `float`, optional
+        Central latitude of projection.
+    radius : `float`, optional
+        Radius of projected sphere.
+    **kwargs : `dict`, optional
+        Additional kwargs for PROJ4 parameters.
+    """
+    def __init__(self, name='ortho', lon_0=0.0, lat_0=0.0, radius=RADIUS, **kwargs):
+        proj4_params = {'proj': 'ortho',
+                        'lon_0': lon_0,
+                        'lat_0': lat_0}
+        proj4_params = {**proj4_params, **kwargs}
+
+        super().__init__(name=name, radius=radius, **proj4_params)
+
+
 _crss = {
     'hammer': ('Hammer', HammerCRS),
     'mbtfpq': ('McBryde-Thomas Flat Polar Quartic', McBrydeThomasFlatPolarQuarticCRS),
@@ -416,6 +454,7 @@ _crss = {
     'obmoll': ('Oblique Mollweide', ObliqueMollweideCRS),
     'gnom': ('Gnomonic', GnomonicCRS),
     'aea': ('Albers Equal Area', AlbersEqualAreaCRS),
+    'ortho': ('Orthographic', OrthographicCRS),
 }
 
 

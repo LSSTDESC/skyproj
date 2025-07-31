@@ -233,7 +233,8 @@ class _Skyproj():
                           full_circle=self._full_circle,
                           wrap=self._wrap,
                           min_lon_ticklabel_delta=self._min_lon_ticklabel_delta,
-                          draw_inner_lon_labels=self._inner_longitude_labels)
+                          draw_inner_lon_labels=self._inner_longitude_labels,
+                          extreme_finder_steps=self._extreme_finder_steps)
 
         self._extent_xy = self._ax.get_extent(lonlat=False)
         self._changed_x_axis = False

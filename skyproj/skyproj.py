@@ -5,9 +5,18 @@ from ._skyproj import _Skyproj
 from ._docstrings import skyproj_init_parameters, skyproj_kwargs_par
 
 
-__all__ = ['Skyproj', 'McBrydeSkyproj', 'LaeaSkyproj', 'MollweideSkyproj',
-           'HammerSkyproj', 'EqualEarthSkyproj', 'GnomonicSkyproj',
-           'ObliqueMollweideSkyproj', 'AlbersSkyproj']
+__all__ = [
+    'Skyproj',
+    'McBrydeSkyproj',
+    'LaeaSkyproj',
+    'MollweideSkyproj',
+    'HammerSkyproj',
+    'EqualEarthSkyproj',
+    'GnomonicSkyproj',
+    'ObliqueMollweideSkyproj',
+    'AlbersSkyproj',
+    'OrthoSkyproj',
+]
 
 
 class _Stadium:
@@ -87,13 +96,13 @@ class _Circle:
         nstep = 1000
 
         t = np.linspace(-np.pi/2., np.pi/2., nstep)
-        x = 2*self.crs.radius*np.cos(t)
-        y = 2*self.crs.radius*np.sin(t)
+        x = self._circle_scale*self.crs.radius*np.cos(t)
+        y = self._circle_scale*self.crs.radius*np.sin(t)
         proj_boundary_xy['right'] = np.column_stack((x, y))
 
         t = np.linspace(np.pi/2., 3*np.pi/2., nstep)
-        x = 2*self.crs.radius*np.cos(t)
-        y = 2*self.crs.radius*np.sin(t)
+        x = self._circle_scale*self.crs.radius*np.cos(t)
+        y = self._circle_scale*self.crs.radius*np.sin(t)
         proj_boundary_xy['left'] = np.column_stack((x, y))
 
         proj_boundary_xy['top'] = np.zeros((0, 2))
@@ -107,6 +116,8 @@ class _Circle:
 class Skyproj(_Skyproj, _Stadium):
     __doc__ = (skyproj_init_parameters("A Plate Carree cylindrical projection Skyproj map.")
                + skyproj_kwargs_par)
+
+    _extreme_finder_steps = 20
 
     # Plate Carree
     def __init__(
@@ -199,6 +210,8 @@ lon_0 : `float`, optional
     Central longitude of the LAEA projection.
 lat_0 : `float`, optional
     Central latitude of the LAEA projection."""
+
+    _circle_scale = 2.0
 
     # Lambert Azimuthal Equal Area
     def __init__(
@@ -485,6 +498,8 @@ lat_0 : `float`, optional
     Central latitude of the Gnomonic projection."""
     __doc__ += skyproj_kwargs_par
 
+    _circle_scale = 2.0
+
     # Gnomonic
     def __init__(
         self,
@@ -588,3 +603,72 @@ lat_2 : `float`, optional
     @property
     def _inner_longitude_labels(self):
         return True
+
+
+class OrthoSkyproj(_Skyproj, _Circle):
+    __doc__ = (skyproj_init_parameters("An Orthographic Skyproj map.")
+               + skyproj_kwargs_par)
+    __doc__ = skyproj_init_parameters(
+        "An Orthographic Skyproj map.",
+        include_lon_0=False,
+    )
+    __doc__ += """
+lon_0 : `float`, optional
+    Central longitude of the Orthographic projection.
+lat_0 : `float`, optional
+    Central latitude of the Orthographic projection."""
+
+    _circle_scale = 1.0
+    _extreme_finder_steps = 51
+
+    # Orthographic
+    def __init__(
+        self,
+        ax=None,
+        gridlines=True,
+        celestial=True,
+        extent=None,
+        longitude_ticks='positive',
+        autorescale=True,
+        galactic=False,
+        rcparams={},
+        n_grid_lon=None,
+        n_grid_lat=None,
+        min_lon_ticklabel_delta=0.1,
+        lon_0=0.0,
+        lat_0=0.0,
+        **kwargs,
+    ):
+        super().__init__(
+            ax=ax,
+            projection_name='ortho',
+            gridlines=gridlines,
+            celestial=celestial,
+            extent=extent,
+            longitude_ticks=longitude_ticks,
+            autorescale=autorescale,
+            galactic=galactic,
+            rcparams=rcparams,
+            n_grid_lon=n_grid_lon,
+            n_grid_lat=n_grid_lat,
+            min_lon_ticklabel_delta=min_lon_ticklabel_delta,
+            lon_0=lon_0,
+            lat_0=lat_0,
+            **kwargs,
+        )
+
+    @property
+    def _full_circle(self):
+        return True
+
+    @property
+    def _init_extent_xy(self):
+        return True
+
+    @property
+    def _radial_labels(self):
+        return True
+
+    @property
+    def _default_xy_labels(self):
+        return ("", "")

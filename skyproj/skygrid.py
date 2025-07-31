@@ -150,6 +150,9 @@ class SkyGridHelper:
     draw_inner_lon_labels : `bool`, optional
         Draw "inner" longitude labels? Only necessary for certain
         projections (e.g. Albers).
+    extreme_finder_steps : `int`, optional
+        Number of steps to use for the extreme finder for finding
+        grid line extents.
     """
     def __init__(
         self,
@@ -163,13 +166,19 @@ class SkyGridHelper:
         full_circle=False,
         min_lon_ticklabel_delta=0.1,
         draw_inner_lon_labels=False,
+        extreme_finder_steps=20,
     ):
         self._transform_lonlat_to_xy = functools.partial(proj, projection=projection, wrap=wrap)
         self._transform_xy_to_lonlat = functools.partial(proj_inverse, projection=projection)
         self._wrap = wrap
         self._n_grid_lon_default = n_grid_lon_default
         self._n_grid_lat_default = n_grid_lat_default
-        self._extreme_finder = ExtremeFinderWrapped(20, 20, wrap, self.transform_xy)
+        self._extreme_finder = ExtremeFinderWrapped(
+            extreme_finder_steps,
+            extreme_finder_steps,
+            wrap,
+            self.transform_xy,
+        )
         self._grid_locator_lon = None
         self._grid_locator_lat = None
         self._tick_formatters = {
