@@ -37,6 +37,8 @@ class _Skyproj():
         include_projection_name=True,
     ) + skyproj_kwargs_par
 
+    _extreme_finder_steps = 20
+
     def __init__(
         self,
         ax=None,

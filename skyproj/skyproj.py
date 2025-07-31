@@ -117,8 +117,6 @@ class Skyproj(_Skyproj, _Stadium):
     __doc__ = (skyproj_init_parameters("A Plate Carree cylindrical projection Skyproj map.")
                + skyproj_kwargs_par)
 
-    _extreme_finder_steps = 20
-
     # Plate Carree
     def __init__(
         self,
