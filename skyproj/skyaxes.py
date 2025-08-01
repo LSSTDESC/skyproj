@@ -94,7 +94,6 @@ class SkyAxes(matplotlib.axes.Axes):
         self._ticklabels_visibility = {
             "left": True,
             "right": False,
-            # "right": True,
             "top": True,
             "bottom": True,
         }
