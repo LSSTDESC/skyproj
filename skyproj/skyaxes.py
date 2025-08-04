@@ -180,6 +180,9 @@ class SkyAxes(matplotlib.axes.Axes):
             self.gridlines._grid_helper.update_lim(self)
             self.gridlines.set_clip_box(self.bbox)
 
+            for side in ["left", "right", "bottom", "top"]:
+                self._ticklabels[side].reset_tick_iterator()
+
             # We only do labels if we have grid lines.
             for lon_or_lat, side in [("lon", "top"), ("lon", "bottom"), ("lat", "left"), ("lat", "right")]:
                 if self._ticklabels_visibility[self._ticklabels[side]._axis_direction]:
@@ -190,6 +193,17 @@ class SkyAxes(matplotlib.axes.Axes):
                     if side == "top" or side == "bottom":
                         xaxis_pad = max(xaxis_pad, self._ticklabels[side]._axislabel_pad)
                     else:
+                        yaxis_pad = max(yaxis_pad, self._ticklabels[side]._axislabel_pad)
+
+            if self.gridlines.full_circle:
+                # In the case of full circle, we will draw the left/right
+                # longitude labels if we want to draw either left or right.
+                if self._ticklabels_visibility["left"] or self._ticklabels_visibility["right"]:
+                    for lon_or_lat, side in [("lon", "left"), ("lon", "right")]:
+                        tick_iter = self.gridlines.get_tick_iterator(lon_or_lat, side)
+                        self._ticklabels[side].set_from_tick_iterator(tick_iter, reset=False)
+                        self._ticklabels[side].compute_padding(renderer)
+                        labels_to_draw.append(self._ticklabels[side])
                         yaxis_pad = max(yaxis_pad, self._ticklabels[side]._axislabel_pad)
 
         self.xaxis.labelpad = xaxis_pad/renderer.points_to_pixels(1.0) + self._xlabelpad

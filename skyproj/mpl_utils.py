@@ -197,6 +197,9 @@ class SkyTickLabels(mtext.Text):
         # Extra initialization.
         self._visible = visible
         self._padding_computed = False
+        self._alignments = []
+        self._outers = []
+        self.ticklabels_loc_angle_label = []
 
     # ==================================================
     # The following methods are vendored from AxisLabel.
@@ -384,7 +387,14 @@ class SkyTickLabels(mtext.Text):
     def visible(self):
         return self._visible
 
-    def set_from_tick_iterator(self, tick_iter):
+    def reset_tick_iterator(self):
+        """Reset the tick iterators.
+        """
+        self.ticklabels_loc_angle_label = []
+        self._alignments = []
+        self._outers = []
+
+    def set_from_tick_iterator(self, tick_iter, reset=True):
         """Set label parameters from a tick iterator.
 
         Parameters
@@ -393,20 +403,21 @@ class SkyTickLabels(mtext.Text):
             Tuple with x/y position, normal angle, tangent angle,
             label name, alignment string, and whether this is
             an outer label or not.
+        reset : `bool`, optional
+            Reset the ticks?
         """
         ticklabel_add_angle = dict(left=180, right=0, bottom=0, top=180)[self._axis_direction]
 
-        ticklabels_loc_angle_label = []
-        self._alignments = []
-        self._outers = []
+        if reset:
+            self.reset_tick_iterator()
 
         for loc, angle_normal, angle_tangent, label, alignment, outer in tick_iter:
             angle_label = angle_tangent - 90 + ticklabel_add_angle
-            ticklabels_loc_angle_label.append([loc, angle_label, label])
+            self.ticklabels_loc_angle_label.append([loc, angle_label, label])
             self._alignments.append(alignment)
             self._outers.append(outer)
 
-        self.set_locs_angles_labels(ticklabels_loc_angle_label)
+        self.set_locs_angles_labels(self.ticklabels_loc_angle_label)
 
     def compute_padding(self, renderer):
         """Compute axis padding from labels.

@@ -131,6 +131,23 @@ def test_skyproj_albers(tmp_path, lat1lat2):
         raise ImageComparisonFailure(err)
 
 
+@pytest.mark.parametrize("lat_0", [-90.0, 90.0])
+def test_skyproj_laea(tmp_path, lat_0):
+    """Test Lambert Azimuthal Equal Area."""
+    plt.rcParams.update(plt.rcParamsDefault)
+
+    fig = plt.figure(1, figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    sp = skyproj.LaeaSkyproj(ax=ax, n_grid_lon=8, n_grid_lat=5, lat_0=lat_0, lon_0=0)
+    fname = f'{sp.projection_name}_{lat_0}_.png'
+    fig.savefig(tmp_path / fname)
+    plt.close(fig)
+    err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 15.0)
+    if err:
+        raise ImageComparisonFailure(err)
+
+
 @pytest.mark.parametrize("skyproj", [skyproj.Skyproj,
                                      skyproj.McBrydeSkyproj,
                                      skyproj.MollweideSkyproj,

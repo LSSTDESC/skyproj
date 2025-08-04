@@ -536,6 +536,10 @@ class SkyGridHelper:
 
         return n_grid_lon, n_grid_lat
 
+    @property
+    def full_circle(self):
+        return self._full_circle
+
 
 class SkyGridlines(matplotlib.collections.LineCollection):
     """A class to describe a set of grid lines on a SkyProj plot.
@@ -589,6 +593,10 @@ class SkyGridlines(matplotlib.collections.LineCollection):
             outside the boundary [True] or inside [False]).
         """
         return self._grid_helper.get_tick_iterator(lon_or_lat, axis_side)
+
+    @property
+    def full_circle(self):
+        return self._grid_helper.full_circle
 
     def draw(self, renderer):
         # docstring inherited
