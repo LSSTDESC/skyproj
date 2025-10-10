@@ -38,6 +38,7 @@ class _Skyproj():
     ) + skyproj_kwargs_par
 
     _extreme_finder_steps = 20
+    _ticklabel_visibility = [True, False, True, True]
 
     def __init__(
         self,

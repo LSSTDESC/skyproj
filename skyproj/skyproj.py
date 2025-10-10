@@ -630,8 +630,8 @@ lat_0 : `float`, optional
         autorescale=True,
         galactic=False,
         rcparams={},
-        n_grid_lon=None,
-        n_grid_lat=None,
+        n_grid_lon=8,
+        n_grid_lat=5,
         min_lon_ticklabel_delta=0.1,
         lon_0=0.0,
         lat_0=0.0,
@@ -665,8 +665,12 @@ lat_0 : `float`, optional
 
     @property
     def _radial_labels(self):
-        return True
+        return False
 
     @property
     def _default_xy_labels(self):
         return ("", "")
+
+    @property
+    def _equatorial_labels(self):
+        return True
