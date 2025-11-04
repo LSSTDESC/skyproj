@@ -18,11 +18,13 @@ GRIDLINES_ZORDER_DEFAULT = 10
 
 
 def _add_lonlat(func):
-    """Decorator to add lonlat option."""
+    """Decorator to add lonlat and geodesic options."""
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
-        if kwargs.pop('lonlat', True):
-            kwargs['transform'] = self.projection
+        if kwargs.pop("lonlat", True):
+            kwargs["transform"] = self.projection
+            geodesics = kwargs.pop("geodesic", True)
+            kwargs["transform"].set_plot_geodesics(geodesics)
         return func(self, *args, **kwargs)
     return wrapper
 

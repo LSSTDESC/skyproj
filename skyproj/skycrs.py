@@ -46,6 +46,7 @@ class SkyCRS(CRS):
         self._transformer_inv = Transformer.from_crs(self, _plate_carree, always_xy=True)
 
         self._transformer_cache = {}
+        self._plot_geodesics = True
 
     def with_new_center(self, lon_0, lat_0=None):
         """Create a new SkyCRS with a new lon_0/lat_0.
@@ -167,13 +168,16 @@ class SkyCRS(CRS):
     def radius(self):
         return self.proj4_params['R']
 
+    def set_plot_geodesics(self, plot_geodesics):
+        self._plot_geodesics = plot_geodesics
+
     def _as_mpl_transform(self, axes=None):
         from .transforms import SkyTransform
 
         if axes is None:
             raise ValueError("help need axes")
 
-        return (SkyTransform(self) + axes.transData)
+        return (SkyTransform(self, plot_geodesics=self._plot_geodesics) + axes.transData)
 
     def _as_mpl_axes(self):
         from .skyaxes import SkyAxes
