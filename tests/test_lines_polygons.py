@@ -30,6 +30,10 @@ def test_lines_polygons_mcbryde(tmp_path, lon_0):
     sp.ax.plot([-10., 45.], [-10., 45.], 'r-', label='One')
     sp.ax.plot([170., 210.], [-10., 45.], 'b--', label='Two')
 
+    # Draw two non-geodesics, one of which will wrap around.
+    sp.ax.plot([-10, 45.], [60.0, 60.0], 'm-', geodesic=False)
+    sp.ax.plot([170., 210.], [60.0, 60.0], 'm-', geodesic=False)
+
     # Draw two unfilled polygons, one of which will wrap around.
     sp.draw_polygon([-20, 20, 20, -20], [20, 20, 40, 40],
                     edgecolor='magenta', label='Three')
@@ -49,6 +53,16 @@ def test_lines_polygons_mcbryde(tmp_path, lon_0):
     # Test ``ellipse``.  We can only plot one point per call
     sp.ax.ellipse(60, 15, 10, 4, 0, color='green', label='Nine')
     sp.ax.ellipse(300, 15, 15, 2, 45, fill=True, color='red', label='Ten')
+
+    # Draw two unfilled boxes, one of which will wrap around.
+    sp.draw_box([-20, 20, 20, -20], [50, 50, 70, 70], edgecolor='magenta')
+    sp.draw_box([160, 200, 200, 160], [50, 50, 70, 70], edgecolor='black')
+
+    # Draw two filled boxes, one of which will wrap around.
+    sp.draw_box([-20, 20, 20, -20], [-50, -50, -70, -70],
+                edgecolor='black', facecolor='red', linestyle='--')
+    sp.draw_box([160, 200, 200, 160], [-50, -50, -70, -70],
+                edgecolor='red', facecolor='black', linestyle='-')
 
     sp.ax.legend()
     fname = f'lines_and_polygons_{lon_0}.png'
@@ -91,6 +105,17 @@ def test_lines_polygons_obmoll(tmp_path, lonlatplonp):
                     edgecolor='black', facecolor='red', linestyle='--', label='Five')
     sp.draw_polygon([160, 200, 200, 160], [-20, -20, -40, -40],
                     edgecolor='red', facecolor='black', linestyle='-', label='Six')
+
+    # Draw two unfilled boxes, one of which will wrap around.
+    sp.draw_box([-20, 20, 20, -20], [50, 50, 70, 70], edgecolor='magenta')
+    sp.draw_box([160, 200, 200, 160], [50, 50, 70, 70], edgecolor='black')
+
+    # Draw two filled boxes, one of which will wrap around.
+    # Note that wrapped filled boxes do not currently work with oblique transforms.
+    sp.draw_box([-20, 20, 20, -20], [-50, -50, -70, -70],
+                edgecolor='black', facecolor='red', linestyle='--')
+    sp.draw_box([160, 200, 200, 160], [-50, -50, -70, -70],
+                edgecolor='red', facecolor='black', linestyle='-')
 
     sp.ax.legend()
     fname = f'lines_and_polygons_obmoll_{lon_0}_{lat_p}_{lon_p}.png'

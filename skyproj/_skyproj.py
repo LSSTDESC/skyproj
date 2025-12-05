@@ -684,7 +684,7 @@ class _Skyproj():
         """Plot a polygon from a list of lon, lat coordinates.
 
         This routine is a convenience wrapper around plot() and fill(), both
-        of which work in geodesic coordinates.
+        of which work in geodesic (great circle) coordinates.
 
         Parameters
         ----------
@@ -743,6 +743,40 @@ class _Skyproj():
                               **kwargs)
             # Only add the label to the first polygon plotting.
             kwargs.pop('label', None)
+
+    def draw_box(self, lon, lat, edgecolor='red', linestyle='solid',
+                 facecolor=None, **kwargs):
+        """Plot a box from a list of lon, lat coordinates.
+
+        This will draw a box with sides of constant lon/lat, and does
+        not operate in geodesic (great circle) coordinates, unlike
+        draw_polygon().
+
+        Parameters
+        ----------
+        lon : `np.ndarray`
+            Array of four longitude points describing box.
+        lat : `np.ndarray`
+            Array of four latitude points describing box.
+        edgecolor : `str`, optional
+            Color of box boundary.  Set to None for no boundary.
+        linestyle : `str`, optional
+            Line style for boundary.
+        facecolor : `str`, optional
+            Color of box face.  Set to None for no fill color.
+        **kwargs : `dict`, optional
+            Additional keywords passed to plot.
+        """
+        if len(lon) != 4 or len(lat) != 4:
+            raise ValueError("draw_box requires 4 longitude and latitude points.")
+
+        if linestyle is not None and edgecolor is not None:
+            self._ax.plot(np.append(lon, lon[0]),
+                          np.append(lat, lat[0]),
+                          color=edgecolor, linestyle=linestyle,
+                          geodesic=False, **kwargs)
+        if facecolor is not None:
+            self.ax.fill(lon, lat, color=facecolor, geodesic=False, **kwargs)
 
     @add_func_docstr(draw_hpxmap_docstr)
     def draw_hpxmap(self, hpxmap, nest=False, zoom=True, xsize=1000, vmin=None, vmax=None,
