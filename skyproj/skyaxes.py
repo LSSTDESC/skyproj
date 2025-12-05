@@ -425,6 +425,18 @@ class SkyAxes(matplotlib.axes.Axes):
 
         return result
 
+    def annotate(self, *args, **kwargs):
+        # docstring inherited
+        if kwargs.pop("lonlat", True):
+            if "xycoords" not in kwargs:
+                kwargs["xycoords"] = self.projection._as_mpl_transform(self)
+            if "textcoords" not in kwargs:
+                kwargs["textcoords"] = self.projection._as_mpl_transform(self)
+
+        result = super().annotate(*args, **kwargs)
+
+        return result
+
     def legend(self, *args, loc="upper left", zorder=GRIDLINES_ZORDER_DEFAULT + 1, **kwargs):
         legend = super().legend(*args, loc=loc, **kwargs)
         legend.set_zorder(zorder)
