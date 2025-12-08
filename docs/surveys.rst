@@ -26,7 +26,7 @@ The outline of DES can be accessed with :code:`draw_des()`.
     sp = skyproj.DESSkyproj(ax=ax)
     sp.draw_des(label='DES')
     sp.tissot_indicatrices(radius=2.5, num_lon=18, num_lat=10, color='blue', alpha=0.3)
-    sp.legend()
+    sp.ax.legend()
     plt.show()
 
 .. image:: images/DES_survey_with_indicatrices.png
@@ -51,7 +51,7 @@ The outline of DES can be accessed with :code:`draw_des()`.
     sp = skyproj.DESAlbersSkyproj(ax=ax)
     sp.draw_des(label='DESAlbers')
     sp.tissot_indicatrices(radius=2.5, num_lon=18, num_lat=10, color='blue', alpha=0.3)
-    sp.legend()
+    sp.ax.legend()
     plt.show()
 
 .. image:: images/DESAlbers_survey_with_indicatrices.png
@@ -74,7 +74,7 @@ The outline of BLISS can be accessed with :code:`draw_bliss()`.
     fig, ax = plt.subplots(figsize=(8, 5))
     sp = skyproj.BlissSkyproj(ax=ax)
     sp.draw_bliss(label='BLISS')
-    sp.legend()
+    sp.ax.legend()
     plt.show()
 
 .. image:: images/BLISS_survey.png
@@ -97,7 +97,7 @@ The outline of MagLiteS can be accessed with :code:`draw_maglites()`.
     fig, ax = plt.subplots(figsize=(8, 5))
     sp = skyproj.MaglitesSkyproj(ax=ax)
     sp.draw_maglites(label='MagLiteS')
-    sp.legend()
+    sp.ax.legend()
     plt.show()
 
 .. image:: images/MagLiTeS_survey.png
@@ -120,7 +120,7 @@ The outline of DECaLS can be accessed with :code:`draw_decals()`.
     fig, ax = plt.subplots(figsize=(8, 5))
     sp = skyproj.DecalsSkyproj(ax=ax)
     sp.draw_decals(label='DECaLS')
-    sp.legend()
+    sp.ax.legend()
     plt.show()
 
 .. image:: images/DECaLS_survey.png

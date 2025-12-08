@@ -81,8 +81,8 @@ Similarly, circles are drawn as a connected locus of points that are all equidis
     sp = skyproj.McBrydeSkyproj(ax=ax)
 
     # Draw two geodesics, one of which will wrap around.
-    sp.plot([-10., 45.], [-10., 45.], 'r-', label='One')
-    sp.plot([170., 210.], [-10., 45.], 'b--', label='Two')
+    sp.ax.plot([-10., 45.], [-10., 45.], 'r-', label='One')
+    sp.ax.plot([170., 210.], [-10., 45.], 'b--', label='Two')
 
     # Draw two unfilled polygons, one of which will wrap around.
     sp.draw_polygon([-20, 20, 20, -20], [20, 20, 40, 40],
@@ -97,17 +97,17 @@ Similarly, circles are drawn as a connected locus of points that are all equidis
                     edgecolor='red', facecolor='black', linestyle='-', label='Six')
 
     # Draw a circle
-    sp.circle(40.0, -40.0, 5.0, label='Seven')
-    sp.circle(-40.0, -40.0, 5.0, color='orange', label='Eight', fill=True)
+    sp.ax.circle(40.0, -40.0, 5.0, label='Seven')
+    sp.ax.circle(-40.0, -40.0, 5.0, color='orange', label='Eight', fill=True)
 
     # Draw one open ellipse and one rotated, filled ellipse.
     # ellipse expects (ra, dec, r_A, r_B, theta)  [degrees]
     # where r_A=Semi-major axis, r_B=semi-minor axis, theta=position angle.
-    sp.ellipse(60, 15, 10, 4, 0, color='green', label='Nine')
-    sp.ellipse(300, 15, 15, 2, 45, fill=True, color='red', label='Ten')
+    sp.ax.ellipse(60, 15, 10, 4, 0, color='green', label='Nine')
+    sp.ax.ellipse(300, 15, 15, 2, 45, fill=True, color='red', label='Ten')
 
     # Make a legend
-    sp.legend()
+    sp.ax.legend()
     plt.show()
 
 .. image:: images/lines_and_polygons_0.0.png
@@ -129,7 +129,7 @@ The default is to plot a thick line along the Galactic equator, and two dashed l
     fig, ax = plt.subplots(figsize=(8, 5))
     sp = skyproj.McBrydeSkyproj(ax=ax)
     sp.draw_milky_way(label='Milky Way')
-    sp.legend(loc="upper right")
+    sp.ax.legend(loc="upper right")
     plt.show()
 
 .. image:: images/milky_way.png
@@ -148,7 +148,7 @@ When using :code:`draw_milky_way()`, it will plot in Galactic coordinates.
     fig, ax = plt.subplots(figsize=(8, 5))
     sp = skyproj.McBrydeSkyproj(ax=ax, galactic=True, longitude_ticks='symmetric')
     sp.draw_milky_way(label='Milky Way')
-    sp.legend(loc="upper right")
+    sp.ax.legend(loc="upper right")
     plt.show()
 
 .. image:: images/milky_way_galactic.png
@@ -171,7 +171,7 @@ See :ref:`surveys` for further information on what surveys are available (and fe
     fig, ax = plt.subplots(figsize=(8, 5))
     sp = skyproj.DESSkyproj(ax=ax)
     sp.draw_des(label='DES')
-    sp.legend()
+    sp.ax.legend()
     plt.show()
 
 .. image:: images/DES_survey.png
@@ -260,7 +260,7 @@ Note that the internal use of the `rc_params` (from `SkyProj` version 1) has bee
     # These values are comically exaggerated for effect.
     rcparams = {'axes.linewidth': 5}
 
-    with plt.rc_context(rcparams)
+    with plt.rc_context(rcparams):
         fig, ax = plt.subplots(figsize=(8, 5))
         sp = skyproj.McBrydeSkyproj(ax=ax)
 
