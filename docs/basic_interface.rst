@@ -285,3 +285,24 @@ These options are controlled at initialization time via keyword parameters, and 
   The default is 6 lines.
 * :code:`min_lon_ticklabel_delta`: The minimum relative spacing between longitude tick labels (relative to the width of the axis).
   Smaller values yield closer tick labels (and the potential for clashes), and larger valus yield more spacing between tick labels.
+
+
+Supporting Additional Matplotlib Methods
+----------------------------------------
+
+For convenience, many :code:`matplotlib.Axes` plotting features are supported directly by `SkyProj`.
+However, there may be additional methods that a user may wish to use in projected coordinates.
+Usually this simply involves setting the keyword :code:`transform=sp.ax.projection`.
+
+For example, one can use the :code:`arrow` method in the following way.
+Note that use of :code:`arrow` is `discouraged https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.arrow.html#matplotlib-pyplot-arrow`, and :code:`annotate` should be used instead.
+
+.. code-block :: python
+
+    import matplotlib.pyplot as plt
+    import skyproj
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    sp = skyproj.McBrydeSkyproj(ax=ax)
+    sp.ax.arrow(0, 0, 10, 10, width=1.0, transform=sp.ax.projection)
+    plt.show()
