@@ -11,7 +11,8 @@ from ._docstrings import (
 )
 
 __all__ = ['DESSkyproj', 'BlissSkyproj', 'MaglitesSkyproj',
-           'DecalsSkyproj', 'DESMcBrydeSkyproj', 'DESAlbersSkyproj']
+           'DecalsSkyproj', 'DESMcBrydeSkyproj', 'DESAlbersSkyproj',
+           'RomanHLWASSkyproj', 'RomanHLWASMcBrydeSkyproj']
 
 
 class _Survey:
@@ -44,6 +45,10 @@ class _Survey:
     def draw_bliss(self, edgecolor='magenta', lw=2, **kwargs):
         """Draw the BLISS footprint."""
         filename = get_datafile('bliss-poly.txt')
+        return self.draw_polygon_file(filename, edgecolor=edgecolor, lw=lw, **kwargs)
+
+    def draw_romanhlwas(self, edgecolor='red', lw=2, **kwargs):
+        filename = get_datafile('roman-hlwas-poly.txt')
         return self.draw_polygon_file(filename, edgecolor=edgecolor, lw=lw, **kwargs)
 
     # Override zoom default for survey maps to keep the default fixed.
@@ -325,3 +330,47 @@ class DecalsSkyproj(_Survey, McBrydeSkyproj):
             min_lon_ticklabel_delta=min_lon_ticklabel_delta,
             **kwargs,
         )
+
+
+class RomanHLWASMcBrydeSkyproj(_Survey, McBrydeSkyproj):
+    __doc__ = skyproj_init_parameters(
+        """A projection for the Roman High-Latitude Wide-Area Survey using a McBryde-Thomas Flat Polar Quartic
+           projection."""
+    )
+    __doc__ += skyproj_kwargs_par
+
+    def __init__(
+        self,
+        ax=None,
+        *,
+        lon_0=-90.0,
+        gridlines=True,
+        celestial=True,
+        extent=[0, 270, -60, 10],
+        longitude_ticks='positive',
+        autorescale=True,
+        galactic=False,
+        rcparams={},
+        n_grid_lon=10,
+        n_grid_lat=6,
+        min_lon_ticklabel_delta=0.1,
+        **kwargs,
+    ):
+        super().__init__(
+            ax=ax,
+            lon_0=lon_0,
+            gridlines=gridlines,
+            celestial=celestial,
+            extent=extent,
+            longitude_ticks=longitude_ticks,
+            autorescale=autorescale,
+            galactic=galactic,
+            rcparams=rcparams,
+            n_grid_lon=n_grid_lon,
+            n_grid_lat=n_grid_lat,
+            min_lon_ticklabel_delta=min_lon_ticklabel_delta,
+            **kwargs,
+        )
+
+
+RomanHLWASSkyproj = RomanHLWASMcBrydeSkyproj

@@ -17,7 +17,8 @@ ROOT = os.path.abspath(os.path.dirname(__file__))
                                           (skyproj.BlissSkyproj, "BLISS"),
                                           (skyproj.MaglitesSkyproj, "MagLiTeS"),
                                           (skyproj.DecalsSkyproj, "DECaLS"),
-                                          (skyproj.DESAlbersSkyproj, "DESAlbers")])
+                                          (skyproj.DESAlbersSkyproj, "DESAlbers"),
+                                          (skyproj.RomanHLWASSkyproj, "Roman_HLWAS")])
 def test_survey_outlines(tmp_path, survey_tuple):
     """Test drawing survey outlines."""
     plt.rcParams.update(plt.rcParamsDefault)
@@ -37,6 +38,8 @@ def test_survey_outlines(tmp_path, survey_tuple):
         sp.draw_maglites(label=name)
     elif name == 'DECaLS':
         sp.draw_decals(label=name)
+    elif name == 'Roman_HLWAS':
+        sp.draw_roman_hlwas(label=name)
     sp.ax.legend()
     fname = f'{name}_survey.png'
     fig.savefig(tmp_path / fname)
