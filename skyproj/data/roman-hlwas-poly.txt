@@ -1,8 +1,4 @@
 # Roman HLWAS polygon corners as defined by the Roman HLWAS CCS
-<<<<<<< HEAD
-# Corners from https://github.com/hirata10/RomanHLWASTools
-=======
->>>>>>> be8d541 (Added Roman HLWAS footprints to skyproj from CCS committee)
 # RA Dec POLY
 172.5732421875 -23.20629983365643 1
 174.7705078125 -23.023788761649328 1
