@@ -47,7 +47,7 @@ class _Survey:
         filename = get_datafile('bliss-poly.txt')
         return self.draw_polygon_file(filename, edgecolor=edgecolor, lw=lw, **kwargs)
 
-    def draw_romanhlwas(self, edgecolor='red', lw=2, **kwargs):
+    def draw_roman_hlwas(self, edgecolor='red', lw=2, **kwargs):
         filename = get_datafile('roman-hlwas-poly.txt')
         return self.draw_polygon_file(filename, edgecolor=edgecolor, lw=lw, **kwargs)
 
