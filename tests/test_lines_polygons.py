@@ -64,6 +64,10 @@ def test_lines_polygons_mcbryde(tmp_path, lon_0):
     sp.draw_box([160, 200, 200, 160], [-50, -50, -70, -70],
                 edgecolor='red', facecolor='black', linestyle='-')
 
+    # Draw an annotated arrow.
+    sp.ax.annotate("", xytext=(220, 20), xy=(270, 50), arrowprops=dict(arrowstyle="->"))
+    sp.ax.annotate("", xytext=(120, -50), xy=(50, -20), arrowprops=dict(arrowstyle="->"))
+
     sp.ax.legend()
     fname = f'lines_and_polygons_{lon_0}.png'
     fig.savefig(tmp_path / fname)
