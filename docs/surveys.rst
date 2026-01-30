@@ -126,3 +126,26 @@ The outline of DECaLS can be accessed with :code:`draw_decals()`.
 .. image:: images/DECaLS_survey.png
    :width: 600
    :alt: DECaLS Survey projection and survey outline.
+
+RomanHLWASSkyproj
+-----------------
+
+The :code:`skyproj.RomanHLWASSkyproj()` projection sets the projection for plotting the survey outline of the `Roman Space Telescope 
+High Latitude Wide Area Survey (HLWAS) <https://roman-docs.stsci.edu/roman-community-defined-surveys/high-latitude-wide-area-survey>`_.
+The default for the Roman HLWAS uses the :code:`skyproj.McBrydeSkyproj()` centered at -90 degrees longitude.
+The outline of the Roman HLWAS can be accessed with :code:`draw_roman_hlwas()`.
+
+.. code-block :: python
+
+    import matplotlib.pyplot as plt
+    import skyproj
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    sp = skyproj.RomanHLWASSkyproj(ax=ax)
+    sp.draw_roman_hlwas(label='Roman HLWAS')
+    sp.legend()
+    plt.show()
+
+.. image:: ../docs/images/Roman_HLWAS_survey.png
+   :width: 600
+   :alt: Roman HLWAS projection and survey outline.
