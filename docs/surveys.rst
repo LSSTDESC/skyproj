@@ -146,6 +146,6 @@ The outline of the Roman HLWAS can be accessed with :code:`draw_roman_hlwas()`.
     sp.legend()
     plt.show()
 
-.. image:: ../tests/data/Roman_HLWAS_survey.png
+.. image:: ../docs/images/Roman_HLWAS_survey.png
    :width: 600
    :alt: Roman HLWAS projection and survey outline.
