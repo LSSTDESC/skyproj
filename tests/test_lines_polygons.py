@@ -50,6 +50,10 @@ def test_lines_polygons_mcbryde(tmp_path, lon_0):
     sp.ax.ellipse(60, 15, 10, 4, 0, color='green', label='Nine')
     sp.ax.ellipse(300, 15, 15, 2, 45, fill=True, color='red', label='Ten')
 
+    # Test arrow
+    sp.ax.arrow(270, 0, 20, 20, head_width=4, color="brown", label='Eleven')
+
+
     sp.ax.legend()
     fname = f'lines_and_polygons_{lon_0}.png'
     fig.savefig(tmp_path / fname)
@@ -91,6 +95,10 @@ def test_lines_polygons_obmoll(tmp_path, lonlatplonp):
                     edgecolor='black', facecolor='red', linestyle='--', label='Five')
     sp.draw_polygon([160, 200, 200, 160], [-20, -20, -40, -40],
                     edgecolor='red', facecolor='black', linestyle='-', label='Six')
+
+    # Test arrow
+    sp.ax.arrow(270, 0, 20, 20, head_width=4, color="brown", label='Eleven')
+
 
     sp.ax.legend()
     fname = f'lines_and_polygons_obmoll_{lon_0}_{lat_p}_{lon_p}.png'
