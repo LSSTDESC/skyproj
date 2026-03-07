@@ -8,10 +8,11 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#include "thread_compat.h"
 #include "skyproj.h"
 
 PyDoc_STRVAR(transform_doc,
-             "transform(projstr, a, b, degrees=True)\n"
+             "transform(projstr, a, b, degrees=True, inverse=False, n_threads=1)\n"
              "--\n\n"
              "Transform from lon, lat to x, y or inverse.\n"
              "\n"
@@ -27,11 +28,118 @@ PyDoc_STRVAR(transform_doc,
              "    Input/output in degrees?\n"
              "inverse : `bool`, optional\n"
              "    Do inverse transform?\n"
+             "n_threads : `int`, optional\n"
+             "    Number of threads to use.\n"
              "\n"
              "Returns\n"
              "-------\n"
              "xy or lonlat : `np.ndarray` (N, 2)\n"
              "    xy or lonlat array.\n");
+
+// Core processing logic for transform - used by both single and multi-threaded paths
+static bool transform_iteration(NpyIter *iter, int degrees, int inverse, const char *proj_str,
+                                double *a2b2s, npy_intp start_idx, npy_intp end_idx, char *err) {
+    NpyIter_IterNextFunc *iternext;
+    char **dataptrarray;
+    char *errmsg;
+    PJ *p = NULL;
+    PJ_CONTEXT *c = NULL;
+    PJ_OPERATION_FACTORY_CONTEXT *operation_ctx = NULL;
+    PJ_COORD coord = {{0, 0, 0, 0}};
+    PJ_COORD coord2 = {{0, 0, 0, 0}};
+
+    // Create PROJ context and projection for this thread
+    c = proj_context_create();
+    if (c == NULL) {
+        snprintf(err, ERR_SIZE, "Failed to create PROJ context");
+        goto fail;
+    }
+
+    proj_log_level(c, PJ_LOG_NONE);
+    p = proj_create(c, proj_str);
+    if (p == NULL) {
+        snprintf(err, ERR_SIZE, "Failed to create PROJ projection");
+        goto fail;
+    }
+
+    operation_ctx = proj_create_operation_factory_context(c, NULL);
+    if (operation_ctx == NULL) {
+        snprintf(err, ERR_SIZE, "Failed to create PROJ operation context");
+        goto fail;
+    }
+    proj_operation_factory_context_set_allow_ballpark_transformations(c, operation_ctx, true);
+
+    proj_errno_reset(p);
+
+    // For ranged iteration, reset to the specified range
+    if (NpyIter_ResetToIterIndexRange(iter, start_idx, end_idx, &errmsg) != NPY_SUCCEED) {
+        snprintf(err, ERR_SIZE, "%s", errmsg);
+        goto fail;
+    }
+
+    iternext = NpyIter_GetIterNext(iter, NULL);
+    if (iternext == NULL) {
+        snprintf(err, ERR_SIZE, "Failed to get iterator next function");
+        goto fail;
+    }
+
+    dataptrarray = NpyIter_GetDataPtrArray(iter);
+
+    do {
+        size_t index = NpyIter_GetIterIndex(iter);
+
+        if (inverse == 0) {
+            // Forward transform
+            coord.v[0] = *(double *)dataptrarray[0];
+            coord.v[1] = *(double *)dataptrarray[1];
+            if (degrees) {
+                coord.v[0] *= SP_D2R;
+                coord.v[1] *= SP_D2R;
+            }
+            coord2 = proj_trans(p, PJ_FWD, coord);
+
+            a2b2s[2 * index] = coord2.enu.e;
+            a2b2s[2 * index + 1] = coord2.enu.n;
+        } else {
+            // Inverse transform
+            coord.enu.e = *(double *)dataptrarray[0];
+            coord.enu.n = *(double *)dataptrarray[1];
+            coord2 = proj_trans(p, PJ_INV, coord);
+
+            a2b2s[2 * index] = coord2.lp.lam;
+            a2b2s[2 * index + 1] = coord2.lp.phi;
+            if (degrees) {
+                a2b2s[2 * index] *= SP_R2D;
+                a2b2s[2 * index + 1] *= SP_R2D;
+            }
+        }
+
+        // We allow invalid coordinates; we just transform them to NaNs
+        if (!isfinite(a2b2s[2 * index])) {
+            a2b2s[2 * index] = NAN;
+            a2b2s[2 * index + 1] = NAN;
+        }
+
+    } while (iternext(iter));
+
+    proj_destroy(p);
+    proj_context_destroy(c);
+    return true;
+
+ fail:
+    if (p != NULL) proj_destroy(p);
+    if (c != NULL) proj_context_destroy(c);
+
+    return false;
+}
+
+// Worker function for each thread
+static void *transform_worker(void *arg) {
+    TransformThreadData *td = (TransformThreadData *)arg;
+    td->failed = !transform_iteration(td->iter, td->degrees, td->inverse, td->proj_str,
+                                      td->a2b2s, td->start_idx, td->end_idx, td->err);
+    return NULL;
+}
 
 static PyObject *transform(PyObject *dummy, PyObject *args, PyObject *kwargs) {
     PyObject *a_obj = NULL, *b_obj = NULL;
@@ -39,21 +147,23 @@ static PyObject *transform(PyObject *dummy, PyObject *args, PyObject *kwargs) {
     PyObject *a2b2_arr = NULL;
     const char *proj_str_in = NULL;
     char proj_str[PROJ_STR_SIZE];
-    int errno;
+
+    NpyIter *iter = NULL;
+    thread_handle_t *threads = NULL;
+    TransformThreadData *thread_data = NULL;
 
     int degrees = 1;
     int inverse = 0;
+    int n_threads = 1;
 
-    NpyIter *iter = NULL;
-
-    static char *kwlist[] = {"proj_str", "a", "b", "degrees", "inverse", NULL};
+    static char *kwlist[] = {"proj_str", "a", "b", "degrees", "inverse", "n_threads", NULL};
 
     double *a2b2s = NULL;
     char err[ERR_SIZE];
     bool loop_failed = false;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "sOO|pp", kwlist, &proj_str_in, &a_obj,
-                                     &b_obj, &degrees, &inverse))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "sOO|ppi", kwlist, &proj_str_in, &a_obj,
+                                     &b_obj, &degrees, &inverse, &n_threads))
         goto fail;
 
     a_arr = PyArray_FROM_OTF(a_obj, NPY_DOUBLE, NPY_ARRAY_IN_ARRAY | NPY_ARRAY_ENSUREARRAY);
@@ -61,8 +171,8 @@ static PyObject *transform(PyObject *dummy, PyObject *args, PyObject *kwargs) {
     b_arr = PyArray_FROM_OTF(b_obj, NPY_DOUBLE, NPY_ARRAY_IN_ARRAY | NPY_ARRAY_ENSUREARRAY);
     if (b_arr == NULL) goto fail;
 
-    // The input arrays are lon_arr (double), lat_arr (double).
-    // The output arrays are x_arr (double), y_arr (double).
+    // The input arrays are a_arr (double), b_arr (double).
+    // The output array is a2b2_arr (double).
 
     PyArrayObject *op[2];
     npy_uint32 op_flags[2];
@@ -76,13 +186,16 @@ static PyObject *transform(PyObject *dummy, PyObject *args, PyObject *kwargs) {
     op_dtypes[1] = NULL;
 
     npy_uint32 iter_flags = NPY_ITER_ZEROSIZE_OK | NPY_ITER_RANGED | NPY_ITER_BUFFERED;
+    if (n_threads > 1) {
+        iter_flags |= NPY_ITER_DELAY_BUFALLOC | NPY_ITER_GROWINNER;
+    }
 
     iter = NpyIter_MultiNew(2, op, iter_flags, NPY_KEEPORDER, NPY_NO_CASTING, op_flags,
                             op_dtypes);
 
     if (iter == NULL) {
         PyErr_SetString(PyExc_ValueError,
-                        "lon, lat arrays could not be broadcast together.");
+                        "a, b arrays could not be broadcast together.");
         goto fail;
     }
 
@@ -108,92 +221,102 @@ static PyObject *transform(PyObject *dummy, PyObject *args, PyObject *kwargs) {
         goto cleanup;
     }
 
-    NpyIter_IterNextFunc *iternext;
-    char **dataptrarray;
-    char *errmsg;
+    // Prepare projection string
+    snprintf(proj_str, PROJ_STR_SIZE, "%s +ellps=sphere ALLOW_BALLPARK=True", proj_str_in);
 
-    if (NpyIter_ResetToIterIndexRange(iter, 0, iter_size, &errmsg) != NPY_SUCCEED) {
-        PyErr_SetString(PyExc_RuntimeError, errmsg);
-        goto fail;
+    if (n_threads > 1) {
+        // Don't use threading if chunks would be too small
+        if (iter_size / n_threads < MIN_CHUNK_SIZE) {
+            n_threads = iter_size / MIN_CHUNK_SIZE;
+        }
     }
 
-    iternext = NpyIter_GetIterNext(iter, NULL);
-    if (iternext == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "Failed to get iterator next function.");
-        goto fail;
-    }
+    if (n_threads > 1) {
+        // Multi-threaded path
+        if (n_threads > iter_size) {
+            n_threads = iter_size;
+        }
 
-    snprintf(proj_str, PROJ_STR_SIZE, "%s +ellps=sphere +R=1.0 ALLOW_BALLPARK=True", proj_str_in);
+        threads = malloc(n_threads * sizeof(thread_handle_t));
+        thread_data = malloc(n_threads * sizeof(TransformThreadData));
 
-    PJ *p;
-    PJ_CONTEXT *c;
-    PJ_COORD coord = {{0, 0, 0, 0}};
-    PJ_COORD coord2 = {{0, 0, 0, 0}};
+        if (threads == NULL || thread_data == NULL) {
+            PyErr_SetString(PyExc_MemoryError, "Failed to allocate thread resources");
+            goto fail;
+        }
 
-    NPY_BEGIN_ALLOW_THREADS
-
-    c = proj_context_create();
-    proj_log_level(c, PJ_LOG_NONE);
-    p = proj_create(c, proj_str);
-    //                "+proj=moll lon_0=0.0");
-    PJ_OPERATION_FACTORY_CONTEXT *operation_ctx = proj_create_operation_factory_context(c, NULL);
-    proj_operation_factory_context_set_allow_ballpark_transformations(
-        c, operation_ctx, true);
-
-    proj_errno_reset(p);
-
-    dataptrarray = NpyIter_GetDataPtrArray(iter);
-
-    do {
-        size_t index = NpyIter_GetIterIndex(iter);
-
-        if (inverse == 0) {
-            // Forward transform.
-            coord.v[0] = *(double *)dataptrarray[0];
-            coord.v[1] = *(double *)dataptrarray[1];
-            if (degrees) {
-                coord.v[0] *= SP_D2R;
-                coord.v[1] *= SP_D2R;
-            }
-            coord2 = proj_trans(p, PJ_FWD, coord);
-
-            a2b2s[2*index] = coord2.enu.e;
-            a2b2s[2*index + 1] = coord2.enu.n;
-        } else {
-            // Inverse transform.
-            coord.enu.e = *(double *)dataptrarray[0];
-            coord.enu.n = *(double *)dataptrarray[1];
-            coord2 = proj_trans(p, PJ_INV, coord);
-
-            a2b2s[2*index] = coord2.lp.lam;
-            a2b2s[2*index + 1] = coord2.lp.phi;
-            if (degrees) {
-                a2b2s[2*index] *= SP_R2D;
-                a2b2s[2*index + 1] *= SP_R2D;
+        // Create iterator copies (with GIL held)
+        thread_data[0].iter = iter;
+        for (int t = 1; t < n_threads; t++) {
+            thread_data[t].iter = NpyIter_Copy(iter);
+            if (thread_data[t].iter == NULL) {
+                PyErr_SetString(PyExc_RuntimeError, "Failed to copy iterator for threading");
+                goto fail;
             }
         }
 
-        // We allow invalid coordinates; we just transform them to NaNs.
-        if (!isfinite(a2b2s[2*index])) {
-            // Set to NaN.
-            a2b2s[2*index] = NAN;
-            a2b2s[2*index + 1] = NAN;
+        // Divide work among threads
+        npy_intp chunk_size = iter_size / n_threads;
+        npy_intp remainder = iter_size % n_threads;
+        bool thread_creation_failed = false;
+
+        for (int t = 0; t < n_threads; t++) {
+            thread_data[t].start_idx = t * chunk_size + (t < remainder ? t : remainder);
+            thread_data[t].end_idx =
+                thread_data[t].start_idx + chunk_size + (t < remainder ? 1 : 0);
+            thread_data[t].degrees = degrees;
+            thread_data[t].inverse = inverse;
+            thread_data[t].proj_str = proj_str;
+            thread_data[t].a2b2s = a2b2s;
+            thread_data[t].failed = false;
+            thread_data[t].err[0] = '\0';
         }
 
-    } while (iternext(iter));
+        NPY_BEGIN_ALLOW_THREADS
 
-    /* If we want to check for errors, this is what we do.
-    errno = proj_context_errno(c);
-    if (errno > 0) {
-        const char* errstr;
-        errstr = proj_context_errno_string(c, errno);
+        for (int t = 0; t < n_threads; t++) {
+            if (thread_create(&threads[t], transform_worker, &thread_data[t]) != 0) {
+                snprintf(err, ERR_SIZE, "Failed to create thread %d", t);
+                thread_creation_failed = true;
+                n_threads = t;
+                break;
+            }
+        }
+
+        // Join all successfully created threads
+        for (int t = 0; t < n_threads; t++) {
+            thread_join(threads[t]);
+        }
+
+        NPY_END_ALLOW_THREADS
+
+        if (thread_creation_failed) {
+            PyErr_SetString(PyExc_RuntimeError, err);
+            goto fail;
+        }
+
+        // Check for processing errors
+        for (int t = 0; t < n_threads; t++) {
+            if (thread_data[t].failed) {
+                PyErr_SetString(PyExc_ValueError, thread_data[t].err);
+                goto fail;
+            }
+        }
+
+    } else {
+        // Single-threaded path
+        NPY_BEGIN_ALLOW_THREADS
+
+        loop_failed = !transform_iteration(iter, degrees, inverse, proj_str, a2b2s,
+                                           0, iter_size, err);
+
+        NPY_END_ALLOW_THREADS
+
+        if (loop_failed) {
+            PyErr_SetString(PyExc_ValueError, err);
+            goto fail;
+        }
     }
-    */
-
-    proj_destroy(p);
-    proj_context_destroy(c);
-
-    NPY_END_ALLOW_THREADS
 
 cleanup:
     Py_DECREF(a_arr);
@@ -202,10 +325,19 @@ cleanup:
         iter = NULL;
         goto fail;
     }
+    if (thread_data != NULL) {
+        for (int t = 1; t < n_threads; t++) {
+            if (thread_data[t].iter != NULL) {
+                NpyIter_Deallocate(thread_data[t].iter);
+            }
+        }
+        free(thread_data);
+    }
+    if (threads != NULL) free(threads);
 
     return PyArray_Return((PyArrayObject *)a2b2_arr);
 
- fail:
+fail:
     Py_XDECREF(a_arr);
     Py_XDECREF(b_arr);
     Py_XDECREF(a2b2_arr);
@@ -213,8 +345,18 @@ cleanup:
         NpyIter_Deallocate(iter);
     }
 
+    if (thread_data != NULL) {
+        for (int t = 1; t < n_threads; t++) {
+            if (thread_data[t].iter != NULL) {
+                NpyIter_Deallocate(thread_data[t].iter);
+            }
+        }
+        free(thread_data);
+    }
+    if (threads != NULL) free(threads);
+
     return NULL;
-};
+}
 
 static PyMethodDef cskyproj_methods[] = {
     {"transform", (PyCFunction)(void (*)(void))transform,
