@@ -1,11 +1,7 @@
 import math
 import numpy as np
 
-from pyproj import CRS
-from pyproj import Transformer
-from pyproj.exceptions import ProjError
-
-from .utils import wrap_values
+from ._cskyproj import transform
 
 __all__ = ["SkyCRS", "PlateCarreeCRS", "McBrydeThomasFlatPolarQuarticCRS", "MollweideCRS",
            "HammerCRS", "EqualEarthCRS", "LambertAzimuthalEqualAreaCRS", "GnomonicCRS",
@@ -16,36 +12,25 @@ __all__ = ["SkyCRS", "PlateCarreeCRS", "McBrydeThomasFlatPolarQuarticCRS", "Moll
 RADIUS = 1.0
 
 
-class SkyCRS(CRS):
+class SkyCRS:
     """Coordinate Reference System (CRS) class describing sky projections.
-
-    This is a specialized subclass of a `pyproj.CRS` Coordinate Reference
-    System object.  Unlike a general earth-based CRS it uses a fixed
-    reference radius instead of a generalized ellipsoidal model.  And it
-    has additional routines used by SkyProj.
 
     Parameters
     ----------
     name : `str`, optional
         Name of projection CRS type.
-    radius : `float`, optional
-        Radius of projected sphere.
     **kwargs : `dict`, optional
         Additional kwargs for PROJ4 parameters.
     """
     def __init__(self, name=None, radius=RADIUS, **kwargs):
         self._name = name
-        self.proj4_params = {'ellps': 'sphere',
-                             'R': radius}
+        self.proj4_params = {"R": radius}
         self.proj4_params.update(**kwargs)
-        super().__init__(self.proj4_params)
 
-        _plate_carree = CRS(proj="eqc", lon_0=0.0, ellps="sphere", R=radius, to_meter=math.radians(1)*radius)
+        self.proj_string = ""
+        for key, value in self.proj4_params.items():
+            self.proj_string += f"{key}={str(value)} "
 
-        self._transformer_fwd = Transformer.from_crs(_plate_carree, self, always_xy=True)
-        self._transformer_inv = Transformer.from_crs(self, _plate_carree, always_xy=True)
-
-        self._transformer_cache = {}
         self._plot_geodesics = True
 
     def with_new_center(self, lon_0, lat_0=None):
@@ -95,40 +80,7 @@ class SkyCRS(CRS):
         x = x.ravel()
         y = y.ravel()
 
-        npts = x.shape[0]
-
-        result = np.zeros([npts, 2], dtype=np.float64)
-        if npts:
-            if not inverse:
-                # We need to wrap to [-180, 180)
-                x = wrap_values(x)
-
-            if len(x) == 1:
-                _x = x[0]
-                _y = y[0]
-            else:
-                _x = x
-                _y = y
-
-            try:
-                if inverse:
-                    result[:, 0], result[:, 1] = self._transformer_inv.transform(_x, _y, None, errcheck=False)
-                else:
-                    result[:, 0], result[:, 1] = self._transformer_fwd.transform(_x, _y, None, errcheck=False)
-            except ProjError as err:
-                msg = str(err).lower()
-                if (
-                    "latitude" in msg
-                    or "longitude" in msg
-                    or "outside of projection domain" in msg
-                    or "tolerance condition error" in msg
-                ):
-                    result[:] = np.nan
-                else:
-                    raise
-
-            # and set to nans
-            result[~np.isfinite(result)] = np.nan
+        result = transform(self.proj_string, x, y, inverse=inverse)
 
         if len(result_shape) > 2:
             return result.reshape(result_shape)

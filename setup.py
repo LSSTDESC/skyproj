@@ -38,6 +38,16 @@ if sys.platform == "darwin":
         f"-L{proj_library_dir}",
     ]
 
+
+libraries = ["proj", "m"]
+if sys.platform == 'win32':
+    # Windows: no pthread library needed, use native threads
+    pass
+else:
+    # Linux/macOS: link with pthread
+    libraries.append("pthread")
+
+
 ext = Extension(
     "skyproj._cskyproj",
     [
@@ -45,7 +55,7 @@ ext = Extension(
     ],
     include_dirs=include_dirs,
     library_dirs=library_dirs,
-    libraries=["proj", "m"],
+    libraries=libraries,
     extra_link_args=extra_link_args,
 )
 
