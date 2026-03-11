@@ -1,11 +1,14 @@
 import matplotlib.transforms
 from matplotlib.path import Path
 import numpy as np
-from pyproj import Geod
 
 from .utils import wrap_values
+from ._cskyproj import geodesic_interp
 
 __all__ = ["SkyTransform"]
+
+
+# TODO: clean up the lists/arrays
 
 
 class SkyTransform(matplotlib.transforms.Transform):
@@ -38,7 +41,6 @@ class SkyTransform(matplotlib.transforms.Transform):
         self._plot_geodesics = plot_geodesics
         self._nsamp = 10
         self._nsamp_resolve = 50
-        self._geod = Geod(a=self._proj.radius)
 
         self._lon_0 = self._proj.proj4_params['lon_0']
         self._wrap = (self._lon_0 + 180.) % 360.
@@ -87,15 +89,13 @@ class SkyTransform(matplotlib.transforms.Transform):
                 # Connect the last vertex
                 if self._plot_geodesics:
                     # Geodesic segment.
-                    lonlats_step = self._geod.npts(
+                    lonlats_step = geodesic_interp(
                         last_vertex[0],
                         last_vertex[1],
                         vertex[0],
                         vertex[1],
                         self._nsamp + 1,
-                        initial_idx=1,
-                        terminus_idx=0,
-                    )
+                    ).tolist()
                 else:
                     # Non-geodesic segment.
                     lonlats_step = list(
@@ -113,8 +113,8 @@ class SkyTransform(matplotlib.transforms.Transform):
             else:
                 raise ValueError("Unsupported code type %d" % (code))
 
-        lonlats = np.array(lonlats)
-        codes = np.array(codes)
+        lonlats = np.asarray(lonlats)
+        codes = np.asarray(codes)
 
         # Normalize range
         lonlats[:, 0] = wrap_values(lonlats[:, 0], wrap=self._wrap)
@@ -225,15 +225,13 @@ class SkyTransform(matplotlib.transforms.Transform):
             for c in cuts:
                 if self._plot_geodesics:
                     # Geodesic connection.
-                    lonlats_step = self._geod.npts(
+                    lonlats_step = geodesic_interp(
                         lonlats[c - 1, 0],
                         lonlats[c - 1, 1],
                         poly_vertex_start[0],
                         poly_vertex_start[1],
                         self._nsamp + 1,
-                        initial_idx=1,
-                        terminus_idx=0,
-                    )
+                    ).tolist()
                 else:
                     # Non-geodesic connection.
                     lonlats_step = list(
@@ -257,15 +255,13 @@ class SkyTransform(matplotlib.transforms.Transform):
         # And the final connection
         if self._plot_geodesics:
             # Geodesic connection
-            lonlats_step = self._geod.npts(
+            lonlats_step = geodesic_interp(
                 lonlats[-1, 0],
                 lonlats[-1, 1],
                 poly_vertex_start[0],
                 poly_vertex_start[1],
                 self._nsamp + 1,
-                initial_idx=1,
-                terminus_idx=0,
-            )
+            ).tolist()
         else:
             # Non-geodesic connection
             lonlats_step = list(
@@ -275,7 +271,7 @@ class SkyTransform(matplotlib.transforms.Transform):
                 )
             )
 
-        lonlats_append = np.array(lonlats_step)
+        lonlats_append = np.asarray(lonlats_step)
         lonlats_append[:, 0] = wrap_values(lonlats_append[:, 0], wrap=self._wrap)
         codes_append = [Path.LINETO]*len(lonlats_append)
 
@@ -315,16 +311,14 @@ class SkyTransform(matplotlib.transforms.Transform):
                 # Connect the last vertex
                 if self._plot_geodesics:
                     # Geodesic connection.
-                    lonlats_step = np.asarray(
-                        self._geod.npts(
-                            last_vertex[0],
-                            last_vertex[1],
-                            vertex[0],
-                            vertex[1],
-                            self._nsamp + 1,
-                            initial_idx=0,
-                            terminus_idx=0,
-                        ),
+                    lonlats_step = geodesic_interp(
+                        last_vertex[0],
+                        last_vertex[1],
+                        vertex[0],
+                        vertex[1],
+                        self._nsamp + 1,
+                        include_start=True,
+                        include_end=True,
                     )
                 else:
                     # Non-geodesic connection.
@@ -354,15 +348,12 @@ class SkyTransform(matplotlib.transforms.Transform):
 
                     if self._plot_geodesics:
                         # Geodesic split.
-                        lonlats_temp = np.asarray(
-                            self._geod.npts(
-                                lonlats_step[index - 1, 0],
-                                lonlats_step[index - 1, 1],
-                                lonlats_step[index, 0],
-                                lonlats_step[index, 1],
-                                self._nsamp_resolve + 1,
-                                initial_idx=1,
-                                terminus_idx=0),
+                        lonlats_temp = geodesic_interp(
+                            lonlats_step[index - 1, 0],
+                            lonlats_step[index - 1, 1],
+                            lonlats_step[index, 0],
+                            lonlats_step[index, 1],
+                            self._nsamp_resolve + 1,
                         )
                     else:
                         # Non-geodesic split.
