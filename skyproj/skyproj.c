@@ -5,6 +5,7 @@
 #include <numpy/arrayobject.h>
 #include <math.h>
 #include <proj.h>
+#include <geodesic.h>
 #include <stdbool.h>
 #include <stdio.h>
 
@@ -358,9 +359,110 @@ fail:
     return NULL;
 }
 
+PyDoc_STRVAR(geodesic_interp_doc,
+             "geodesic_interp(lon0, lat0, lon1, lat1, npts, radius=1.0, flattening=0.0, include_start=False, include_end=True)\n"
+             "--\n\n"
+             "Compute geodesic points between two terminii.\n"
+             "\n"
+             "Parameters\n"
+             "----------\n"
+             "lon0 : `float`\n"
+             "    Initial longitude (degrees).\n"
+             "lat0 : `float`\n"
+             "    Initial latitude (degrees).\n"
+             "lon1 : `float`\n"
+             "    Final longitude (degrees).\n"
+             "lat1 : `float`\n"
+             "    Final latitude (degrees).\n"
+             "npts : `int`\n"
+             "    Number of points to interpolate.\n"
+             "radius : `float`\n"
+             "    Radius of sphere (meters).\n"
+             "flattening : `float`\n"
+             "    Flattening parameter.\n"
+             "include_start : `bool`\n"
+             "    Include initial lon/lat in output?\n"
+             "include_end : `bool`\n"
+             "    Include final lon/lat in output?\n"
+             "\n"
+             "Returns\n"
+             "-------\n"
+             "lonlat : `np.ndarray` (N, 2)\n");
+
+static PyObject *geodesic_interp(PyObject *dummy, PyObject *args, PyObject *kwargs) {
+    PyObject *lonlat_arr = NULL;
+
+    double lon0, lat0, lon1, lat1;
+    int npts;
+    double radius = 1.0;
+    double flattening = 0.0;
+    int include_start = 0;
+    int include_end = 1;
+
+    double *lonlat_data = NULL;
+
+    struct geod_geodesic g;
+    struct geod_geodesicline l;
+    int index;
+
+    static char *kwlist[] = {"lon0", "lat0", "lon1", "lat1", "npts", "radius", "flattening", "include_start", "include_end", NULL};
+
+    char err[ERR_SIZE];
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ddddi|ddpp", kwlist, &lon0, &lat0,
+                                     &lon1, &lat1, &npts, &radius, &flattening,
+                                     &include_start, &include_end))
+        goto fail;
+
+    // Check that npts is valid.
+
+    npy_intp dims[2];
+    dims[0] = npts;
+    dims[1] = 2;
+    lonlat_arr = PyArray_SimpleNew(2, dims, NPY_FLOAT64);
+    if (lonlat_arr == NULL) goto fail;
+
+    lonlat_data = (double *)PyArray_DATA((PyArrayObject *)lonlat_arr);
+
+    geod_init(&g, radius, flattening);
+    // Note geod_inverseline takes lat, lon order.
+    geod_inverseline(&l, &g, lat0, lon0, lat1, lon1, GEOD_LATITUDE | GEOD_LONGITUDE);
+
+    int npts_stepsize = npts;
+    int offset = 0;
+
+    if ((include_start == 0) & (include_end == 1)) {
+        offset = 1;
+    } else if ((include_start == 1) & (include_end == 1)) {
+        npts_stepsize -= 1;
+    } else if ((include_start == 0) & (include_end == 0)) {
+        npts_stepsize += 1;
+        offset = 1;
+    }
+
+    double stepsize = 1. / (double) npts_stepsize;
+
+    for (index = 0; index < npts; index++) {
+        // Note geod_genposition returns lat, lon order.
+        geod_genposition(&l, GEOD_ARCMODE, (index + offset) * l.a13 * stepsize,
+                         &lonlat_data[index * 2 + 1], &lonlat_data[index * 2],
+                         0, 0, 0, 0, 0, 0);
+    }
+
+    return PyArray_Return((PyArrayObject *)lonlat_arr);
+
+ fail:
+    Py_XDECREF(lonlat_arr);
+
+    return NULL;
+}
+
+
 static PyMethodDef cskyproj_methods[] = {
     {"transform", (PyCFunction)(void (*)(void))transform,
      METH_VARARGS | METH_KEYWORDS, transform_doc},
+    {"geodesic_interp", (PyCFunction)(void (*)(void))geodesic_interp,
+     METH_VARARGS | METH_KEYWORDS, geodesic_interp_doc},
     {NULL, NULL, 0, NULL}};
 
 static struct PyModuleDef cskyproj_module = {PyModuleDef_HEAD_INIT, "_cskyproj", NULL, -1,
