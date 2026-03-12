@@ -8,9 +8,6 @@ from ._cskyproj import geodesic_interp
 __all__ = ["SkyTransform"]
 
 
-# TODO: clean up the lists/arrays
-
-
 class SkyTransform(matplotlib.transforms.Transform):
     """Class for transforming to and from sky coordinates.
 
@@ -73,7 +70,7 @@ class SkyTransform(matplotlib.transforms.Transform):
         if self._proj.name == 'obmoll':
             return self._transform_path_non_affine_oblique(path)
 
-        lonlats = []
+        lonlats = np.zeros((0, 2))
         codes = []
 
         last_vertex = None
@@ -82,7 +79,7 @@ class SkyTransform(matplotlib.transforms.Transform):
         # systems all messed up.
         for vertex, code in path.iter_segments(simplify=False):
             if last_vertex is None or code == Path.MOVETO:
-                lonlats.extend([(vertex[0], vertex[1])])
+                lonlats = np.vstack((lonlats, [vertex[0], vertex[1]]))
                 codes.append(Path.MOVETO)
                 last_vertex = vertex
             elif code in (Path.LINETO, Path.CLOSEPOLY, None):
@@ -95,17 +92,17 @@ class SkyTransform(matplotlib.transforms.Transform):
                         vertex[0],
                         vertex[1],
                         self._nsamp + 1,
-                    ).tolist()
+                    )
                 else:
                     # Non-geodesic segment.
-                    lonlats_step = list(
-                        zip(
+                    lonlats_step = np.vstack(
+                        (
                             np.linspace(last_vertex[0], vertex[0], self._nsamp + 1)[1:],
                             np.linspace(last_vertex[1], vertex[1], self._nsamp + 1)[1:],
-                        )
-                    )
+                        ),
+                    ).T
 
-                lonlats.extend(lonlats_step)
+                lonlats = np.vstack((lonlats, lonlats_step))
                 if code == Path.CLOSEPOLY:
                     is_polygon = True
                 codes.extend([Path.LINETO]*len(lonlats_step))
@@ -113,7 +110,6 @@ class SkyTransform(matplotlib.transforms.Transform):
             else:
                 raise ValueError("Unsupported code type %d" % (code))
 
-        lonlats = np.asarray(lonlats)
         codes = np.asarray(codes)
 
         # Normalize range
@@ -219,7 +215,7 @@ class SkyTransform(matplotlib.transforms.Transform):
         poly_vertex_start = lonlats[0, :]
 
         if cuts.size > 0:
-            lonlats_insert = []
+            lonlats_insert = np.zeros((0, 2))
             locs_insert = []
             codes_insert = []
             for c in cuts:
@@ -231,22 +227,21 @@ class SkyTransform(matplotlib.transforms.Transform):
                         poly_vertex_start[0],
                         poly_vertex_start[1],
                         self._nsamp + 1,
-                    ).tolist()
+                    )
                 else:
                     # Non-geodesic connection.
-                    lonlats_step = list(
-                        zip(
+                    lonlats_step = np.vstack(
+                        (
                             np.linspace(lonlats[c - 1, 0], poly_vertex_start[0], self._nsamp + 1)[1:],
                             np.linspace(lonlats[c - 1, 1], poly_vertex_start[1], self._nsamp + 1)[1:],
-                        )
-                    )
+                        ),
+                    ).T
 
-                lonlats_insert.extend(lonlats_step)
+                lonlats_insert = np.vstack((lonlats_insert, lonlats_step))
                 locs_insert.extend([c + 1]*len(lonlats_step))
                 codes_insert.extend([Path.LINETO]*len(lonlats_step))
                 poly_vertex_start = lonlats[c + 1, :]
 
-            lonlats_insert = np.array(lonlats_insert)
             lonlats_insert[:, 0] = wrap_values(lonlats_insert[:, 0], wrap=self._wrap)
 
             lonlats = np.insert(lonlats, locs_insert, lonlats_insert, axis=0)
@@ -255,23 +250,22 @@ class SkyTransform(matplotlib.transforms.Transform):
         # And the final connection
         if self._plot_geodesics:
             # Geodesic connection
-            lonlats_step = geodesic_interp(
+            lonlats_append = geodesic_interp(
                 lonlats[-1, 0],
                 lonlats[-1, 1],
                 poly_vertex_start[0],
                 poly_vertex_start[1],
                 self._nsamp + 1,
-            ).tolist()
+            )
         else:
             # Non-geodesic connection
-            lonlats_step = list(
-                zip(
+            lonlats_append = np.vstack(
+                (
                     np.linspace(lonlats[-1, 0], poly_vertex_start[0], self._nsamp + 1)[1:],
                     np.linspace(lonlats[-1, 1], poly_vertex_start[1], self._nsamp + 1)[1:],
-                )
-            )
+                ),
+            ).T
 
-        lonlats_append = np.asarray(lonlats_step)
         lonlats_append[:, 0] = wrap_values(lonlats_append[:, 0], wrap=self._wrap)
         codes_append = [Path.LINETO]*len(lonlats_append)
 
@@ -322,14 +316,12 @@ class SkyTransform(matplotlib.transforms.Transform):
                     )
                 else:
                     # Non-geodesic connection.
-                    lonlats_step = np.asarray(
-                        list(
-                            zip(
-                                np.linspace(last_vertex[0], vertex[0], self._nsamp + 1),
-                                np.linspace(last_vertex[1], vertex[1], self._nsamp + 1),
-                            )
+                    lonlats_step = np.vstack(
+                        (
+                            np.linspace(last_vertex[0], vertex[0], self._nsamp + 1),
+                            np.linspace(last_vertex[1], vertex[1], self._nsamp + 1),
                         ),
-                    )
+                    ).T
 
                 lonlats_step_xform = self._proj.transform_points(
                     lonlats_step[:, 0],
@@ -357,22 +349,20 @@ class SkyTransform(matplotlib.transforms.Transform):
                         )
                     else:
                         # Non-geodesic split.
-                        lonlats_temp = np.asarray(
-                            list(
-                                zip(
-                                    np.linspace(
-                                        lonlats_step[index - 1, 0],
-                                        lonlats_step[index, 0],
-                                        self._nsamp_resolve + 1,
-                                    ),
-                                    np.linspace(
-                                        lonlats_step[index - 1, 1],
-                                        lonlats_step[index, 1],
-                                        self._nsamp_resolve + 1,
-                                    ),
-                                )
-                            )
-                        )
+                        lonlats_temp = np.vstack(
+                            (
+                                np.linspace(
+                                    lonlats_step[index - 1, 0],
+                                    lonlats_step[index, 0],
+                                    self._nsamp_resolve + 1,
+                                ),
+                                np.linspace(
+                                    lonlats_step[index - 1, 1],
+                                    lonlats_step[index, 1],
+                                    self._nsamp_resolve + 1,
+                                ),
+                            ),
+                        ).T
 
                     lonlats_temp_xform = self._proj.transform_points(
                         lonlats_temp[:, 0],
