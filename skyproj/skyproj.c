@@ -407,8 +407,6 @@ static PyObject *geodesic_interp(PyObject *dummy, PyObject *args, PyObject *kwar
 
     static char *kwlist[] = {"lon0", "lat0", "lon1", "lat1", "npts", "radius", "flattening", "include_start", "include_end", NULL};
 
-    char err[ERR_SIZE];
-
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ddddi|ddpp", kwlist, &lon0, &lat0,
                                      &lon1, &lat1, &npts, &radius, &flattening,
                                      &include_start, &include_end))
@@ -457,12 +455,163 @@ static PyObject *geodesic_interp(PyObject *dummy, PyObject *args, PyObject *kwar
     return NULL;
 }
 
+PyDoc_STRVAR(geodesic_direct_doc,
+             "geodesic_direct(lon, lat, az, dist, radius=1.0, flattening=0.0)\n"
+             "--\n\n"
+             "Solve the direct geodesic problem.\n"
+             "\n"
+             "Parameters\n"
+             "----------\n"
+             "lon : `np.ndarray`\n"
+             "    Array of longitudes (degrees).\n"
+             "lat : `np.ndarray`\n"
+             "    Array of latitudes (degrees).\n"
+             "az : `np.ndarray`\n"
+             "    Array of azimuths (degrees).\n"
+             "dist : `np.ndarray`\n"
+             "    Array of distances (meters).\n"
+             "radius : `float`\n"
+             "    Radius of sphere (meters).\n"
+             "flattening : `float`\n"
+             "    Flattening parameter.\n"
+             "\n"
+             "Returns\n"
+             "-------\n"
+             "lon_out : `np.ndarray`\n"
+             "    Longitude points (degrees).\n"
+             "lat_out : `np.ndarray`\n"
+             "    Latitude points (degrees).\n");
+
+static PyObject *geodesic_direct(PyObject *dummy, PyObject *args, PyObject *kwargs) {
+    PyObject *lon_obj = NULL, *lat_obj = NULL, *az_obj = NULL, *dist_obj = NULL;
+    PyObject *lon_arr = NULL, *lat_arr = NULL, *az_arr = NULL, *dist_arr = NULL;
+    PyObject *lon_out_arr = NULL, *lat_out_arr = NULL;
+
+    double radius = 1.0;
+    double flattening = 0.0;
+
+    NpyIter *iter = NULL;
+    NpyIter_IterNextFunc *iternext;
+    char **dataptrarray;
+
+    struct geod_geodesic g;
+
+    static char *kwlist[] = {"lon", "lat", "az", "dist", "radius", "flattening", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OOOO|dd", kwlist, &lon_obj, &lat_obj,
+                                     &az_obj, &dist_obj, &radius, &flattening))
+        goto fail;
+
+    lon_arr = PyArray_FROM_OTF(lon_obj, NPY_DOUBLE, NPY_ARRAY_IN_ARRAY | NPY_ARRAY_ENSUREARRAY);
+    if (lon_arr == NULL) goto fail;
+    lat_arr = PyArray_FROM_OTF(lat_obj, NPY_DOUBLE, NPY_ARRAY_IN_ARRAY | NPY_ARRAY_ENSUREARRAY);
+    if (lat_arr == NULL) goto fail;
+    az_arr = PyArray_FROM_OTF(az_obj, NPY_DOUBLE, NPY_ARRAY_IN_ARRAY | NPY_ARRAY_ENSUREARRAY);
+    if (az_arr == NULL) goto fail;
+    dist_arr = PyArray_FROM_OTF(dist_obj, NPY_DOUBLE, NPY_ARRAY_IN_ARRAY | NPY_ARRAY_ENSUREARRAY);
+    if (dist_arr == NULL) goto fail;
+
+    // The input arrays are lon_arr (double), lat_arr (double), az_arr (double),
+    // and dist_arr (double).
+    // The output arrays are lon_out_arr (double), lat_out_arr (double).
+    PyArrayObject *op[6];
+    npy_uint32 op_flags[6];
+    PyArray_Descr *op_dtypes[6];
+
+    op[0] = (PyArrayObject *)lon_arr;
+    op_flags[0] = NPY_ITER_READONLY;
+    op_dtypes[0] = NULL;
+    op[1] = (PyArrayObject *)lat_arr;
+    op_flags[1] = NPY_ITER_READONLY;
+    op_dtypes[1] = NULL;
+    op[2] = (PyArrayObject *)az_arr;
+    op_flags[2] = NPY_ITER_READONLY;
+    op_dtypes[2] = NULL;
+    op[3] = (PyArrayObject *)dist_arr;
+    op_flags[3] = NPY_ITER_READONLY;
+    op_dtypes[3] = NULL;
+    op[4] = NULL;
+    op_flags[4] = NPY_ITER_WRITEONLY | NPY_ITER_ALLOCATE;
+    op_dtypes[4] = PyArray_DescrFromType(NPY_DOUBLE);
+    op[5] = NULL;
+    op_flags[5] = NPY_ITER_WRITEONLY | NPY_ITER_ALLOCATE;
+    op_dtypes[5] = PyArray_DescrFromType(NPY_DOUBLE);
+
+    npy_uint32 iter_flags = NPY_ITER_ZEROSIZE_OK;
+
+    iter = NpyIter_MultiNew(6, op, iter_flags, NPY_KEEPORDER, NPY_NO_CASTING, op_flags,
+                            op_dtypes);
+    if (iter == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                        "lon, lat, az, dist arrays could not be broadcast together.");
+        goto fail;
+    }
+
+    npy_intp iter_size = NpyIter_GetIterSize(iter);
+
+    if (iter_size == 0) {
+        goto cleanup;
+    }
+
+    geod_init(&g, radius, flattening);
+
+    iternext = NpyIter_GetIterNext(iter, NULL);
+    if (iternext == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "Could not get iternext.");
+        goto fail;
+    }
+    dataptrarray = NpyIter_GetDataPtrArray(iter);
+
+    do {
+        double *lon = (double *)dataptrarray[0];
+        double *lat = (double *)dataptrarray[1];
+        double *az = (double *)dataptrarray[2];
+        double *dist = (double *)dataptrarray[3];
+        double *lon_out = (double *)dataptrarray[4];
+        double *lat_out = (double *)dataptrarray[5];
+
+        geod_direct(&g, *lat, *lon, *az, *dist, lat_out, lon_out, 0);
+
+    } while (iternext(iter));
+
+ cleanup:
+    lon_out_arr = (PyObject *)NpyIter_GetOperandArray(iter)[4];
+    Py_INCREF(lon_out_arr);
+    lat_out_arr = (PyObject *)NpyIter_GetOperandArray(iter)[5];
+    Py_INCREF(lat_out_arr);
+
+    Py_DECREF(lon_arr);
+    Py_DECREF(lat_arr);
+    Py_DECREF(az_arr);
+    Py_DECREF(dist_arr);
+    if (NpyIter_Deallocate(iter) != NPY_SUCCEED) {
+        iter = NULL;
+        goto fail;
+    }
+
+    PyObject *retval = PyTuple_New(2);
+    PyTuple_SET_ITEM(retval, 0, PyArray_Return((PyArrayObject *)lon_out_arr));
+    PyTuple_SET_ITEM(retval, 1, PyArray_Return((PyArrayObject *)lat_out_arr));
+
+    return retval;
+
+ fail:
+    Py_XDECREF(lon_arr);
+    Py_XDECREF(lat_arr);
+    Py_XDECREF(az_arr);
+    Py_XDECREF(dist_arr);
+
+    return NULL;
+}
+
 
 static PyMethodDef cskyproj_methods[] = {
     {"transform", (PyCFunction)(void (*)(void))transform,
      METH_VARARGS | METH_KEYWORDS, transform_doc},
     {"geodesic_interp", (PyCFunction)(void (*)(void))geodesic_interp,
      METH_VARARGS | METH_KEYWORDS, geodesic_interp_doc},
+    {"geodesic_direct", (PyCFunction)(void (*)(void))geodesic_direct,
+     METH_VARARGS | METH_KEYWORDS, geodesic_direct_doc},
     {NULL, NULL, 0, NULL}};
 
 static struct PyModuleDef cskyproj_module = {PyModuleDef_HEAD_INIT, "_cskyproj", NULL, -1,
