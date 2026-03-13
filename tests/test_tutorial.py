@@ -8,6 +8,7 @@ import os
 import pytest
 import subprocess
 import tempfile
+import sys
 
 try:
     import nbformat
@@ -50,6 +51,7 @@ def _notebook_run(nbfile):
 
 
 @pytest.mark.skipif(nbformat is None, reason="nbformat not installed.")
+@pytest.mark.skipif(sys.platform != "linux", reason="too slow for ci.")
 @pytest.mark.parametrize("nbfile", ["tutorial_baseclass.ipynb",
                                     "tutorial_surveys.ipynb",
                                     "tutorial_healsparse.ipynb"])
