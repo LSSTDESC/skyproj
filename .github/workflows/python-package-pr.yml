@@ -32,7 +32,7 @@ jobs:
     - name: Configure conda and install code
       shell: bash -l {0}
       run: |
-        conda install -y --file requirements.txt --file requirements-dev.txt python-build
+        conda install -y --file requirements.txt --file requirements-dev.txt python-build proj
         python -m pip install --no-deps --no-build-isolation .
 
     - name: test versions
