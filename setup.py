@@ -39,12 +39,13 @@ if sys.platform == "darwin":
     ]
 
 
-libraries = ["proj", "m"]
+libraries = ["proj"]
 if sys.platform == 'win32':
-    # Windows: no pthread library needed, use native threads
+    # Windows: no pthread or math library needed, use native
     pass
 else:
     # Linux/macOS: link with pthread
+    libraries.append("m")
     libraries.append("pthread")
 
 
