@@ -23,6 +23,7 @@ jobs:
 
       - name: Build and install
         run: |
+          sudo apt-get update
           sudo apt-get install -y proj-bin libproj-dev
           python -m pip install --upgrade pip setuptools
           python -m pip install pytest
