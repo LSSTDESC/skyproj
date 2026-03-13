@@ -23,7 +23,7 @@ jobs:
 
       - name: Build and install
         run: |
-          yum install -y proj-devel proj
+          apt-get install -y proj-bin libproj-dev
           python -m pip install --upgrade pip setuptools
           python -m pip install pytest
           if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
