@@ -95,7 +95,7 @@ jobs:
     needs: [pypi_build_sdist, pypi_build_wheels]
     runs-on: ubuntu-latest
     environment: Publish
-    if: github.event_name == "push" && startsWith(github.ref, "refs/tags/")
+    if: startsWith(github.ref, "refs/tags/")
     steps:
       - uses: actions/download-artifact@v7
         with:
