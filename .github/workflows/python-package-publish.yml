@@ -50,7 +50,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           miniforge-version: latest
-          channels: conda-forge
+          channels: conda-forge,defaults
           channel-priority: strict
           show-channel-urls: true
 
