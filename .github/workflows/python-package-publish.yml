@@ -23,6 +23,8 @@ jobs:
 
       - name: Build sdist
         run: |
+          sudo apt-get update
+          sudo apt-get install -y proj-bin libproj-dev
           pip install build
           python -m build --sdist
 
