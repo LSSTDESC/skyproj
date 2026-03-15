@@ -26,7 +26,7 @@ jobs:
           pip install build
           python -m build --sdist
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v6
         with:
           name: sdist
           path: dist/*.tar.gz
@@ -100,7 +100,12 @@ jobs:
       - uses: actions/download-artifact@v7
         with:
           path: dist
-          pattern: '*'
+          pattern: 'wheels-*'
+          merge-multiple: true
+      - uses: actions/download-artifact@v7
+        with:
+          path: dist
+          pattern: 'sdist'
           merge-multiple: true
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
