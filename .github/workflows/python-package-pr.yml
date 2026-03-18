@@ -78,6 +78,9 @@ jobs:
 
           cd ../..
 
+          # Clean up after install.
+          rm -r proj-${PROJ_VERSION}
+
       - name: Install code
         shell: bash -l {0}
         run: |
