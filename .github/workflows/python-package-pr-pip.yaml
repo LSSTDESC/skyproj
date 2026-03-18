@@ -14,20 +14,61 @@ jobs:
           # Need to clone everything to determine version from git.
           fetch-depth: 0
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - uses: conda-incubator/setup-miniconda@v3
         with:
-          python-version: "3.10"
-          cache: "pip"
-          cache-dependency-path: "requirements.txt"
+          python-version: ${{ matrix.python-version }}
+          channels: conda-forge,defaults
+          channel-priority: strict
+          show-channel-urls: true
+          miniforge-version: latest
+          miniforge-variant: Miniforge3
+
+      - name: Configure conda
+        shell: bash -l {0}
+        run: |
+          conda install -y cmake sqlite pip c-compiler cxx-compiler
+
+      - name: Build minimal PROJ
+        shell: bash -l {0}
+        run: |
+          PROJ_VERSION=9.8.0
+          curl -L https://download.osgeo.org/proj/proj-${PROJ_VERSION}.tar.gz -o proj.tar.gz
+          tar xzf proj.tar.gz
+          cd proj-${PROJ_VERSION}
+
+          mkdir build
+          cd build
+
+          # Minimal build - disable most features
+          cmake .. \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX \
+            -DBUILD_SHARED_LIBS=ON \
+            -DBUILD_PROJ=ON \
+            -DENABLE_TIFF=OFF \
+            -DCURL_ENABLED=OFF \
+            -DBUILD_TESTING=OFF \
+            -DBUILD_PROJSYNC=OFF \
+            -DBUILD_CCT=OFF \
+            -DBUILD_CS2CS=OFF \
+            -DBUILD_GEOD=OFF \
+            -DBUILD_GIE=OFF \
+            -DBUILD_PROJINFO=OFF
+
+          cmake --build . --config Release
+          cmake --install .
+
+          cd ../..
+
+          # Clean up after install.
+          rm -r proj-${PROJ_VERSION}
 
       - name: Build and install
         run: |
-          sudo apt-get update
-          sudo apt-get install -y proj-bin libproj-dev
           python -m pip install --upgrade pip setuptools
           python -m pip install pytest
-          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+          python -m pip install -r requirements.txt
+          python -m pip install -r requirements-dev.txt
           python -m pip install .
 
       - name: Run tests
