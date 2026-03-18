@@ -64,6 +64,7 @@ jobs:
           rm -r proj-${PROJ_VERSION}
 
       - name: Build and install
+        shell: bash -l {0}
         run: |
           python -m pip install --upgrade pip setuptools
           python -m pip install pytest
