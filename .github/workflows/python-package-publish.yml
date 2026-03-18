@@ -57,8 +57,44 @@ jobs:
       - name: Install dependencies
         shell: bash -l {0}
         run: |
-          conda install -y proj numpy setuptools wheel pip
-          conda install -y --file requirements.txt --file requirements-dev.txt python-build proj pip
+          conda install -y setuptools wheel pip
+          conda install -y --file requirements.txt
+          conda install -y python-build cmake sqlite pip c-compiler cxx-compiler
+
+      - name: Build minimal PROJ
+        shell: bash -l {0}
+        run: |
+          PROJ_VERSION=9.8.0
+          curl -L https://download.osgeo.org/proj/proj-${PROJ_VERSION}.tar.gz -o proj.tar.gz
+          tar xzf proj.tar.gz
+          cd proj-${PROJ_VERSION}
+
+          mkdir build
+          cd build
+
+          # Minimal build - disable most features
+          cmake .. \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX \
+            -DBUILD_SHARED_LIBS=ON \
+            -DBUILD_PROJ=ON \
+            -DENABLE_TIFF=OFF \
+            -DCURL_ENABLED=OFF \
+            -DBUILD_TESTING=OFF \
+            -DBUILD_PROJSYNC=OFF \
+            -DBUILD_CCT=OFF \
+            -DBUILD_CS2CS=OFF \
+            -DBUILD_GEOD=OFF \
+            -DBUILD_GIE=OFF \
+            -DBUILD_PROJINFO=OFF
+
+          cmake --build . --config Release
+          cmake --install .
+
+          cd ../..
+
+          # Clean up after install.
+          rm -r proj-${PROJ_VERSION}
 
       - name: Build wheel
         shell: bash -l {0}
