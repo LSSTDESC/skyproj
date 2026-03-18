@@ -5,7 +5,7 @@ on:
     branches: [ '**' ]
 
 jobs:
-  build_and_test:
+  build_and_test_with_pip:
     runs-on: ubuntu-latest
 
     steps:
@@ -73,6 +73,7 @@ jobs:
           python -m pip install .
 
       - name: Run tests
+        shell: bash -l {0}
         run: |
           cd tests
           pytest
