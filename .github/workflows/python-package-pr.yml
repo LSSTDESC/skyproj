@@ -27,56 +27,93 @@ jobs:
             python-version: "3.13"
 
     steps:
-    - uses: actions/checkout@v6
-      with:
-        fetch-depth: 0
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
-    - uses: conda-incubator/setup-miniconda@v3
-      with:
-        python-version: ${{ matrix.python-version }}
-        channels: conda-forge,defaults
-        channel-priority: strict
-        show-channel-urls: true
-        miniforge-version: latest
-        miniforge-variant: Miniforge3
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+          channels: conda-forge,defaults
+          channel-priority: strict
+          show-channel-urls: true
+          miniforge-version: latest
+          miniforge-variant: Miniforge3
 
-    - name: Configure conda and install code
-      shell: bash -l {0}
-      run: |
-        conda install -y --file requirements.txt --file requirements-dev.txt python-build proj
-        python -m pip install --no-deps --no-build-isolation .
+      - name: Configure conda
+        shell: bash -l {0}
+        run: |
+          conda install -y --file requirements.txt --file requirements-dev.txt python-build
+          conda install -y cmake sqlite pip c-compiler cxx-compiler
 
-    - name: test versions
-      shell: bash -l {0}
-      run: |
-        pip uninstall skyproj --yes
-        [[ $(python setup.py --version) != "0.0.0" ]] || exit 1
+      - name: Build minimal PROJ
+        shell: bash -l {0}
+        run: |
+          PROJ_VERSION=9.8.0
+          curl -L https://download.osgeo.org/proj/proj-${PROJ_VERSION}.tar.gz -o proj.tar.gz
+          tar xzf proj.tar.gz
+          cd proj-${PROJ_VERSION}
 
-        rm -rf dist/*
-        python setup.py sdist
-        pip install --no-deps --no-build-isolation dist/*.tar.gz
-        pushd ..
-        python -c "import skyproj; assert skyproj.__version__ != '0.0.0'"
-        popd
-        pip uninstall skyproj --yes
+          mkdir build
+          cd build
 
-        rm -rf dist/*
-        python -m build --sdist . --outdir dist
-        pip install --no-deps --no-build-isolation dist/*.tar.gz
-        pushd ..
-        python -c "import skyproj; assert skyproj.__version__ != '0.0.0'"
-        popd
-        pip uninstall skyproj --yes
+          # Minimal build - disable most features
+          cmake .. \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX \
+            -DBUILD_SHARED_LIBS=ON \
+            -DBUILD_PROJ=ON \
+            -DENABLE_TIFF=OFF \
+            -DCURL_ENABLED=OFF \
+            -DBUILD_TESTING=OFF \
+            -DBUILD_PROJSYNC=OFF \
+            -DBUILD_CCT=OFF \
+            -DBUILD_CS2CS=OFF \
+            -DBUILD_GEOD=OFF \
+            -DBUILD_GIE=OFF \
+            -DBUILD_PROJINFO=OFF
 
-        python -m pip install --no-deps --no-build-isolation .
+          cmake --build . --config Release
+          cmake --install .
 
-    - name: Lint with flake8
-      shell: bash -l {0}
-      run: |
-        # stop the build if it fails flake8 with default pyproject.toml
-        flake8 . --count --show-source --statistics
+          cd ../..
 
-    - name: Test with pytest
-      shell: bash -l {0}
-      run: |
-        pytest
+      - name: Install code
+        shell: bash -l {0}
+        run: |
+          python -m pip install --no-deps --no-build-isolation .
+
+      - name: test versions
+        shell: bash -l {0}
+        run: |
+          pip uninstall skyproj --yes
+          [[ $(python setup.py --version) != "0.0.0" ]] || exit 1
+
+          rm -rf dist/*
+          python setup.py sdist
+          pip install --no-deps --no-build-isolation dist/*.tar.gz
+          pushd ..
+          python -c "import skyproj; assert skyproj.__version__ != '0.0.0'"
+          popd
+          pip uninstall skyproj --yes
+
+          rm -rf dist/*
+          python -m build --sdist . --outdir dist
+          pip install --no-deps --no-build-isolation dist/*.tar.gz
+          pushd ..
+          python -c "import skyproj; assert skyproj.__version__ != '0.0.0'"
+          popd
+          pip uninstall skyproj --yes
+
+          python -m pip install --no-deps --no-build-isolation .
+
+      - name: Lint with flake8
+        shell: bash -l {0}
+        run: |
+          # stop the build if it fails flake8 with default pyproject.toml
+          flake8 . --count --show-source --statistics
+
+      - name: Test with pytest
+        shell: bash -l {0}
+        run: |
+          pytest
