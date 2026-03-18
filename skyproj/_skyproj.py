@@ -367,10 +367,10 @@ class _Skyproj():
         if np.isfinite(lon) and np.isfinite(lat):
             xx, yy = self.proj(lon, lat)
             if not np.isclose(x, xx) or not np.isclose(y, yy):
-                lon, lat = np.nan, np.nan
+                lon, lat = np.asarray([np.nan]), np.asarray([np.nan])
         if self._longitude_ticks == 'positive' and np.isfinite(lon):
             lon %= 360.0
-        coord_string = 'lon=%.6f, lat=%.6f' % (lon, lat)
+        coord_string = 'lon=%.6f, lat=%.6f' % (lon.item(), lat.item())
         if np.isnan(lon) or np.isnan(lat):
             val = hpg.UNSEEN
         elif self._redraw_dict['hspmap'] is not None:
@@ -387,7 +387,7 @@ class _Skyproj():
         if np.isclose(val, hpg.UNSEEN):
             coord_string += ', val=UNSEEN'
         else:
-            coord_string += ', val=%f' % (val)
+            coord_string += ', val=%f' % (val.item())
         return coord_string
 
     def _add_change_axis_callbacks(self):
