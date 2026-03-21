@@ -4,11 +4,11 @@ import warnings
 
 import matplotlib as mpl
 import matplotlib.axes
-from pyproj import Geod
 
 from .utils import wrap_values
 from .skygrid import SkyGridlines, SkyGridHelper
 from .mpl_utils import SkyTickLabels
+from ._cskyproj import geodesic_direct
 
 
 __all__ = ["SkyAxes"]
@@ -462,18 +462,12 @@ class SkyAxes(matplotlib.axes.Axes):
         **kwargs : `dict`
             Extra plotting kwargs.
         """
-        geod = Geod(a=self.projection.radius)
-
         # We need the radius in meters
         radius_m = self.projection.radius*np.deg2rad(radius)
 
         az = np.linspace(360.0, 0.0, nsamp)
-        lons, lats, _ = geod.fwd(
-            np.full(nsamp, lon, dtype=np.float64),
-            np.full(nsamp, lat, dtype=np.float64),
-            az,
-            np.full(nsamp, radius_m)
-        )
+        lons, lats = geodesic_direct(lon, lat, az, radius_m, radius=self.projection.radius)
+
         if fill:
             return self.fill(lons, lats, **kwargs)
         else:
@@ -502,8 +496,6 @@ class SkyAxes(matplotlib.axes.Axes):
         **kwargs : `dict`
             Extra plotting kwargs.
         """
-        geod = Geod(a=self.projection.radius)
-
         # We need the radius in meters
         a_m = self.projection.radius * np.deg2rad(a)
         b_m = self.projection.radius * np.deg2rad(b)
@@ -516,12 +508,8 @@ class SkyAxes(matplotlib.axes.Axes):
         denom = np.sqrt((b_m * np.cos(phase_rad))**2 + (a_m * np.sin(phase_rad))**2)
         dist = a_m * b_m / denom
 
-        lons, lats, _ = geod.fwd(
-            np.full(nsamp, lon, dtype=np.float64),
-            np.full(nsamp, lat, dtype=np.float64),
-            az,
-            dist,
-        )
+        lons, lats = geodesic_direct(lon, lat, az, dist, radius=self.projection.radius)
+
         if fill:
             return self.fill(lons, lats, **kwargs)
         else:

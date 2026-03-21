@@ -8,7 +8,10 @@ Install
 * `matplotlib <https://matplotlib.org>`_
 * `healpy <https://healpy.readthedocs.io/en/latest/>`_
 * `healsparse <https://healsparse.readthedocs.io/en/latest/>`_
-* `pyproj <https://pyproj4.github.io/pyproj/stable/>`_
+
+In addition, it requires:
+
+* `proj <https://proj.org/en/stable/index.html>`_
 
 `SkyProj` is available at `pypi <https://pypi.org/project/skyproj>`_ and `conda-forge <https://anaconda.org/conda-forge/skyproj>`_.
 The most convenient way of installing the latest released version is simply:
