@@ -79,7 +79,7 @@ jobs:
             -DBUILD_SHARED_LIBS=ON \
             -DBUILD_PROJ=ON \
             -DENABLE_TIFF=OFF \
-            -DCURL_ENABLED=OFF \
+            -DENABLE_CURL=OFF \
             -DBUILD_TESTING=OFF \
             -DBUILD_PROJSYNC=OFF \
             -DBUILD_CCT=OFF \
