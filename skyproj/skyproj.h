@@ -17,6 +17,7 @@ typedef struct {
     NpyIter *iter;
     npy_intp start_idx;
     npy_intp end_idx;
+    int noproj;
     int degrees;
     int inverse;
     const char *proj_str;
