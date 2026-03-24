@@ -53,6 +53,7 @@ ext = Extension(
     "skyproj._cskyproj",
     [
         "skyproj/skyproj.c",
+        "skyproj/projections.c",
     ],
     include_dirs=include_dirs,
     library_dirs=library_dirs,
