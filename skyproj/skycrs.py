@@ -32,6 +32,15 @@ class SkyCRS:
             self.proj_string += f"{key}={str(value)} "
 
         self._plot_geodesics = True
+        self._noproj = False
+        self._noproj_dict = {
+            "radius": radius,
+        }
+        self._noproj_dict.update(**kwargs)
+        if name == "cyl":
+            self._noproj_dict["projection"] = 0
+        elif name == "moll":
+            self._noproj_dict["projection"] = 1
 
     def with_new_center(self, lon_0, lat_0=None):
         """Create a new SkyCRS with a new lon_0/lat_0.
@@ -80,7 +89,15 @@ class SkyCRS:
         x = x.ravel()
         y = y.ravel()
 
-        result = transform(self.proj_string, x, y, inverse=inverse)
+        if self._noproj:
+            noproj_dict = self._noproj_dict
+        else:
+            noproj_dict = None
+
+        if inverse:
+            result = transform(self.proj_string, noproj_dict, x, y, inverse=inverse, noproj=self._noproj)
+        else:
+            result = transform(self.proj_string, noproj_dict, x, y, inverse=inverse, noproj=self._noproj)
 
         if len(result_shape) > 2:
             return result.reshape(result_shape)
@@ -205,6 +222,7 @@ class MollweideCRS(SkyCRS):
         proj4_params = {**proj4_params, **kwargs}
 
         super().__init__(name=name, radius=radius, **proj4_params)
+        self._noproj = True
 
 
 class ObliqueMollweideCRS(SkyCRS):
