@@ -13,6 +13,7 @@
 #include "thread_compat.h"
 #include "skyproj.h"
 #include "projections.h"
+#include "str_dict.h"
 
 PyDoc_STRVAR(transform_doc,
              "transform(projstr, a, b, degrees=True, inverse=False, n_threads=1)\n"
@@ -40,8 +41,9 @@ PyDoc_STRVAR(transform_doc,
              "    xy or lonlat array.\n");
 
 // Core processing logic for transform - used by both single and multi-threaded paths
-static bool transform_iteration(NpyIter *iter, int noproj, int degrees, int inverse, const char *proj_str,
-                                double *a2b2s, npy_intp start_idx, npy_intp end_idx, char *err) {
+static bool transform_iteration(NpyIter *iter, int degrees, int inverse, const char *proj_str,
+                                StrDict *noproj_dict, double *a2b2s, npy_intp start_idx, npy_intp end_idx,
+                                char *err) {
     NpyIter_IterNextFunc *iternext;
     char **dataptrarray;
     char *errmsg;
@@ -50,8 +52,9 @@ static bool transform_iteration(NpyIter *iter, int noproj, int degrees, int inve
     PJ_OPERATION_FACTORY_CONTEXT *operation_ctx = NULL;
     PJ_COORD coord = {{0, 0, 0, 0}};
     PJ_COORD coord2 = {{0, 0, 0, 0}};
+    double noproj_type;
 
-    if (noproj == 0) {
+    if (noproj_dict == NULL) {
         // Create PROJ context and projection for this thread
         c = proj_context_create();
         if (c == NULL) {
@@ -75,11 +78,10 @@ static bool transform_iteration(NpyIter *iter, int noproj, int degrees, int inve
 
         proj_errno_reset(p);
     } else {
-        if (strstr(proj_str, "proj=moll") == NULL) {
-            snprintf(err, ERR_SIZE, "Only supports mollweide");
+        if (str_dict_get(noproj_dict, "projection", &noproj_type) < 0) {
+            snprintf(err, ERR_SIZE, "``Projection`` key must be set");
             goto fail;
         }
-
     }
 
     // For ranged iteration, reset to the specified range
@@ -99,7 +101,7 @@ static bool transform_iteration(NpyIter *iter, int noproj, int degrees, int inve
     do {
         size_t index = NpyIter_GetIterIndex(iter);
 
-        if (noproj == 0) {
+        if (noproj_dict == NULL) {
             if (inverse == 0) {
                 // Forward transform
                 coord.v[0] = *(double *)dataptrarray[0];
@@ -134,6 +136,7 @@ static bool transform_iteration(NpyIter *iter, int noproj, int degrees, int inve
         } else {
             // noproj!
             double conv;
+            double radius;
 
             if (degrees) {
                 conv = SP_D2R;
@@ -141,19 +144,36 @@ static bool transform_iteration(NpyIter *iter, int noproj, int degrees, int inve
                 conv = 1.0;
             }
 
-            if (inverse == 0) {
-                // forward
-                mollweide_forward(*(double *)dataptrarray[0] * conv, *(double *)dataptrarray[1] * conv,
-                                  1.0, 0.0,
-                                  &a2b2s[2 * index], &a2b2s[2 * index + 1]);
+            if (str_dict_get(noproj_dict, "radius", &radius) == -1) {
+                radius = 1.0;
+            }
 
-            } else {
-                // inverse
-                mollweide_inverse(*(double *)dataptrarray[0], *(double *)dataptrarray[1],
-                                  1.0, 0.0,
-                                  &a2b2s[2 * index], &a2b2s[2 * index + 1]);
-                a2b2s[2 * index] /= conv;
-                a2b2s[2 * index + 1] /= conv;
+            switch ((int) noproj_type) {
+            case MOLLWEIDE:
+                double lon_center;
+
+                if (str_dict_get(noproj_dict, "lon_center", &lon_center) == -1) {
+                    lon_center = 0.0;
+                }
+
+                if (inverse == 0) {
+                    // forward
+                    mollweide_forward(*(double *)dataptrarray[0] * conv, *(double *)dataptrarray[1] * conv,
+                                      radius, lon_center,
+                                      &a2b2s[2 * index], &a2b2s[2 * index + 1]);
+
+                } else {
+                    // inverse
+                    mollweide_inverse(*(double *)dataptrarray[0], *(double *)dataptrarray[1],
+                                      radius, lon_center,
+                                      &a2b2s[2 * index], &a2b2s[2 * index + 1]);
+                    a2b2s[2 * index] /= conv;
+                    a2b2s[2 * index + 1] /= conv;
+                }
+                break;
+            default:
+                snprintf(err, ERR_SIZE, "Unsupported projection.");
+                goto fail;
             }
 
             // We allow invalid coordinates; we just transform them to NaNs
@@ -164,7 +184,7 @@ static bool transform_iteration(NpyIter *iter, int noproj, int degrees, int inve
         }
     } while (iternext(iter));
 
-    if (noproj == 0) {
+    if (noproj_dict == NULL) {
         proj_destroy(p);
         proj_context_destroy(c);
     }
@@ -180,8 +200,8 @@ static bool transform_iteration(NpyIter *iter, int noproj, int degrees, int inve
 // Worker function for each thread
 static void *transform_worker(void *arg) {
     TransformThreadData *td = (TransformThreadData *)arg;
-    td->failed = !transform_iteration(td->iter, td->noproj, td->degrees, td->inverse, td->proj_str,
-                                      td->a2b2s, td->start_idx, td->end_idx, td->err);
+    td->failed = !transform_iteration(td->iter, td->degrees, td->inverse, td->proj_str,
+                                      td->noproj_dict, td->a2b2s, td->start_idx, td->end_idx, td->err);
     return NULL;
 }
 
@@ -189,7 +209,9 @@ static PyObject *transform(PyObject *dummy, PyObject *args, PyObject *kwargs) {
     PyObject *a_obj = NULL, *b_obj = NULL;
     PyObject *a_arr = NULL, *b_arr = NULL;
     PyObject *a2b2_arr = NULL;
+    PyObject *noproj_dict_obj = NULL;
     const char *proj_str_in = NULL;
+    StrDict *noproj_dict = NULL;
     char proj_str[PROJ_STR_SIZE];
 
     NpyIter *iter = NULL;
@@ -201,13 +223,13 @@ static PyObject *transform(PyObject *dummy, PyObject *args, PyObject *kwargs) {
     int n_threads = 1;
     int noproj = 0;
 
-    static char *kwlist[] = {"proj_str", "a", "b", "degrees", "inverse", "n_threads", "noproj", NULL};
+    static char *kwlist[] = {"proj_str", "noproj_dict", "a", "b", "degrees", "inverse", "n_threads", "noproj", NULL};
 
     double *a2b2s = NULL;
     char err[ERR_SIZE];
     bool loop_failed = false;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "sOO|ppip", kwlist, &proj_str_in, &a_obj,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "sOOO|ppip", kwlist, &proj_str_in, &noproj_dict_obj, &a_obj,
                                      &b_obj, &degrees, &inverse, &n_threads, &noproj))
         goto fail;
 
@@ -266,8 +288,17 @@ static PyObject *transform(PyObject *dummy, PyObject *args, PyObject *kwargs) {
         goto cleanup;
     }
 
-    // Prepare projection string
-    snprintf(proj_str, PROJ_STR_SIZE, "%s +ellps=sphere ALLOW_BALLPARK=True", proj_str_in);
+    // Need to unpack the noproj dict...
+    if (noproj) {
+        noproj_dict = str_dict_from_pydict(noproj_dict_obj);
+        if (noproj_dict == NULL) {
+            PyErr_SetString(PyExc_RuntimeError, "Failed to translate noproj_dict");
+            goto fail;
+        }
+    } else {
+        // Prepare projection string
+        snprintf(proj_str, PROJ_STR_SIZE, "%s +ellps=sphere ALLOW_BALLPARK=True", proj_str_in);
+    }
 
     if (n_threads > 1) {
         // Don't use threading if chunks would be too small
@@ -309,10 +340,13 @@ static PyObject *transform(PyObject *dummy, PyObject *args, PyObject *kwargs) {
             thread_data[t].start_idx = t * chunk_size + (t < remainder ? t : remainder);
             thread_data[t].end_idx =
                 thread_data[t].start_idx + chunk_size + (t < remainder ? 1 : 0);
-            thread_data[t].noproj = noproj;
+            if (noproj_dict != NULL) {
+                thread_data[t].noproj_dict = noproj_dict;
+            } else {
+                thread_data[t].proj_str = proj_str;
+            }
             thread_data[t].degrees = degrees;
             thread_data[t].inverse = inverse;
-            thread_data[t].proj_str = proj_str;
             thread_data[t].a2b2s = a2b2s;
             thread_data[t].failed = false;
             thread_data[t].err[0] = '\0';
@@ -353,7 +387,7 @@ static PyObject *transform(PyObject *dummy, PyObject *args, PyObject *kwargs) {
         // Single-threaded path
         NPY_BEGIN_ALLOW_THREADS
 
-        loop_failed = !transform_iteration(iter, noproj, degrees, inverse, proj_str, a2b2s,
+        loop_failed = !transform_iteration(iter, degrees, inverse, proj_str, noproj_dict, a2b2s,
                                            0, iter_size, err);
 
         NPY_END_ALLOW_THREADS
@@ -380,6 +414,7 @@ cleanup:
         free(thread_data);
     }
     if (threads != NULL) free(threads);
+    if (noproj_dict != NULL) str_dict_free(noproj_dict);
 
     return PyArray_Return((PyArrayObject *)a2b2_arr);
 
@@ -400,6 +435,7 @@ fail:
         free(thread_data);
     }
     if (threads != NULL) free(threads);
+    if (noproj_dict != NULL) str_dict_free(noproj_dict);
 
     return NULL;
 }
