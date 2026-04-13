@@ -36,6 +36,7 @@ class SkyCRS:
         self._noproj_dict = {
             "radius": radius,
         }
+        kwargs.pop("proj")
         self._noproj_dict.update(**kwargs)
         if name == "cyl":
             self._noproj_dict["projection"] = 0
