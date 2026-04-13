@@ -240,3 +240,186 @@ bool mollweide_inverse(double x, double y, double radius, double lon_center,
 
     return true;
 }
+
+// Equal Earth projection parameters
+// From: Šavrič, B., Patterson, T., & Jenny, B. (2019)
+// International Journal of Geographical Information Science, 33(3), 454-465
+#define A1 1.340264
+#define A2 -0.081106
+#define A3 0.000893
+#define A4 0.003796
+
+/**
+ * Forward Equal Earth projection
+ * Converts latitude/longitude to x/y coordinates
+ *
+ * @param lon Longitude in radians [-π, π]
+ * @param lat Latitude in radians [-π/2, π/2]
+ * @param radius Radius of the sphere (must be > 0)
+ * @param lon_center Central meridian in radians
+ * @param x Output x coordinate
+ * @param y Output y coordinate
+ * @return true if successful, false otherwise
+ */
+bool equal_earth_forward(double lon, double lat, double radius, double lon_center,
+                         double *x, double *y) {
+    if (x == NULL || y == NULL || radius <= 0) {
+        return false;
+    }
+
+    // Calculate delta longitude
+    double lambda = delta_longitude(lon, lon_center);
+
+    // Parametric latitude
+    double phi = lat;
+    double sin_phi = sin(phi);
+
+    // Calculate parametric angle theta
+    // sin(theta) = (sqrt(3)/2) * sin(phi)
+    double sin_theta = sqrt(3.0) / 2.0 * sin_phi;
+
+    // Clamp to valid range
+    if (sin_theta > 1.0) sin_theta = 1.0;
+    if (sin_theta < -1.0) sin_theta = -1.0;
+
+    double theta = asin(sin_theta);
+
+    // Calculate powers of theta
+    double theta2 = theta * theta;
+    double theta6 = theta2 * theta2 * theta2;
+    double theta8 = theta6 * theta2;
+
+    // Calculate polynomial terms
+    double cos_theta = cos(theta);
+
+    // Denominator for x coordinate
+    double denom = 3.0 * (9.0 * A4 * theta6 + 7.0 * A3 * theta6 + 
+                          3.0 * A2 * theta2 + A1);
+
+    // Calculate coordinates
+    // Note: The standard R in the paper is approximately sqrt(3)/2 ≈ 0.8660254
+    // We scale by our custom radius
+
+    // x = (2 * sqrt(3) * R * lambda * cos(theta)) / (3 * denom)
+    *x = (2.0 * sqrt(3.0) * radius * lambda * cos_theta) / denom;
+
+    // y = R * A1 * theta + R * A2 * theta^3 + R * A3 * theta^7 + R * A4 * theta^9
+    // Factored: y = R * theta * (A1 + A2*theta^2 + A3*theta^6 + A4*theta^8)
+    *y = radius * theta * (A1 + A2 * theta2 + A3 * theta6 + A4 * theta8);
+
+    return true;
+}
+
+/**
+ * Inverse Equal Earth projection
+ * Converts x/y coordinates back to latitude/longitude
+ *
+ * @param x Input x coordinate
+ * @param y Input y coordinate
+ * @param radius Radius of the sphere (must be > 0)
+ * @param lon_center Central meridian in radians
+ * @param lon Output longitude in radians
+ * @param lat Output latitude in radians
+ * @return true if successful, false if point is outside valid region
+ */
+bool equal_earth_inverse(double x, double y, double radius, double lon_center,
+                         double *lon, double *lat) {
+    if (lon == NULL || lat == NULL || radius <= 0) {
+        return false;
+    }
+
+    // Normalize y coordinate
+    double y_scaled = y / radius;
+
+    // Maximum theta value
+    double theta_max = asin(sqrt(3.0) / 2.0);  // ≈ 1.0472 radians ≈ 60°
+
+    // Check if y is in valid range
+    double y_max = theta_max * (A1 + A2 * theta_max * theta_max + 
+                                A3 * pow(theta_max, 6) + 
+                                A4 * pow(theta_max, 8));
+
+    if (fabs(y_scaled) > y_max + EPSILON) {
+        return false;
+    }
+
+    // Solve for theta using Newton-Raphson iteration
+    // Equation: f(theta) = theta * (A1 + A2*theta^2 + A3*theta^6 + A4*theta^8) - y/R = 0
+
+    // Initial guess: for small y, theta ≈ y/A1
+    double theta = y_scaled / A1;
+
+    // Clamp initial guess
+    if (theta > theta_max) theta = theta_max;
+    if (theta < -theta_max) theta = -theta_max;
+
+    // Newton-Raphson iteration
+    for (int i = 0; i < MAX_ITERATIONS; i++) {
+        double theta2 = theta * theta;
+        double theta4 = theta2 * theta2;
+        double theta6 = theta4 * theta2;
+        double theta8 = theta6 * theta2;
+
+        // f(theta) = theta * (A1 + A2*theta^2 + A3*theta^6 + A4*theta^8) - y/R
+        double polynomial = A1 + A2 * theta2 + A3 * theta6 + A4 * theta8;
+        double f = theta * polynomial - y_scaled;
+
+        // f'(theta) = polynomial + theta * d(polynomial)/d(theta)
+        // d(polynomial)/d(theta) = 2*A2*theta + 6*A3*theta^5 + 8*A4*theta^7
+        double d_polynomial = 2.0 * A2 * theta + 6.0 * A3 * theta * theta4 + 
+                             8.0 * A4 * theta * theta6;
+        double df = polynomial + theta * d_polynomial;
+
+        if (fabs(df) < EPSILON) {
+            return false;
+        }
+
+        double delta = f / df;
+        theta -= delta;
+
+        if (fabs(delta) < EPSILON) {
+            break;
+        }
+
+        // Clamp theta to valid range during iteration
+        if (theta > theta_max) theta = theta_max;
+        if (theta < -theta_max) theta = -theta_max;
+    }
+
+    // Calculate latitude from theta
+    // sin(phi) = 2 * sin(theta) / sqrt(3)
+    double sin_phi = 2.0 * sin(theta) / sqrt(3.0);
+
+    // Clamp to valid range
+    if (sin_phi > 1.0) sin_phi = 1.0;
+    if (sin_phi < -1.0) sin_phi = -1.0;
+
+    *lat = asin(sin_phi);
+
+    // Calculate longitude
+    double cos_theta = cos(theta);
+
+    // Handle poles
+    if (fabs(cos_theta) < EPSILON) {
+        *lon = lon_center;
+        return true;
+    }
+
+    // Calculate delta longitude
+    double theta2 = theta * theta;
+    double theta6 = theta2 * theta2 * theta2;
+
+    double denom = 3.0 * (9.0 * A4 * theta6 + 7.0 * A3 * theta6 + 
+                          3.0 * A2 * theta2 + A1);
+
+    double lambda = (x * denom) / (2.0 * sqrt(3.0) * radius * cos_theta);
+
+    // Clamp to valid range
+    if (lambda > SP_PI) lambda = SP_PI;
+    if (lambda < -SP_PI) lambda = -SP_PI;
+
+    // Add central meridian
+    *lon = normalize_angle(lon_center + lambda);
+
+    return true;
+}

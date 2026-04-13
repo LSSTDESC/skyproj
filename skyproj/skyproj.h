@@ -17,6 +17,7 @@
 enum NoProjMap {
     PLATE_CARREE,
     MOLLWEIDE,
+    EQUAL_EARTH,
 };
 
 typedef struct {
