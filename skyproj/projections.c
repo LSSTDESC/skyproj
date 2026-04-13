@@ -5,14 +5,77 @@
 #include "projections.h"
 
 /**
- * Normalize angle to [-π, π] range
+ * Normalize angle to (-π, π] range (exclusive of -π, inclusive of π)
+ *
+ * @param angle Input angle in radians
+ * @return Normalized angle in (-π, π]
+ */
+
+/**
+ * Normalize angle to (-π, π] using floor-based approach
  */
 static double normalize_angle(double angle) {
-    while (angle > SP_PI) angle -= 2.0 * SP_PI;
-    while (angle < -SP_PI) angle += 2.0 * SP_PI;
+    if (!isfinite(angle)) {
+        return 0.0;
+    }
+
+    // Bring into approximate range
+    angle = fmod(angle, 2.0 * SP_PI);
+
+    // Ensure (-π, π] with correct boundary behavior
+    if (angle > SP_PI) {
+        angle -= 2.0 * SP_PI;
+    } else if (angle <= -SP_PI) {
+        angle += 2.0 * SP_PI;
+    }
+
     return angle;
 }
 
+/**
+ * Adjust longitude to be within ±180° of central meridian
+ * This matches PROJ library behavior
+ */
+static double adjust_lon(double lon) {
+    // Normalize to (-π, π]
+    if (!isfinite(lon)) {
+        return 0.0;
+    }
+
+    lon = fmod(lon, 2.0 * SP_PI);
+
+    if (lon > SP_PI) {
+        lon -= 2.0 * SP_PI;
+    } else if (lon <= -SP_PI) {
+        lon += 2.0 * SP_PI;
+    }
+
+    return lon;
+}
+
+/**
+ * Calculate delta longitude the way PROJ does it
+ * This maintains consistent behavior across the ±180° boundary
+ */
+static double delta_longitude(double lon, double lon_center) {
+    // First, normalize both longitudes to (-π, π]
+    lon = adjust_lon(lon);
+    lon_center = adjust_lon(lon_center);
+
+    // Compute difference
+    double delta = lon - lon_center;
+
+    // Adjust to ensure delta is in (-π, π]
+    // This is the key: we normalize the DIFFERENCE, not compute shortest path
+    while (delta > SP_PI) {
+        delta -= 2.0 * SP_PI;
+    }
+    while (delta <= -SP_PI) {
+        delta += 2.0 * SP_PI;
+    }
+
+    return delta;
+}
 
 /**
  * Improved initial guess for theta using a rational approximation
@@ -33,7 +96,6 @@ static double theta_initial_guess(double lat) {
     return lat * (1.0 - 0.16211 * lat2) / (1.0 + 0.05082 * lat2);
 }
 
-
 /**
  * Forward Mollweide projection
  * Converts latitude/longitude to x/y coordinates
@@ -53,7 +115,7 @@ bool mollweide_forward(double lon, double lat, double radius, double lon_center,
     }
 
     // Calculate delta longitude from central meridian
-    double delta_lon = normalize_angle(lon - lon_center);
+    double delta_lon = delta_longitude(lon, lon_center);
 
     // Handle poles specially
     if (fabs(lat - SP_PI/2) < EPSILON) {
@@ -69,7 +131,6 @@ bool mollweide_forward(double lon, double lat, double radius, double lon_center,
 
     // Solve for auxiliary angle theta using Newton-Raphson iteration
     // Equation: 2*theta + sin(2*theta) = pi*sin(lat)
-    // double theta = lat;  // Initial guess
     double theta = theta_initial_guess(lat);
     double target = SP_PI * sin(lat);
 
@@ -89,24 +150,6 @@ bool mollweide_forward(double lon, double lat, double radius, double lon_center,
 
         if (fabs(delta) < EPSILON) break;
     }
-
-    /*
-    for (int i = 0; i < MAX_ITERATIONS; i++) {
-        double f = 2.0 * theta + sin(2.0 * theta) - target;
-        double df = 2.0 + 2.0 * cos(2.0 * theta);
-
-        if (fabs(df) < EPSILON) {
-            return false;  // Derivative too small
-        }
-
-        double delta = f / df;
-        theta -= delta;
-
-        if (fabs(delta) < EPSILON) {
-            break;
-        }
-    }
-    */
 
     // Calculate x and y coordinates
     // x = (2*sqrt(2)/π) * R * delta_lon * cos(theta)
@@ -129,73 +172,17 @@ bool mollweide_forward(double lon, double lat, double radius, double lon_center,
  * @param lat Output latitude in radians [-π/2, π/2]
  * @return true if successful, false if point is outside valid region
  */
-/*
+/**
+ * Optimized inverse with better numerical stability
+ */
 bool mollweide_inverse(double x, double y, double radius, double lon_center,
                        double *lon, double *lat) {
     if (lon == NULL || lat == NULL || radius <= 0) {
         return false;
     }
 
-    // Normalize coordinates by radius
-    double x_scaled = x / radius;
-    double y_scaled = y / radius;
-
-    // Check if point is within the valid ellipse
-    // Ellipse equation: (x/(2*sqrt(2)*R))^2 + (y/(sqrt(2)*R))^2 <= 1
-    // After scaling: (x_scaled/(2*sqrt(2)))^2 + (y_scaled/sqrt(2))^2 <= 1
-    double x_norm = x_scaled / (2.0 * sqrt(2.0));
-    double y_norm = y_scaled / sqrt(2.0);
-
-    if (x_norm * x_norm + y_norm * y_norm > 1.0 + EPSILON) {
-        return false;  // Point outside valid region
-    }
-
-    // Clamp y to valid range to handle numerical errors
-    double y_max = sqrt(2.0);
-    if (y_scaled > y_max) y_scaled = y_max;
-    if (y_scaled < -y_max) y_scaled = -y_max;
-
-    // Calculate theta from y coordinate
-    // y = sqrt(2) * R * sin(theta)
-    double theta = asin(y_scaled / sqrt(2.0));
-
-    // Handle the case where cos(theta) is zero (poles)
-    if (fabs(cos(theta)) < EPSILON) {
-        *lon = lon_center;  // Use center longitude for poles
-        *lat = (y > 0) ? SP_PI/2.0 : -SP_PI/2.0;
-        return true;
-    }
-
-    // Calculate latitude
-    // From: 2*theta + sin(2*theta) = pi*sin(lat)
-    double sin_lat = (2.0 * theta + sin(2.0 * theta)) / SP_PI;
-
-    // Clamp to valid range [-1, 1] to handle numerical errors
-    if (sin_lat > 1.0) sin_lat = 1.0;
-    if (sin_lat < -1.0) sin_lat = -1.0;
-
-    *lat = asin(sin_lat);
-
-    // Calculate delta longitude from x coordinate
-    // x = (2*sqrt(2)/π) * R * delta_lon * cos(theta)
-    double delta_lon = SP_PI * x_scaled / (2.0 * sqrt(2.0) * cos(theta));
-
-    // Clamp delta longitude to valid range [-π, π]
-    if (delta_lon > SP_PI) delta_lon = SP_PI;
-    if (delta_lon < -SP_PI) delta_lon = -SP_PI;
-
-    // Add central meridian to get actual longitude
-    *lon = normalize_angle(lon_center + delta_lon);
-
-    return true;
-}
-*/
-/**
- * Optimized inverse with better numerical stability
- */
-bool mollweide_inverse(double x, double y, double radius, double lon_center,
-                                 double *lon, double *lat) {
-    if (lon == NULL || lat == NULL || radius <= 0) {
+    // Check for invalid inputs
+    if (!isfinite(x) || !isfinite(y)) {
         return false;
     }
 
@@ -203,51 +190,51 @@ bool mollweide_inverse(double x, double y, double radius, double lon_center,
     double x_scaled = x / radius;
     double y_scaled = y / radius;
 
-    // Quick bounds check (can early-exit invalid points faster)
+    // Quick bounds check
     double abs_y = fabs(y_scaled);
-    if (abs_y > sqrt(2.0) + EPSILON) {
-        return false;  // Definitely outside
+    double sqrt2 = sqrt(2.0);
+
+    if (abs_y > sqrt2 + EPSILON) {
+        return false;
     }
 
     // More precise ellipse check
-    double x_norm = x_scaled / (2.0 * sqrt(2.0));
-    double y_norm = y_scaled / sqrt(2.0);
+    double x_norm = x_scaled / (2.0 * sqrt2);
+    double y_norm = y_scaled / sqrt2;
     double dist_sq = x_norm * x_norm + y_norm * y_norm;
 
     if (dist_sq > 1.0 + EPSILON) {
         return false;
     }
 
-    // Clamp y to valid range
-    double sqrt2 = sqrt(2.0);
+    // Clamp y to valid range to prevent asin domain errors
     if (y_scaled > sqrt2) y_scaled = sqrt2;
     if (y_scaled < -sqrt2) y_scaled = -sqrt2;
 
-    // Calculate theta from y (this is exact)
+    // Calculate theta from y
     double theta = asin(y_scaled / sqrt2);
-
-    // Handle poles specially
-    double cos_theta = cos(theta);
-    if (fabs(cos_theta) < EPSILON) {
-        *lon = lon_center;
-        *lat = (y > 0) ? SP_PI/2.0 : -SP_PI/2.0;
-        return true;
-    }
-
-    // Calculate latitude using optimized polynomial evaluation
-    // Original: sin_lat = (2*theta + sin(2*theta)) / SP_PI
-    // Optimized using sin(2*theta) = 2*sin(theta)*cos(theta)
     double sin_theta = sin(theta);
+    double cos_theta = cos(theta);
+
+    // Calculate latitude first (always works)
     double sin_2theta = 2.0 * sin_theta * cos_theta;
     double sin_lat = (2.0 * theta + sin_2theta) / SP_PI;
-
-    // Clamp and calculate latitude
     sin_lat = fmax(-1.0, fmin(1.0, sin_lat));
     *lat = asin(sin_lat);
 
-    // Calculate longitude
+    // Handle poles and near-poles for longitude
+    // Use a slightly larger threshold for safety
+    if (fabs(cos_theta) < EPSILON * 10.0) {
+        *lon = lon_center;
+        return true;
+    }
+
+    // Calculate longitude with bounds checking
     double delta_lon = SP_PI * x_scaled / (2.0 * sqrt2 * cos_theta);
-    delta_lon = fmax(-SP_PI, fmin(SP_PI, delta_lon));
+
+    // Clamp to valid range
+    if (delta_lon > SP_PI) delta_lon = SP_PI;
+    if (delta_lon < -SP_PI) delta_lon = -SP_PI;
 
     *lon = normalize_angle(lon_center + delta_lon);
 
