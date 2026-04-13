@@ -152,20 +152,20 @@ static bool transform_iteration(NpyIter *iter, int degrees, int inverse, const c
             case MOLLWEIDE:
                 double lon_center;
 
-                if (str_dict_get(noproj_dict, "lon_center", &lon_center) == -1) {
+                if (str_dict_get(noproj_dict, "lon_0", &lon_center) == -1) {
                     lon_center = 0.0;
                 }
 
                 if (inverse == 0) {
                     // forward
                     mollweide_forward(*(double *)dataptrarray[0] * conv, *(double *)dataptrarray[1] * conv,
-                                      radius, lon_center,
+                                      radius, lon_center * SP_D2R,
                                       &a2b2s[2 * index], &a2b2s[2 * index + 1]);
 
                 } else {
                     // inverse
                     mollweide_inverse(*(double *)dataptrarray[0], *(double *)dataptrarray[1],
-                                      radius, lon_center,
+                                      radius, lon_center * SP_D2R,
                                       &a2b2s[2 * index], &a2b2s[2 * index + 1]);
                     a2b2s[2 * index] /= conv;
                     a2b2s[2 * index + 1] /= conv;
