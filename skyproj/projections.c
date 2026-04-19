@@ -423,3 +423,168 @@ bool equal_earth_inverse(double x, double y, double radius, double lon_center,
 
     return true;
 }
+
+#include <math.h>
+#include <stdbool.h>
+#include "skyproj.h"
+#include "projections.h"
+
+/*
+ * McBryde-Thomas Flat Polar Quartic Projection
+ *
+ * Constants and algorithm from PROJ PJ_mbtfpq.c
+ *
+ * Auxiliary angle theta solved from:
+ *   sin(theta/2) + sin(theta) = C * sin(lat)
+ *   where C = 1 + sqrt(2)/2
+ *
+ * Forward:
+ *   x = FXC * R * delta_lon * (1 + 2*cos(theta)/sqrt(3))
+ *   y = FYC * R * sin(theta/2)
+ *
+ * Inverse:
+ *   sin(theta/2) = y / (FYC * R)
+ *   theta = 2 * asin(sin(theta/2))
+ *   sin(lat) = (sin(theta/2) + sin(theta)) / C
+ *   delta_lon = x / (FXC * R * (1 + 2*cos(theta)/sqrt(3)))
+ */
+
+/* Constants directly from PROJ PJ_mbtfpq.c */
+#define MBTFPQ_C      1.70710678118654752440   /* 1 + sqrt(2)/2           */
+#define MBTFPQ_RC     0.58578643762690495119   /* 1/C                     */
+#define MBTFPQ_FYC    1.87475828462269495505   /* y forward scale         */
+#define MBTFPQ_RYC    0.53340209679090950      /* 1/FYC                   */
+#define MBTFPQ_FXC    0.31245526550726392588   /* x forward scale         */
+#define MBTFPQ_RXC    3.20041258076506210122   /* 1/FXC                   */
+
+/**
+ * Forward McBryde-Thomas Flat Polar Quartic projection
+ *
+ * @param lon        Longitude in radians
+ * @param lat        Latitude in radians [-pi/2, pi/2]
+ * @param radius     Radius of the sphere (must be > 0)
+ * @param lon_center Central meridian in radians
+ * @param x          Output x coordinate
+ * @param y          Output y coordinate
+ * @return true if successful, false otherwise
+ */
+bool mbtfpq_forward(double lon, double lat, double radius, double lon_center,
+                     double *x, double *y) {
+    if (x == NULL || y == NULL || radius <= 0) {
+        return false;
+    }
+
+    double delta_lon = delta_longitude(lon, lon_center);
+    double sin_lat = sin(lat);
+
+    /*
+     * Solve: sin(theta/2) + sin(theta) = C * sin(lat)
+     *
+     * Let k = sin(theta/2), then:
+     *   cos(theta/2) = sqrt(1 - k^2)
+     *   sin(theta) = 2*k*sqrt(1 - k^2)
+     *
+     * So the equation becomes:
+     *   k + 2*k*sqrt(1 - k^2) = C * sin(lat)
+     *   k * (1 + 2*sqrt(1 - k^2)) = C * sin(lat)
+     *
+     * Let g(k) = k * (1 + 2*sqrt(1 - k^2)) - target
+     * g'(k) = 1 + 2*sqrt(1 - k^2) - 2*k^2/sqrt(1 - k^2)
+     *       = 1 + 2*(1 - k^2)/sqrt(1 - k^2) - 2*k^2/sqrt(1 - k^2)
+     *       = 1 + (2 - 4*k^2) / sqrt(1 - k^2)
+     *
+     * No trig in the loop — only sqrt.
+     */
+    static const double TWO_OVER_SQRT3 = 1.15470053837925152902;
+
+    double target = MBTFPQ_C * sin_lat;
+    double k = sin_lat * 0.5;  /* initial guess for sin(theta/2) */
+
+    for (int i = 0; i < MAX_ITERATIONS; i++) {
+        double k2 = k * k;
+        double om_k2 = 1.0 - k2;
+        if (om_k2 < 0.0) om_k2 = 0.0;
+        double sqrt_om = sqrt(om_k2);
+
+        double g = k * (1.0 + 2.0 * sqrt_om) - target;
+
+        /* Avoid division by zero near poles */
+        double dg;
+        if (sqrt_om < EPSILON) {
+            dg = 1.0;
+        } else {
+            dg = 1.0 + (2.0 - 4.0 * k2) / sqrt_om;
+        }
+
+        double delta = g / dg;
+        k -= delta;
+
+        /* Clamp k to valid range */
+        if (k > 1.0) k = 1.0;
+        if (k < -1.0) k = -1.0;
+
+        if (fabs(delta) < EPSILON) break;
+    }
+
+    /* Now compute x, y from k = sin(theta/2) */
+    /* cos(theta) = 1 - 2*k^2 */
+    double cos_theta = 1.0 - 2.0 * k * k;
+
+    *x = radius * MBTFPQ_FXC * delta_lon * (1.0 + TWO_OVER_SQRT3 * cos_theta);
+    *y = radius * MBTFPQ_FYC * k;
+
+    return true;
+}
+
+/**
+ * Inverse McBryde-Thomas Flat Polar Quartic projection
+ *
+ * @param x          Input x coordinate
+ * @param y          Input y coordinate
+ * @param radius     Radius of the sphere (must be > 0)
+ * @param lon_center Central meridian in radians
+ * @param lon        Output longitude in radians
+ * @param lat        Output latitude in radians
+ * @return true if successful, false if point is outside valid region
+ */
+bool mbtfpq_inverse(double x, double y, double radius, double lon_center,
+                     double *lon, double *lat) {
+    if (lon == NULL || lat == NULL || radius <= 0) {
+        return false;
+    }
+
+    if (!isfinite(x) || !isfinite(y)) {
+        return false;
+    }
+
+    double sin_half_theta = y * MBTFPQ_RYC / radius;
+
+    if (fabs(sin_half_theta) > 1.0 + EPSILON) {
+        return false;
+    }
+    sin_half_theta = fmax(-1.0, fmin(1.0, sin_half_theta));
+
+    double half_theta = asin(sin_half_theta);
+    double theta = 2.0 * half_theta;
+
+    double sin_lat = (sin_half_theta + sin(theta)) * MBTFPQ_RC;
+    sin_lat = fmax(-1.0, fmin(1.0, sin_lat));
+    *lat = asin(sin_lat);
+
+    double cos_theta = cos(theta);
+    double shape = 1.0 + 2.0 * cos_theta / sqrt(3.0);
+
+    if (fabs(shape) < EPSILON * 10.0) {
+        *lon = lon_center;
+        return true;
+    }
+
+    double delta_lon = x * MBTFPQ_RXC / (radius * shape);
+
+    if (delta_lon > SP_PI) delta_lon = SP_PI;
+    if (delta_lon < -SP_PI) delta_lon = -SP_PI;
+
+    *lon = normalize_angle(lon_center + delta_lon);
+
+    return true;
+}
