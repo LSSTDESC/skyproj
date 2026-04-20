@@ -137,7 +137,7 @@ static bool transform_iteration(NpyIter *iter, int degrees, int inverse, const c
             // noproj!
             double conv;
             double radius;
-            double lon_0;
+            double lon_0, lat_0;
 
             if (degrees) {
                 conv = SP_D2R;
@@ -230,6 +230,30 @@ static bool transform_iteration(NpyIter *iter, int degrees, int inverse, const c
                     a2b2s[2 * index + 1] /= conv;
                 }
                 break;
+            case LAEA:
+                if (str_dict_get(noproj_dict, "lon_0", &lon_0) == -1) {
+                    lon_0 = 0.0;
+                }
+                if (str_dict_get(noproj_dict, "lat_0", &lat_0) == -1) {
+                    lat_0 = 0.0;
+                }
+
+                if (inverse == 0) {
+                    // forward
+                    laea_forward(*(double *)dataptrarray[0] * conv, *(double *)dataptrarray[1] * conv,
+                                 radius, lon_0 * SP_D2R, lat_0 * SP_D2R,
+                                 &a2b2s[2 * index], &a2b2s[2 * index + 1]);
+
+                } else {
+                    // inverse
+                    laea_inverse(*(double *)dataptrarray[0], *(double *)dataptrarray[1],
+                                 radius, lon_0 * SP_D2R, lat_0 * SP_D2R,
+                                 &a2b2s[2 * index], &a2b2s[2 * index + 1]);
+                    a2b2s[2 * index] /= conv;
+                    a2b2s[2 * index + 1] /= conv;
+                }
+                break;
+
             default:
                 snprintf(err, ERR_SIZE, "Unsupported projection.");
                 goto fail;

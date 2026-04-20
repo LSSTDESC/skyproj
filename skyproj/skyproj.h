@@ -20,6 +20,7 @@ enum NoProjMap {
     EQUAL_EARTH,
     MBTFPQ,
     HAMMER,
+    LAEA,
 };
 
 typedef struct {
