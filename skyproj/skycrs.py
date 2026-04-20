@@ -37,6 +37,8 @@ class SkyCRS:
             "radius": radius,
         }
         kwargs.pop("proj")
+        if "o_proj" in kwargs:
+            kwargs.pop("o_proj")
         self._noproj_dict.update(**kwargs)
         if name == "cyl":
             self._noproj_dict["projection"] = 0
@@ -54,6 +56,8 @@ class SkyCRS:
             self._noproj_dict["projection"] = 6
         elif name == "aea":
             self._noproj_dict["projection"] = 7
+        elif name == "obmoll":
+            self._noproj_dict["projection"] = 8
 
     def with_new_center(self, lon_0, lat_0=None):
         """Create a new SkyCRS with a new lon_0/lat_0.
@@ -266,6 +270,7 @@ class ObliqueMollweideCRS(SkyCRS):
         proj4_params = {**proj4_params, **kwargs}
 
         super().__init__(name=name, radius=radius, **proj4_params)
+        self._noproj = True
 
     @property
     def lon_0(self):
