@@ -424,6 +424,26 @@ bool equal_earth_inverse(double x, double y, double radius, double lon_center,
     return true;
 }
 
+/*
+ * McBryde-Thomas Flat Polar Quartic Projection
+ *
+ * Pseudocylindrical equal-area projection.
+ *
+ * Auxiliary angle theta solved from:
+ *   sin(theta/2) + sin(theta) = C_p * sin(lat)
+ *
+ * where C_p = 1 + sqrt(2)/2
+ *
+ * Forward:
+ *   x = C_x * R * delta_lon * (1 + 2*cos(theta)/sqrt(3))
+ *   y = C_y * R * sin(theta/2)
+ *
+ * Constants from PROJ (PJ_mbtfpq.c):
+ *   C_x = 0.4052847345693511
+ *   C_y = 1.1463476799243318
+ *   C_p = 3.4141356237309505  (= 2 * (1 + sqrt(2)/2))
+ */
+
 #define MBTFPQ_C      1.70710678118654752440
 #define MBTFPQ_RC     0.58578643762690495119
 #define MBTFPQ_FYC    1.87475828462269495505
@@ -441,20 +461,33 @@ bool mbtfpq_forward(double lon, double lat, double radius, double lon_center,
     double sin_lat = sin(lat);
     double target = MBTFPQ_C * sin_lat;
 
-    /* Iterate on theta (called lp.phi in PROJ after overwriting) */
     double theta = lat;
+
+    double sin_h, cos_h;
 
     for (int i = 0; i < MAX_ITERATIONS; i++) {
         double half_t = 0.5 * theta;
-        double dtheta = (sin(half_t) + sin(theta) - target) /
-                        (0.5 * cos(half_t) + cos(theta));
+        sin_h = sin(half_t);
+        cos_h = cos(half_t);
+
+        double sin_t = 2.0 * sin_h * cos_h;
+        double cos_t = 2.0 * cos_h * cos_h - 1.0;
+
+        double dtheta = (sin_h + sin_t - target) / (0.5 * cos_h + cos_t);
         theta -= dtheta;
         if (fabs(dtheta) < EPSILON) break;
     }
 
+    /* Recompute for final theta */
     double half_t = 0.5 * theta;
-    *x = radius * MBTFPQ_FXC * delta_lon * (1.0 + 2.0 * cos(theta) / cos(half_t));
-    *y = radius * MBTFPQ_FYC * sin(half_t);
+    sin_h = sin(half_t);
+    cos_h = cos(half_t);
+
+    /* cos(theta)/cos(theta/2) = 2*cos_h - 1/cos_h */
+    double x_shape = 1.0 + 2.0 * (2.0 * cos_h - 1.0 / cos_h);
+
+    *x = radius * MBTFPQ_FXC * delta_lon * x_shape;
+    *y = radius * MBTFPQ_FYC * sin_h;
 
     return true;
 }
