@@ -52,6 +52,8 @@ class SkyCRS:
             self._noproj_dict["projection"] = 5
         elif name == "gnom":
             self._noproj_dict["projection"] = 6
+        elif name == "aea":
+            self._noproj_dict["projection"] = 7
 
     def with_new_center(self, lon_0, lat_0=None):
         """Create a new SkyCRS with a new lon_0/lat_0.
@@ -394,6 +396,7 @@ class AlbersEqualAreaCRS(SkyCRS):
         proj4_params = {**proj4_params, **kwargs}
 
         super().__init__(name=name, radius=radius, **proj4_params)
+        self._noproj = True
 
 
 _crss = {
