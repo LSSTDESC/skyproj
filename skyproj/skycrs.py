@@ -205,7 +205,7 @@ class McBrydeThomasFlatPolarQuarticCRS(SkyCRS):
         proj4_params = {**proj4_params, **kwargs}
 
         super().__init__(name=name, radius=radius, **proj4_params)
-        # self._noproj = True
+        self._noproj = True
 
 
 class MollweideCRS(SkyCRS):
