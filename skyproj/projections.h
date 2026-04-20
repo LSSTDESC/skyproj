@@ -20,6 +20,12 @@ typedef struct {
     bool n_negative;
 } albers_params_t;
 
+typedef struct {
+    double lon_0;       /* central meridian (geographic), subtracted first */
+    double lamp;        /* lon_p */
+    double sphip;       /* sin(lat_p) */
+    double cphip;       /* cos(lat_p) */
+} oblique_mollweide_params_t;
 
 bool mollweide_forward(double lon, double lat, double radius, double lon_center,
                        double *x, double *y);
@@ -58,4 +64,13 @@ bool albers_forward(const albers_params_t *params,
 bool albers_inverse(const albers_params_t *params,
                     double x, double y, double radius,
                     double *lon, double *lat);
+bool oblique_mollweide_init(oblique_mollweide_params_t *params,
+                            double lon_p, double lat_p,
+                            double lon_0);
+bool oblique_mollweide_forward(const oblique_mollweide_params_t *params,
+                               double lon, double lat, double radius,
+                               double *x, double *y);
+bool oblique_mollweide_inverse(const oblique_mollweide_params_t *params,
+                               double x, double y, double radius,
+                               double *lon, double *lat);
 #endif

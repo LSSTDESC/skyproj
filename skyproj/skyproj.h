@@ -23,6 +23,7 @@ enum NoProjMap {
     LAEA,
     GNOMONIC,
     ALBERS,
+    OBLIQUE_MOLLWEIDE,
 };
 
 typedef struct {

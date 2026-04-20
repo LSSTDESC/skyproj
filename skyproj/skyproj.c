@@ -137,7 +137,7 @@ static bool transform_iteration(NpyIter *iter, int degrees, int inverse, const c
             // noproj!
             double conv;
             double radius;
-            double lon_0, lat_0, lat_1, lat_2;
+            double lon_0, lat_0, lat_1, lat_2, lon_p, lat_p;
 
             if (degrees) {
                 conv = SP_D2R;
@@ -287,22 +287,49 @@ static bool transform_iteration(NpyIter *iter, int degrees, int inverse, const c
                     lat_2 = 0.0;
                 }
 
-                albers_params_t params;
-                albers_init(&params, lon_0 * SP_D2R, lat_1 * SP_D2R, lat_2 * SP_D2R);
+                albers_params_t aparams;
+                albers_init(&aparams, lon_0 * SP_D2R, lat_1 * SP_D2R, lat_2 * SP_D2R);
 
                 if (inverse == 0) {
                     // forward
-                    albers_forward(&params, *(double *)dataptrarray[0] * conv, *(double *)dataptrarray[1] * conv,
+                    albers_forward(&aparams, *(double *)dataptrarray[0] * conv, *(double *)dataptrarray[1] * conv,
                                    radius, &a2b2s[2 * index], &a2b2s[2 * index + 1]);
                 } else {
                     // inverse
-                    albers_inverse(&params, *(double *)dataptrarray[0], *(double *)dataptrarray[1],
+                    albers_inverse(&aparams, *(double *)dataptrarray[0], *(double *)dataptrarray[1],
                                    radius, &a2b2s[2 * index], &a2b2s[2 * index + 1]);
                     a2b2s[2 * index] /= conv;
                     a2b2s[2 * index + 1] /= conv;
                 }
                 break;
+            case OBLIQUE_MOLLWEIDE:
+                if (str_dict_get(noproj_dict, "lon_0", &lon_0) == -1) {
+                    lon_0 = 0.0;
+                }
+                if (str_dict_get(noproj_dict, "o_lon_p", &lon_p) == -1) {
+                    lon_p = 0.0;
+                }
+                if (str_dict_get(noproj_dict, "o_lat_p", &lat_p) == -1) {
+                    lat_p = 0.0;
+                }
 
+                oblique_mollweide_params_t omparams;
+                oblique_mollweide_init(&omparams, lon_p * SP_D2R, lat_p * SP_D2R, lon_0 * SP_D2R);
+
+                if (inverse == 0) {
+                    // forward
+                    oblique_mollweide_forward(&omparams,
+                                              *(double *)dataptrarray[0] * conv, *(double *)dataptrarray[1] * conv,
+                                              radius, &a2b2s[2 * index], &a2b2s[2 * index + 1]);
+                } else {
+                    // inverse
+                    oblique_mollweide_inverse(&omparams,
+                                              *(double *)dataptrarray[0], *(double *)dataptrarray[1],
+                                              radius, &a2b2s[2 * index], &a2b2s[2 * index + 1]);
+                    a2b2s[2 * index] /= conv;
+                    a2b2s[2 * index + 1] /= conv;
+                }
+                break;
             default:
                 snprintf(err, ERR_SIZE, "Unsupported projection.");
                 goto fail;

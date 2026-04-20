@@ -1088,3 +1088,160 @@ bool albers_inverse(const albers_params_t *params,
 
     return true;
 }
+
+/*
+ * Oblique Mollweide Projection
+ *
+ * This applies a coordinate rotation to move the projection pole
+ * to (lon_p, lat_p), then applies the standard Mollweide projection.
+ *
+ * The rotation transforms geographic (lon, lat) to oblique (olon, olat)
+ * where the new "north pole" is at the specified (lon_p, lat_p).
+ *
+ * Forward:
+ *   1. Rotate (lon, lat) -> (olon, olat) with pole at (lon_p, lat_p)
+ *   2. Apply standard Mollweide to (olon, olat)
+ *
+ * Inverse:
+ *   1. Apply inverse Mollweide to get (olon, olat)
+ *   2. Rotate (olon, olat) -> (lon, lat) back to geographic
+ */
+
+/**
+ * Initialize oblique Mollweide parameters
+ *
+ * @param params     Output parameter structure
+ * @param lon_p      Longitude of the oblique pole in radians
+ * @param lat_p      Latitude of the oblique pole in radians
+ * @param lon_0 Central meridian in radians (in the oblique system)
+ * @return true if successful
+ */
+bool oblique_mollweide_init(oblique_mollweide_params_t *params,
+                            double lon_p, double lat_p,
+                            double lon_0) {
+    if (params == NULL) {
+        return false;
+    }
+
+    params->lon_0 = lon_0;
+    params->lamp = lon_p;
+    params->sphip = sin(lat_p);
+    params->cphip = cos(lat_p);
+
+    return true;
+}
+
+/**
+ * PROJ o_forward rotation: geographic -> oblique
+ * Input lon must already have lon_0 subtracted.
+ */
+static void geographic_to_oblique(const oblique_mollweide_params_t *params,
+                                  double lon, double lat,
+                                  double *olon, double *olat) {
+    double coslam = cos(lon);
+    double sinphi = sin(lat);
+    double cosphi = cos(lat);
+
+    /* Snyder (5-8b) */
+    *olon = atan2(cosphi * sin(lon),
+                  params->sphip * cosphi * coslam + params->cphip * sinphi)
+            + params->lamp;
+
+    /* Normalize */
+    *olon = fmod(*olon, 2.0 * SP_PI);
+    if (*olon > SP_PI) *olon -= 2.0 * SP_PI;
+    if (*olon <= -SP_PI) *olon += 2.0 * SP_PI;
+
+    /* Snyder (5-7) */
+    double sin_olat = params->sphip * sinphi - params->cphip * cosphi * coslam;
+    sin_olat = fmax(-1.0, fmin(1.0, sin_olat));
+    *olat = asin(sin_olat);
+}
+
+/**
+ * PROJ o_inverse rotation: oblique -> geographic
+ * Returns lon WITHOUT lon_0 added back.
+ */
+static void oblique_to_geographic(const oblique_mollweide_params_t *params,
+                                  double olon, double olat,
+                                  double *lon, double *lat) {
+    /* Subtract lamp first */
+    olon -= params->lamp;
+
+    double coslam = cos(olon);
+    double sinphi = sin(olat);
+    double cosphi = cos(olat);
+
+    /* Snyder (5-9) */
+    double sin_lat = params->sphip * sinphi + params->cphip * cosphi * coslam;
+    sin_lat = fmax(-1.0, fmin(1.0, sin_lat));
+    *lat = asin(sin_lat);
+
+    /* Snyder (5-10b) */
+    *lon = atan2(cosphi * sin(olon),
+                 params->sphip * cosphi * coslam - params->cphip * sinphi);
+}
+
+/**
+ * Forward oblique Mollweide projection
+ *
+ * @param params     Precomputed oblique parameters
+ * @param lon        Longitude in radians
+ * @param lat        Latitude in radians [-pi/2, pi/2]
+ * @param radius     Radius of the sphere (must be > 0)
+ * @param x          Output x coordinate
+ * @param y          Output y coordinate
+ * @return true if successful, false otherwise
+ */
+bool oblique_mollweide_forward(const oblique_mollweide_params_t *params,
+                               double lon, double lat, double radius,
+                               double *x, double *y) {
+    if (params == NULL || x == NULL || y == NULL || radius <= 0) {
+        return false;
+    }
+
+    /* Subtract lon_0 (same as PROJ pipeline does before o_forward) */
+    double lon_adj = lon - params->lon_0;
+
+    /* Rotate to oblique */
+    double olon, olat;
+    geographic_to_oblique(params, lon_adj, lat, &olon, &olat);
+
+    /* Standard Mollweide with lon_center=0 */
+    return mollweide_forward(olon, olat, radius, 0.0, x, y);
+}
+
+/**
+ * Inverse oblique Mollweide projection
+ *
+ * @param params     Precomputed oblique parameters
+ * @param x          Input x coordinate
+ * @param y          Input y coordinate
+ * @param radius     Radius of the sphere (must be > 0)
+ * @param lon        Output longitude in radians
+ * @param lat        Output latitude in radians
+ * @return true if successful, false if point is outside valid region
+ */
+bool oblique_mollweide_inverse(const oblique_mollweide_params_t *params,
+                               double x, double y, double radius,
+                               double *lon, double *lat) {
+    if (params == NULL || lon == NULL || lat == NULL || radius <= 0) {
+        return false;
+    }
+
+    /* Inverse Mollweide with lon_center=0 */
+    double olon, olat;
+    if (!mollweide_inverse(x, y, radius, 0.0, &olon, &olat)) {
+        return false;
+    }
+
+    /* Rotate back to geographic */
+    double geo_lon, geo_lat;
+    oblique_to_geographic(params, olon, olat, &geo_lon, &geo_lat);
+
+    /* Add lon_0 back and normalize */
+    *lon = normalize_angle(geo_lon + params->lon_0);
+    *lat = geo_lat;
+
+    return true;
+}
