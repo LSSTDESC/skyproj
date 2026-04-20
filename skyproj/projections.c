@@ -557,3 +557,135 @@ bool mbtfpq_inverse(double x, double y, double radius, double lon_center,
     return true;
 }
 
+/*
+ * Hammer-Aitoff Projection
+ *
+ * Equal-area projection derived from the azimuthal equal-area projection.
+ *
+ * Forward:
+ *   Let w = sqrt(1 + cos(lat)*cos(lon/2))   (the "Aitoff weight")
+ *   x = 2*sqrt(2) * R * cos(lat)*sin(lon/2) / w
+ *   y = sqrt(2) * R * sin(lat) / w
+ *
+ * Inverse:
+ *   z = sqrt(1 - (x/(4R))^2 - (y/(2R))^2)
+ *   lon = 2 * atan2(z*x, 2*(2*z^2 - 1)) + lon_center
+ *   lat = asin(z*y / R)          (with appropriate scaling)
+ *
+ * From PROJ PJ_hammer.c with W=0.5, M=1 (standard Hammer).
+ */
+
+/**
+ * Forward Hammer-Aitoff projection
+ *
+ * @param lon        Longitude in radians
+ * @param lat        Latitude in radians [-pi/2, pi/2]
+ * @param radius     Radius of the sphere (must be > 0)
+ * @param lon_center Central meridian in radians
+ * @param x          Output x coordinate
+ * @param y          Output y coordinate
+ * @return true if successful, false otherwise
+ */
+bool hammer_forward(double lon, double lat, double radius, double lon_center,
+                    double *x, double *y) {
+    if (x == NULL || y == NULL || radius <= 0) {
+        return false;
+    }
+
+    double delta_lon = delta_longitude(lon, lon_center);
+
+    double half_lon = 0.5 * delta_lon;
+    double cos_lat = cos(lat);
+    double sin_lat = sin(lat);
+    double cos_half_lon = cos(half_lon);
+    double sin_half_lon = sin(half_lon);
+
+    double d = cos_lat * cos_half_lon;
+
+    /* 1 + cos(lat)*cos(lon/2) must be positive for a valid point */
+    double sum = 1.0 + d;
+    if (sum < EPSILON) {
+        /* Point is at the anti-meridian edge; clamp */
+        *x = 0.0;
+        *y = (sin_lat >= 0.0) ? sqrt(2.0) * radius : -sqrt(2.0) * radius;
+        return true;
+    }
+
+    double w = sqrt(sum);
+
+    /* x = 2*sqrt(2) * R * cos(lat)*sin(lon/2) / w */
+    /* y = sqrt(2) * R * sin(lat) / w */
+    static const double SQRT2 = 1.41421356237309504880;
+    static const double TWO_SQRT2 = 2.82842712474619009760;
+
+    *x = radius * TWO_SQRT2 * cos_lat * sin_half_lon / w;
+    *y = radius * SQRT2 * sin_lat / w;
+
+    return true;
+}
+
+/**
+ * Inverse Hammer-Aitoff projection
+ *
+ * @param x          Input x coordinate
+ * @param y          Input y coordinate
+ * @param radius     Radius of the sphere (must be > 0)
+ * @param lon_center Central meridian in radians
+ * @param lon        Output longitude in radians
+ * @param lat        Output latitude in radians
+ * @return true if successful, false if point is outside valid region
+ */
+bool hammer_inverse(double x, double y, double radius, double lon_center,
+                    double *lon, double *lat) {
+    if (lon == NULL || lat == NULL || radius <= 0) {
+        return false;
+    }
+
+    if (!isfinite(x) || !isfinite(y)) {
+        return false;
+    }
+
+    /* Normalize */
+    double x_scaled = x / radius;
+    double y_scaled = y / radius;
+
+    double x_az = x_scaled * 0.5;   /* undo the x doubling */
+    double y_az = y_scaled;
+
+    double rho_sq = x_az * x_az + y_az * y_az;
+
+    /* Boundary check: rho must be <= 2 for valid azimuthal equal-area */
+    if (rho_sq > 4.0 + EPSILON) {
+        return false;
+    }
+    if (rho_sq > 4.0) rho_sq = 4.0;
+
+    double rho = sqrt(rho_sq);
+
+    /* Handle origin */
+    if (rho < EPSILON) {
+        *lat = 0.0;
+        *lon = lon_center;
+        return true;
+    }
+
+    /* c = 2*asin(rho/2) */
+    double half_rho = rho * 0.5;
+    if (half_rho > 1.0) half_rho = 1.0;
+    double c = 2.0 * asin(half_rho);
+    double sin_c = sin(c);
+    double cos_c = cos(c);
+
+    /* lat = asin(y_az * sin_c / rho) */
+    double sin_lat = y_az * sin_c / rho;
+    sin_lat = fmax(-1.0, fmin(1.0, sin_lat));
+    *lat = asin(sin_lat);
+
+    /* half_lon = atan2(x_az * sin_c, rho * cos_c) */
+    double half_lon = atan2(x_az * sin_c, rho * cos_c);
+
+    /* lon = 2 * half_lon + lon_center */
+    *lon = normalize_angle(lon_center + 2.0 * half_lon);
+
+    return true;
+}
