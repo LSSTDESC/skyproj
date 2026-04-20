@@ -5,14 +5,14 @@
 #include "projections.h"
 
 /**
- * Normalize angle to (-π, π] range (exclusive of -π, inclusive of π)
+ * Normalize angle to [-π, π] range (inclusive of -π, π)
  *
  * @param angle Input angle in radians
- * @return Normalized angle in (-π, π]
+ * @return Normalized angle in [-π, π]
  */
 
 /**
- * Normalize angle to (-π, π] using floor-based approach
+ * Normalize angle to [-π, π] using floor-based approach
  */
 static double normalize_angle(double angle) {
     if (!isfinite(angle)) {
@@ -25,7 +25,7 @@ static double normalize_angle(double angle) {
     // Ensure (-π, π] with correct boundary behavior
     if (angle > SP_PI) {
         angle -= 2.0 * SP_PI;
-    } else if (angle <= -SP_PI) {
+    } else if (angle < -SP_PI) {
         angle += 2.0 * SP_PI;
     }
 
@@ -37,7 +37,7 @@ static double normalize_angle(double angle) {
  * This matches PROJ library behavior
  */
 static double adjust_lon(double lon) {
-    // Normalize to (-π, π]
+    // Normalize to [-π, π]
     if (!isfinite(lon)) {
         return 0.0;
     }
@@ -46,7 +46,7 @@ static double adjust_lon(double lon) {
 
     if (lon > SP_PI) {
         lon -= 2.0 * SP_PI;
-    } else if (lon <= -SP_PI) {
+    } else if (lon < -SP_PI) {
         lon += 2.0 * SP_PI;
     }
 
@@ -58,19 +58,19 @@ static double adjust_lon(double lon) {
  * This maintains consistent behavior across the ±180° boundary
  */
 static double delta_longitude(double lon, double lon_center) {
-    // First, normalize both longitudes to (-π, π]
+    // First, normalize both longitudes to [-π, π]
     lon = adjust_lon(lon);
     lon_center = adjust_lon(lon_center);
 
     // Compute difference
     double delta = lon - lon_center;
 
-    // Adjust to ensure delta is in (-π, π]
+    // Adjust to ensure delta is in [-π, π]
     // This is the key: we normalize the DIFFERENCE, not compute shortest path
     while (delta > SP_PI) {
         delta -= 2.0 * SP_PI;
     }
-    while (delta <= -SP_PI) {
+    while (delta < -SP_PI) {
         delta += 2.0 * SP_PI;
     }
 
