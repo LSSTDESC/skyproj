@@ -77,6 +77,46 @@ static double delta_longitude(double lon, double lon_center) {
     return delta;
 }
 
+/* Plate Carree */
+
+bool platecarree_forward(double lon, double lat, double radius, double lon_center,
+                         double *x, double *y) {
+    if (x == NULL || y == NULL || radius <= 0) {
+        return false;
+    }
+
+    double delta_lon = delta_longitude(lon, lon_center);
+
+    *x = radius * delta_lon;
+    *y = radius * lat;
+
+    return true;
+}
+
+bool platecarree_inverse(double x, double y, double radius, double lon_center,
+                         double *lon, double *lat) {
+    if (lon == NULL || lat == NULL || radius <= 0) {
+        return false;
+    }
+
+    if (!isfinite(x) || !isfinite(y)) {
+        return false;
+    }
+
+    *lat = y / radius;
+
+    if (*lat > SP_PI / 2.0) *lat = SP_PI / 2.0;
+    if (*lat < -SP_PI / 2.0) *lat = -SP_PI / 2.0;
+
+    double delta_lon = x / radius;
+    if (delta_lon > SP_PI) delta_lon = SP_PI;
+    if (delta_lon < -SP_PI) delta_lon = -SP_PI;
+
+    *lon = normalize_angle(lon_center + delta_lon);
+
+    return true;
+}
+
 /**
  * Improved initial guess for theta using a rational approximation
  * This significantly reduces iterations needed

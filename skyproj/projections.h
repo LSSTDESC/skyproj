@@ -27,6 +27,10 @@ typedef struct {
     double cphip;       /* cos(lat_p) */
 } oblique_mollweide_params_t;
 
+bool platecarree_forward(double lon, double lat, double radius, double lon_center,
+                         double *x, double *y);
+bool platecarree_inverse(double x, double y, double radius, double lon_center,
+                         double *lon, double *lat);
 bool mollweide_forward(double lon, double lat, double radius, double lon_center,
                        double *x, double *y);
 bool mollweide_inverse(double x, double y, double radius, double lon_center,

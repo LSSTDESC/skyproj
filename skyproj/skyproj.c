@@ -150,6 +150,26 @@ static bool transform_iteration(NpyIter *iter, int degrees, int inverse, const c
             }
 
             switch ((int) noproj_type) {
+            case PLATE_CARREE:
+                if (str_dict_get(noproj_dict, "lon_0", &lon_0) == -1) {
+                    lon_0 = 0.0;
+                }
+
+                if (inverse == 0) {
+                    // forward
+                    platecarree_forward(*(double *)dataptrarray[0] * conv, *(double *)dataptrarray[1] * conv,
+                                        radius, lon_0 * SP_D2R,
+                                        &a2b2s[2 * index], &a2b2s[2 * index + 1]);
+
+                } else {
+                    // inverse
+                    platecarree_inverse(*(double *)dataptrarray[0], *(double *)dataptrarray[1],
+                                        radius, lon_0 * SP_D2R,
+                                        &a2b2s[2 * index], &a2b2s[2 * index + 1]);
+                    a2b2s[2 * index] /= conv;
+                    a2b2s[2 * index + 1] /= conv;
+                }
+                break;
             case MOLLWEIDE:
                 if (str_dict_get(noproj_dict, "lon_0", &lon_0) == -1) {
                     lon_0 = 0.0;
