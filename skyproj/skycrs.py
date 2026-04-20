@@ -48,6 +48,8 @@ class SkyCRS:
             self._noproj_dict["projection"] = 3
         elif name == "hammer":
             self._noproj_dict["projection"] = 4
+        elif name == "laea":
+            self._noproj_dict["projection"] = 5
 
     def with_new_center(self, lon_0, lat_0=None):
         """Create a new SkyCRS with a new lon_0/lat_0.
@@ -335,6 +337,7 @@ class LambertAzimuthalEqualAreaCRS(SkyCRS):
         proj4_params = {**proj4_params, **kwargs}
 
         super().__init__(name=name, radius=radius, **proj4_params)
+        self._noproj = True
 
 
 class GnomonicCRS(SkyCRS):
