@@ -195,6 +195,7 @@ class PlateCarreeCRS(SkyCRS):
         proj4_params = {**proj4_params, **kwargs}
 
         super().__init__(name=name, radius=radius, **proj4_params)
+        self._noproj = True
 
 
 class McBrydeThomasFlatPolarQuarticCRS(SkyCRS):
