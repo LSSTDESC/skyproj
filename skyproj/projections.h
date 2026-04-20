@@ -6,6 +6,21 @@
 #define EPSILON 1e-10
 #define MAX_ITERATIONS 100
 
+/**
+ * Precomputed Albers Equal-Area Conic constants
+ */
+typedef struct {
+    double lon_center;
+    double lat1;
+    double lat2;
+    double n;
+    double n_inv;
+    double C;
+    double rho0;
+    bool n_negative;
+} albers_params_t;
+
+
 bool mollweide_forward(double lon, double lat, double radius, double lon_center,
                        double *x, double *y);
 bool mollweide_inverse(double x, double y, double radius, double lon_center,
@@ -34,4 +49,13 @@ bool gnomonic_forward(double lon, double lat, double radius,
 bool gnomonic_inverse(double x, double y, double radius,
                       double lon_center, double lat_center,
                       double *lon, double *lat);
+bool albers_init(albers_params_t *params,
+                 double lon_center,
+                 double lat1, double lat2);
+bool albers_forward(const albers_params_t *params,
+                    double lon, double lat, double radius,
+                    double *x, double *y);
+bool albers_inverse(const albers_params_t *params,
+                    double x, double y, double radius,
+                    double *lon, double *lat);
 #endif

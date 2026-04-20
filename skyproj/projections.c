@@ -943,3 +943,148 @@ bool gnomonic_inverse(double x, double y, double radius,
 
     return true;
 }
+
+/*
+ * Albers Equal-Area Conic Projection
+ *
+ * Constants (computed from standard parallels lat1, lat2):
+ *   n = (sin(lat1) + sin(lat2)) / 2
+ *   C = cos^2(lat1) + 2*n*sin(lat1)
+ *   rho0 = sqrt(C) / n    (y-origin at equator)
+ *
+ * Forward:
+ *   theta = n * delta_lon
+ *   rho = sqrt(C - 2*n*sin(lat)) / n
+ *   x = R * rho * sin(theta)
+ *   y = R * (rho0 - rho * cos(theta))
+ *
+ * Inverse:
+ *   rho = sqrt(x^2 + (rho0*R - y)^2) * sign(n)
+ *   theta = atan2(x, rho0*R - y)
+ *   lat = asin((C - (rho*n/R)^2) / (2*n))
+ *   lon = lon0 + theta / n
+ */
+
+/**
+ * Initialize Albers constants from projection parameters.
+ *
+ * @param params     Output constants structure
+ * @param lon_center Central meridian in radians
+ * @param lat1       First standard parallel in radians
+ * @param lat2       Second standard parallel in radians
+ * @return true if valid, false if degenerate (e.g. n ≈ 0)
+ */
+bool albers_init(albers_params_t *params,
+                 double lon_center,
+                 double lat1, double lat2) {
+    if (params == NULL) {
+        return false;
+    }
+
+    params->lon_center = lon_center;
+    params->lat1 = lat1;
+    params->lat2 = lat2;
+
+    double sin_lat1 = sin(lat1);
+    double sin_lat2 = sin(lat2);
+    double cos_lat1 = cos(lat1);
+
+    params->n = 0.5 * (sin_lat1 + sin_lat2);
+
+    if (fabs(params->n) < EPSILON) {
+        return false;
+    }
+
+    params->n_inv = 1.0 / params->n;
+    params->C = cos_lat1 * cos_lat1 + 2.0 * params->n * sin_lat1;
+
+    /* rho0 with y-origin at equator (lat=0, sin(lat)=0) */
+    params->rho0 = sqrt(params->C) * params->n_inv;
+
+    params->n_negative = (params->n < 0.0);
+
+    return true;
+}
+
+/**
+ * Forward Albers Equal-Area Conic projection
+ *
+ * @param params     Precomputed constants from albers_init
+ * @param lon        Longitude in radians
+ * @param lat        Latitude in radians [-pi/2, pi/2]
+ * @param radius     Radius of the sphere (must be > 0)
+ * @param x          Output x coordinate
+ * @param y          Output y coordinate
+ * @return true if successful, false otherwise
+ */
+bool albers_forward(const albers_params_t *params,
+                    double lon, double lat, double radius,
+                    double *x, double *y) {
+    if (params == NULL || x == NULL || y == NULL || radius <= 0) {
+        return false;
+    }
+
+    double delta_lon = delta_longitude(lon, params->lon_center);
+
+    double theta = params->n * delta_lon;
+    double sin_theta = sin(theta);
+    double cos_theta = cos(theta);
+
+    double rho_sq = params->C - 2.0 * params->n * sin(lat);
+    if (rho_sq < 0.0) rho_sq = 0.0;
+    double rho = sqrt(rho_sq) * params->n_inv;
+
+    *x = radius * rho * sin_theta;
+    *y = radius * (params->rho0 - rho * cos_theta);
+
+    return true;
+}
+
+/**
+ * Inverse Albers Equal-Area Conic projection
+ *
+ * @param params     Precomputed constants from albers_init
+ * @param x          Input x coordinate
+ * @param y          Input y coordinate
+ * @param radius     Radius of the sphere (must be > 0)
+ * @param lon        Output longitude in radians
+ * @param lat        Output latitude in radians
+ * @return true if successful, false if point is outside valid region
+ */
+bool albers_inverse(const albers_params_t *params,
+                    double x, double y, double radius,
+                    double *lon, double *lat) {
+    if (params == NULL || lon == NULL || lat == NULL || radius <= 0) {
+        return false;
+    }
+
+    if (!isfinite(x) || !isfinite(y)) {
+        return false;
+    }
+
+    double x_scaled = x / radius;
+    double y_adj = params->rho0 - y / radius;
+
+    double rho = sqrt(x_scaled * x_scaled + y_adj * y_adj);
+
+    double theta;
+    if (params->n_negative) {
+        rho = -rho;
+        theta = atan2(-x_scaled, -y_adj);
+    } else {
+        theta = atan2(x_scaled, y_adj);
+    }
+
+    double rho_n = rho * params->n;
+    double sin_lat = (params->C - rho_n * rho_n) * 0.5 * params->n_inv;
+    sin_lat = fmax(-1.0, fmin(1.0, sin_lat));
+    *lat = asin(sin_lat);
+
+    double delta_lon = theta * params->n_inv;
+    if (delta_lon > SP_PI) delta_lon = SP_PI;
+    if (delta_lon < -SP_PI) delta_lon = -SP_PI;
+
+    *lon = normalize_angle(params->lon_center + delta_lon);
+
+    return true;
+}

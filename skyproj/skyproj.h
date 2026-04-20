@@ -22,6 +22,7 @@ enum NoProjMap {
     HAMMER,
     LAEA,
     GNOMONIC,
+    ALBERS,
 };
 
 typedef struct {
