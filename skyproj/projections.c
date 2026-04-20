@@ -451,6 +451,17 @@ bool equal_earth_inverse(double x, double y, double radius, double lon_center,
 #define MBTFPQ_FXC    0.31245971410378249250
 #define MBTFPQ_RXC    3.20041258076506210122
 
+/**
+ * Forward McBryde-Thomas Flat Polar Quartic projection
+ *
+ * @param lon        Longitude in radians
+ * @param lat        Latitude in radians [-π/2, π/2]
+ * @param radius     Radius of the sphere (must be > 0)
+ * @param lon_center Central meridian in radians
+ * @param x          Output x coordinate
+ * @param y          Output y coordinate
+ * @return true if successful, false otherwise
+ */
 bool mbtfpq_forward(double lon, double lat, double radius, double lon_center,
                      double *x, double *y) {
     if (x == NULL || y == NULL || radius <= 0) {
@@ -492,6 +503,17 @@ bool mbtfpq_forward(double lon, double lat, double radius, double lon_center,
     return true;
 }
 
+/**
+ * Inverse McBryde-Thomas Flat Polar Quartic projection
+ *
+ * @param x          Input x coordinate
+ * @param y          Input y coordinate
+ * @param radius     Radius of the sphere (must be > 0)
+ * @param lon_center Central meridian in radians
+ * @param lon        Output longitude in radians
+ * @param lat        Output latitude in radians
+ * @return true if successful, false if point is outside valid region
+ */
 bool mbtfpq_inverse(double x, double y, double radius, double lon_center,
                      double *lon, double *lat) {
     if (lon == NULL || lat == NULL || radius <= 0) {
@@ -534,3 +556,4 @@ bool mbtfpq_inverse(double x, double y, double radius, double lon_center,
 
     return true;
 }
+
