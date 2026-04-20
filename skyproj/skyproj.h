@@ -21,6 +21,7 @@ enum NoProjMap {
     MBTFPQ,
     HAMMER,
     LAEA,
+    GNOMONIC,
 };
 
 typedef struct {

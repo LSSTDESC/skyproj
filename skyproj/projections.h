@@ -28,4 +28,10 @@ bool laea_forward(double lon, double lat, double radius,
 bool laea_inverse(double x, double y, double radius,
                   double lon_center, double lat_center,
                   double *lon, double *lat);
+bool gnomonic_forward(double lon, double lat, double radius,
+                      double lon_center, double lat_center,
+                      double *x, double *y);
+bool gnomonic_inverse(double x, double y, double radius,
+                      double lon_center, double lat_center,
+                      double *lon, double *lat);
 #endif

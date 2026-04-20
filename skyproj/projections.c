@@ -822,3 +822,124 @@ bool laea_inverse(double x, double y, double radius,
 
     return true;
 }
+
+/*
+ * Gnomonic Projection
+ *
+ * A perspective projection from the center of the sphere onto a tangent plane.
+ * Only the hemisphere facing the tangent point can be projected (points
+ * at or beyond 90° from center are invalid).
+ *
+ * Forward:
+ *   cos_c = sin(lat0)*sin(lat) + cos(lat0)*cos(lat)*cos(dlon)
+ *   x = R * cos(lat)*sin(dlon) / cos_c
+ *   y = R * (cos(lat0)*sin(lat) - sin(lat0)*cos(lat)*cos(dlon)) / cos_c
+ *
+ * Inverse:
+ *   rho = sqrt(x^2 + y^2)
+ *   c = atan(rho / R)
+ *   lat = asin(cos(c)*sin(lat0) + y*sin(c)*cos(lat0)/(rho))
+ *   lon = lon0 + atan2(x*sin(c), rho*cos(lat0)*cos(c) - y*sin(lat0)*sin(c))
+ */
+
+/**
+ * Forward Gnomonic projection
+ *
+ * @param lon        Longitude in radians
+ * @param lat        Latitude in radians [-pi/2, pi/2]
+ * @param radius     Radius of the sphere (must be > 0)
+ * @param lon_center Central meridian in radians
+ * @param lat_center Central latitude in radians
+ * @param x          Output x coordinate
+ * @param y          Output y coordinate
+ * @return true if successful, false if point is on back hemisphere
+ */
+bool gnomonic_forward(double lon, double lat, double radius,
+                      double lon_center, double lat_center,
+                      double *x, double *y) {
+    if (x == NULL || y == NULL || radius <= 0) {
+        return false;
+    }
+
+    double delta_lon = delta_longitude(lon, lon_center);
+
+    double sin_lat = sin(lat);
+    double cos_lat = cos(lat);
+    double sin_lat0 = sin(lat_center);
+    double cos_lat0 = cos(lat_center);
+    double cos_dlon = cos(delta_lon);
+    double sin_dlon = sin(delta_lon);
+
+    /* cos_c = cos of angular distance from center */
+    double cos_c = sin_lat0 * sin_lat + cos_lat0 * cos_lat * cos_dlon;
+
+    /* Point must be on the near hemisphere (cos_c > 0) */
+    if (cos_c <= EPSILON) {
+        return false;
+    }
+
+    double rcp = radius / cos_c;
+
+    *x = rcp * cos_lat * sin_dlon;
+    *y = rcp * (cos_lat0 * sin_lat - sin_lat0 * cos_lat * cos_dlon);
+
+    return true;
+}
+
+/**
+ * Inverse Gnomonic projection
+ *
+ * @param x          Input x coordinate
+ * @param y          Input y coordinate
+ * @param radius     Radius of the sphere (must be > 0)
+ * @param lon_center Central meridian in radians
+ * @param lat_center Central latitude in radians
+ * @param lon        Output longitude in radians
+ * @param lat        Output latitude in radians
+ * @return true if successful, false otherwise
+ */
+bool gnomonic_inverse(double x, double y, double radius,
+                      double lon_center, double lat_center,
+                      double *lon, double *lat) {
+    if (lon == NULL || lat == NULL || radius <= 0) {
+        return false;
+    }
+
+    if (!isfinite(x) || !isfinite(y)) {
+        return false;
+    }
+
+    double x_scaled = x / radius;
+    double y_scaled = y / radius;
+
+    double rho_sq = x_scaled * x_scaled + y_scaled * y_scaled;
+    double rho = sqrt(rho_sq);
+
+    /* Handle origin */
+    if (rho < EPSILON) {
+        *lat = lat_center;
+        *lon = lon_center;
+        return true;
+    }
+
+    /* c = atan(rho) — angular distance from center */
+    double c = atan(rho);
+    double sin_c = sin(c);
+    double cos_c = cos(c);
+
+    double sin_lat0 = sin(lat_center);
+    double cos_lat0 = cos(lat_center);
+
+    /* lat = asin(cos_c * sin_lat0 + y_scaled * sin_c * cos_lat0 / rho) */
+    double sin_lat = cos_c * sin_lat0 + y_scaled * sin_c * cos_lat0 / rho;
+    sin_lat = fmax(-1.0, fmin(1.0, sin_lat));
+    *lat = asin(sin_lat);
+
+    /* lon = lon0 + atan2(x*sin_c, rho*cos_lat0*cos_c - y*sin_lat0*sin_c) */
+    double numer = x_scaled * sin_c;
+    double denom = rho * cos_lat0 * cos_c - y_scaled * sin_lat0 * sin_c;
+
+    *lon = normalize_angle(lon_center + atan2(numer, denom));
+
+    return true;
+}
