@@ -140,11 +140,11 @@ bool geod_interp_sp(double lon0, double lat0,
  * @param lat_out   Output latitude in radians
  * @return true if successful
  */
-bool geodesic_direct(double lon0, double lat0,
-                     double azimuth, double distance,
-                     double radius,
-                     int degrees,
-                     double *lon_out, double *lat_out) {
+bool geod_direct_sp(double lon0, double lat0,
+                    double azimuth, double distance,
+                    double radius,
+                    int degrees,
+                    double *lon_out, double *lat_out) {
     if (lon_out == NULL || lat_out == NULL || radius <= 0) {
         return false;
     }
