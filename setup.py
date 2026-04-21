@@ -55,6 +55,7 @@ ext = Extension(
         "skyproj/skyproj.c",
         "skyproj/projections.c",
         "skyproj/str_dict.c",
+        "skyproj/geodesics.c",
     ],
     include_dirs=include_dirs,
     library_dirs=library_dirs,
