@@ -4,7 +4,6 @@
 
 #include <numpy/arrayobject.h>
 #include <math.h>
-#include <proj.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
