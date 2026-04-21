@@ -5,7 +5,6 @@
 #include <numpy/arrayobject.h>
 #include <math.h>
 #include <proj.h>
-#include <geodesic.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -13,6 +12,7 @@
 #include "thread_compat.h"
 #include "skyproj.h"
 #include "projections.h"
+#include "geodesics.h"
 #include "str_dict.h"
 
 PyDoc_STRVAR(transform_doc,
@@ -661,10 +661,6 @@ static PyObject *geodesic_interp(PyObject *dummy, PyObject *args, PyObject *kwar
 
     double *lonlat_data = NULL;
 
-    struct geod_geodesic g;
-    struct geod_geodesicline l;
-    int index;
-
     static char *kwlist[] = {"lon0", "lat0", "lon1", "lat1", "npts", "radius", "flattening", "include_start", "include_end", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ddddi|ddpp", kwlist, &lon0, &lat0,
@@ -682,30 +678,7 @@ static PyObject *geodesic_interp(PyObject *dummy, PyObject *args, PyObject *kwar
 
     lonlat_data = (double *)PyArray_DATA((PyArrayObject *)lonlat_arr);
 
-    geod_init(&g, radius, flattening);
-    // Note geod_inverseline takes lat, lon order.
-    geod_inverseline(&l, &g, lat0, lon0, lat1, lon1, GEOD_LATITUDE | GEOD_LONGITUDE);
-
-    int npts_stepsize = npts;
-    int offset = 0;
-
-    if ((include_start == 0) & (include_end == 1)) {
-        offset = 1;
-    } else if ((include_start == 1) & (include_end == 1)) {
-        npts_stepsize -= 1;
-    } else if ((include_start == 0) & (include_end == 0)) {
-        npts_stepsize += 1;
-        offset = 1;
-    }
-
-    double stepsize = 1. / (double) npts_stepsize;
-
-    for (index = 0; index < npts; index++) {
-        // Note geod_genposition returns lat, lon order.
-        geod_genposition(&l, GEOD_ARCMODE, (index + offset) * l.a13 * stepsize,
-                         &lonlat_data[index * 2 + 1], &lonlat_data[index * 2],
-                         0, 0, 0, 0, 0, 0);
-    }
+    geod_interp_sp(lon0, lat0, lon1, lat1, radius, npts, include_start, include_end, 1, lonlat_data);
 
     return PyArray_Return((PyArrayObject *)lonlat_arr);
 
@@ -753,8 +726,6 @@ static PyObject *geodesic_direct(PyObject *dummy, PyObject *args, PyObject *kwar
     NpyIter *iter = NULL;
     NpyIter_IterNextFunc *iternext;
     char **dataptrarray;
-
-    struct geod_geodesic g;
 
     static char *kwlist[] = {"lon", "lat", "az", "dist", "radius", "flattening", NULL};
 
@@ -813,8 +784,6 @@ static PyObject *geodesic_direct(PyObject *dummy, PyObject *args, PyObject *kwar
         goto cleanup;
     }
 
-    geod_init(&g, radius, flattening);
-
     iternext = NpyIter_GetIterNext(iter, NULL);
     if (iternext == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "Could not get iternext.");
@@ -830,7 +799,7 @@ static PyObject *geodesic_direct(PyObject *dummy, PyObject *args, PyObject *kwar
         double *lon_out = (double *)dataptrarray[4];
         double *lat_out = (double *)dataptrarray[5];
 
-        geod_direct(&g, *lat, *lon, *az, *dist, lat_out, lon_out, 0);
+        geod_direct_sp(*lon, *lat, *az, *dist, radius, 1, lon_out, lat_out);
 
     } while (iternext(iter));
 
