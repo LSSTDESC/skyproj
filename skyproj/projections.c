@@ -454,10 +454,6 @@ bool equal_earth_inverse(double x, double y, double radius, double lon_center,
 
     double lambda = (x * denom) / (2.0 * sqrt(3.0) * radius * cos_theta);
 
-    // Clamp to valid range
-    if (lambda > SP_PI) lambda = SP_PI;
-    if (lambda < -SP_PI) lambda = -SP_PI;
-
     // Add central meridian
     *lon = normalize_angle(lon_center + lambda);
 
@@ -564,32 +560,41 @@ bool mbtfpq_inverse(double x, double y, double radius, double lon_center,
         return false;
     }
 
-    double t = y * MBTFPQ_RYC / radius;
+    double sin_half_theta = y * MBTFPQ_RYC / radius;
     double theta;
+    double t;
 
-    if (fabs(t) > 1.0 + EPSILON) {
-        return false;
-    }
-
-    if (fabs(t) > 1.0) {
-        t = (t < 0.0) ? -1.0 : 1.0;
-        theta = (t < 0.0) ? -SP_PI : SP_PI;
+    if (fabs(sin_half_theta) > 1.0) {
+        if (fabs(sin_half_theta) > 1.000001) {
+            return false;
+        }
+        if (sin_half_theta < 0.0) {
+            t = -1.0;
+            theta = -SP_PI;
+        } else {
+            t = 1.0;
+            theta = SP_PI;
+        }
     } else {
-        theta = 2.0 * asin(t);
+        t = sin_half_theta;
+        theta = 2.0 * asin(sin_half_theta);
     }
 
-    double half_t = 0.5 * theta;
-    double cos_half = cos(half_t);
+    /* Longitude */
+    double cos_half = cos(0.5 * theta);
+    double delta_lon;
 
-    if (fabs(cos_half) < EPSILON * 10.0) {
-        *lon = lon_center;
+    if (cos_half == 0.0) {
+        delta_lon = 0.0;
     } else {
-        double delta_lon = x * MBTFPQ_RXC / (radius * (1.0 + 2.0 * cos(theta) / cos_half));
-        if (delta_lon > SP_PI) delta_lon = SP_PI;
-        if (delta_lon < -SP_PI) delta_lon = -SP_PI;
-        *lon = normalize_angle(lon_center + delta_lon);
+        double cos_theta = cos(theta);
+        double shape = 1.0 + 2.0 * cos_theta / cos_half;
+        delta_lon = x * MBTFPQ_RXC / (radius * shape);
     }
 
+    *lon = normalize_angle(lon_center + delta_lon);
+
+    /* Latitude */
     double sin_lat = MBTFPQ_RC * (t + sin(theta));
     sin_lat = fmax(-1.0, fmin(1.0, sin_lat));
     *lat = asin(sin_lat);
