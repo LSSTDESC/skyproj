@@ -39,7 +39,7 @@ class SkyTransform(matplotlib.transforms.Transform):
         self._nsamp = 10
         self._nsamp_resolve = 50
 
-        self._lon_0 = self._proj.proj4_params['lon_0']
+        self._lon_0 = self._proj.lon_0
         self._wrap = (self._lon_0 + 180.) % 360.
 
         super().__init__()
