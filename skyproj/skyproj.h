@@ -14,6 +14,7 @@
 #define SP_D2R SP_PI / 180.0
 #define SP_R2D 180.0 / SP_PI
 
+
 enum NoProjMap {
     PLATE_CARREE,
     MOLLWEIDE,
@@ -30,12 +31,9 @@ typedef struct {
     NpyIter *iter;
     npy_intp start_idx;
     npy_intp end_idx;
-    StrDict *noproj_dict;
-    enum NoProjMap noproj_map;
-    double noproj_values[10];
+    StrDict *projection_dict;
     int degrees;
     int inverse;
-    const char *proj_str;
     double *a2b2s;
     char err[ERR_SIZE];
     bool failed;
