@@ -1,0 +1,16 @@
+# A clang-format style based on cPython's clang-format.
+BasedOnStyle: Google
+AllowShortIfStatementsOnASingleLine: true
+AlignAfterOpenBracket: Align
+BreakBeforeBraces: Attach
+ColumnLimit: 95
+DerivePointerAlignment: false
+IndentWidth: 4
+Language: Cpp
+PointerAlignment: Right
+ReflowComments: true
+SpaceBeforeParens: ControlStatements
+SpacesInParentheses: false
+TabWidth: 4
+UseTab: Never
+SortIncludes: false

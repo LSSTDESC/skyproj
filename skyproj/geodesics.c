@@ -58,11 +58,8 @@ static double central_angle(double lat0, double lon0, double lat1, double lon1) 
  *
  * where d is the central angle between P0 and P1
  */
-static void great_circle_point(double lat0, double lon0,
-                               double lat1, double lon1,
-                               double d, double sin_d,
-                               double f,
-                               double *lat_out, double *lon_out) {
+static void great_circle_point(double lat0, double lon0, double lat1, double lon1, double d,
+                               double sin_d, double f, double *lat_out, double *lon_out) {
     /* Handle zero or near-zero distance */
     if (sin_d < 1e-15) {
         *lat_out = lat0;
@@ -100,11 +97,8 @@ static void great_circle_point(double lat0, double lon0,
  * @param lonlat_data   Output array of size npts*2: [lon0,lat0,lon1,lat1,...]
  * @return true if successful
  */
-bool geod_interp_sp(double lon0, double lat0,
-                    double lon1, double lat1,
-                    double radius,
-                    int npts, int include_start, int include_end,
-                    int degrees,
+bool geod_interp_sp(double lon0, double lat0, double lon1, double lat1, double radius,
+                    int npts, int include_start, int include_end, int degrees,
                     double *lonlat_data) {
     if (lonlat_data == NULL || npts <= 0 || radius <= 0) {
         return false;
@@ -141,11 +135,9 @@ bool geod_interp_sp(double lon0, double lat0,
         double f = (i + offset) * stepsize;
         double lat_out, lon_out;
 
-        great_circle_point(lat0_r, lon0_r, lat1_r, lon1_r,
-                           d, sin_d, f,
-                           &lat_out, &lon_out);
+        great_circle_point(lat0_r, lon0_r, lat1_r, lon1_r, d, sin_d, f, &lat_out, &lon_out);
 
-        lonlat_data[i * 2]     = lon_out * conv;
+        lonlat_data[i * 2] = lon_out * conv;
         lonlat_data[i * 2 + 1] = lat_out * conv;
     }
 
@@ -167,11 +159,8 @@ bool geod_interp_sp(double lon0, double lat0,
  * @param lat_out   Output latitude in radians
  * @return true if successful
  */
-bool geod_direct_sp(double lon0, double lat0,
-                    double azimuth, double distance,
-                    double radius,
-                    int degrees,
-                    double *lon_out, double *lat_out) {
+bool geod_direct_sp(double lon0, double lat0, double azimuth, double distance, double radius,
+                    int degrees, double *lon_out, double *lat_out) {
     if (lon_out == NULL || lat_out == NULL || radius <= 0) {
         return false;
     }

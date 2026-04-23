@@ -106,8 +106,8 @@ static double delta_longitude(double lon, double lon_center) {
 
 /* Plate Carree */
 
-bool platecarree_forward(double lon, double lat, double radius, double lon_center,
-                         double *x, double *y) {
+bool platecarree_forward(double lon, double lat, double radius, double lon_center, double *x,
+                         double *y) {
     if (x == NULL || y == NULL || radius <= 0) {
         return false;
     }
@@ -120,8 +120,8 @@ bool platecarree_forward(double lon, double lat, double radius, double lon_cente
     return true;
 }
 
-bool platecarree_inverse(double x, double y, double radius, double lon_center,
-                         double *lon, double *lat) {
+bool platecarree_inverse(double x, double y, double radius, double lon_center, double *lon,
+                         double *lat) {
     if (lon == NULL || lat == NULL || radius <= 0) {
         return false;
     }
@@ -175,8 +175,8 @@ static double theta_initial_guess(double lat) {
  * @param y Output y coordinate
  * @return true if successful, false otherwise
  */
-bool mollweide_forward(double lon, double lat, double radius, double lon_center,
-                       double *x, double *y) {
+bool mollweide_forward(double lon, double lat, double radius, double lon_center, double *x,
+                       double *y) {
     if (x == NULL || y == NULL || radius <= 0) {
         return false;
     }
@@ -185,12 +185,12 @@ bool mollweide_forward(double lon, double lat, double radius, double lon_center,
     double delta_lon = delta_longitude(lon, lon_center);
 
     // Handle poles specially
-    if (fabs(lat - SP_PI/2) < EPSILON) {
+    if (fabs(lat - SP_PI / 2) < EPSILON) {
         *x = 0.0;
         *y = sqrt(2.0) * radius;
         return true;
     }
-    if (fabs(lat + SP_PI/2) < EPSILON) {
+    if (fabs(lat + SP_PI / 2) < EPSILON) {
         *x = 0.0;
         *y = -sqrt(2.0) * radius;
         return true;
@@ -242,8 +242,8 @@ bool mollweide_forward(double lon, double lat, double radius, double lon_center,
 /**
  * Optimized inverse with better numerical stability
  */
-bool mollweide_inverse(double x, double y, double radius, double lon_center,
-                       double *lon, double *lat) {
+bool mollweide_inverse(double x, double y, double radius, double lon_center, double *lon,
+                       double *lat) {
     if (lon == NULL || lat == NULL || radius <= 0) {
         return false;
     }
@@ -328,8 +328,8 @@ bool mollweide_inverse(double x, double y, double radius, double lon_center,
  * @param y Output y coordinate
  * @return true if successful, false otherwise
  */
-bool equal_earth_forward(double lon, double lat, double radius, double lon_center,
-                         double *x, double *y) {
+bool equal_earth_forward(double lon, double lat, double radius, double lon_center, double *x,
+                         double *y) {
     if (x == NULL || y == NULL || radius <= 0) {
         return false;
     }
@@ -360,8 +360,7 @@ bool equal_earth_forward(double lon, double lat, double radius, double lon_cente
     double cos_theta = cos(theta);
 
     // Denominator for x coordinate
-    double denom = 3.0 * (9.0 * A4 * theta6 + 7.0 * A3 * theta6 + 
-                          3.0 * A2 * theta2 + A1);
+    double denom = 3.0 * (9.0 * A4 * theta6 + 7.0 * A3 * theta6 + 3.0 * A2 * theta2 + A1);
 
     // Calculate coordinates
     // Note: The standard R in the paper is approximately sqrt(3)/2 ≈ 0.8660254
@@ -389,8 +388,8 @@ bool equal_earth_forward(double lon, double lat, double radius, double lon_cente
  * @param lat Output latitude in radians
  * @return true if successful, false if point is outside valid region
  */
-bool equal_earth_inverse(double x, double y, double radius, double lon_center,
-                         double *lon, double *lat) {
+bool equal_earth_inverse(double x, double y, double radius, double lon_center, double *lon,
+                         double *lat) {
     if (lon == NULL || lat == NULL || radius <= 0) {
         return false;
     }
@@ -402,8 +401,7 @@ bool equal_earth_inverse(double x, double y, double radius, double lon_center,
     double theta_max = asin(sqrt(3.0) / 2.0);  // ≈ 1.0472 radians ≈ 60°
 
     // Check if y is in valid range
-    double y_max = theta_max * (A1 + A2 * theta_max * theta_max + 
-                                A3 * pow(theta_max, 6) + 
+    double y_max = theta_max * (A1 + A2 * theta_max * theta_max + A3 * pow(theta_max, 6) +
                                 A4 * pow(theta_max, 8));
 
     if (fabs(y_scaled) > y_max + EPSILON) {
@@ -433,8 +431,8 @@ bool equal_earth_inverse(double x, double y, double radius, double lon_center,
 
         // f'(theta) = polynomial + theta * d(polynomial)/d(theta)
         // d(polynomial)/d(theta) = 2*A2*theta + 6*A3*theta^5 + 8*A4*theta^7
-        double d_polynomial = 2.0 * A2 * theta + 6.0 * A3 * theta * theta4 + 
-                             8.0 * A4 * theta * theta6;
+        double d_polynomial =
+            2.0 * A2 * theta + 6.0 * A3 * theta * theta4 + 8.0 * A4 * theta * theta6;
         double df = polynomial + theta * d_polynomial;
 
         if (fabs(df) < EPSILON) {
@@ -476,8 +474,7 @@ bool equal_earth_inverse(double x, double y, double radius, double lon_center,
     double theta2 = theta * theta;
     double theta6 = theta2 * theta2 * theta2;
 
-    double denom = 3.0 * (9.0 * A4 * theta6 + 7.0 * A3 * theta6 + 
-                          3.0 * A2 * theta2 + A1);
+    double denom = 3.0 * (9.0 * A4 * theta6 + 7.0 * A3 * theta6 + 3.0 * A2 * theta2 + A1);
 
     double lambda = (x * denom) / (2.0 * sqrt(3.0) * radius * cos_theta);
 
@@ -507,12 +504,12 @@ bool equal_earth_inverse(double x, double y, double radius, double lon_center,
  *   C_p = 3.4141356237309505  (= 2 * (1 + sqrt(2)/2))
  */
 
-#define MBTFPQ_C      1.70710678118654752440
-#define MBTFPQ_RC     0.58578643762690495119
-#define MBTFPQ_FYC    1.87475828462269495505
-#define MBTFPQ_RYC    0.53340209679417701685
-#define MBTFPQ_FXC    0.31245971410378249250
-#define MBTFPQ_RXC    3.20041258076506210122
+#define MBTFPQ_C 1.70710678118654752440
+#define MBTFPQ_RC 0.58578643762690495119
+#define MBTFPQ_FYC 1.87475828462269495505
+#define MBTFPQ_RYC 0.53340209679417701685
+#define MBTFPQ_FXC 0.31245971410378249250
+#define MBTFPQ_RXC 3.20041258076506210122
 
 /**
  * Forward McBryde-Thomas Flat Polar Quartic projection
@@ -525,8 +522,8 @@ bool equal_earth_inverse(double x, double y, double radius, double lon_center,
  * @param y          Output y coordinate
  * @return true if successful, false otherwise
  */
-bool mbtfpq_forward(double lon, double lat, double radius, double lon_center,
-                     double *x, double *y) {
+bool mbtfpq_forward(double lon, double lat, double radius, double lon_center, double *x,
+                    double *y) {
     if (x == NULL || y == NULL || radius <= 0) {
         return false;
     }
@@ -577,8 +574,8 @@ bool mbtfpq_forward(double lon, double lat, double radius, double lon_center,
  * @param lat        Output latitude in radians
  * @return true if successful, false if point is outside valid region
  */
-bool mbtfpq_inverse(double x, double y, double radius, double lon_center,
-                     double *lon, double *lat) {
+bool mbtfpq_inverse(double x, double y, double radius, double lon_center, double *lon,
+                    double *lat) {
     if (lon == NULL || lat == NULL || radius <= 0) {
         return false;
     }
@@ -658,8 +655,8 @@ bool mbtfpq_inverse(double x, double y, double radius, double lon_center,
  * @param y          Output y coordinate
  * @return true if successful, false otherwise
  */
-bool hammer_forward(double lon, double lat, double radius, double lon_center,
-                    double *x, double *y) {
+bool hammer_forward(double lon, double lat, double radius, double lon_center, double *x,
+                    double *y) {
     if (x == NULL || y == NULL || radius <= 0) {
         return false;
     }
@@ -707,8 +704,8 @@ bool hammer_forward(double lon, double lat, double radius, double lon_center,
  * @param lat        Output latitude in radians
  * @return true if successful, false if point is outside valid region
  */
-bool hammer_inverse(double x, double y, double radius, double lon_center,
-                    double *lon, double *lat) {
+bool hammer_inverse(double x, double y, double radius, double lon_center, double *lon,
+                    double *lat) {
     if (lon == NULL || lat == NULL || radius <= 0) {
         return false;
     }
@@ -721,7 +718,7 @@ bool hammer_inverse(double x, double y, double radius, double lon_center,
     double x_scaled = x / radius;
     double y_scaled = y / radius;
 
-    double x_az = x_scaled * 0.5;   /* undo the x doubling */
+    double x_az = x_scaled * 0.5; /* undo the x doubling */
     double y_az = y_scaled;
 
     double rho_sq = x_az * x_az + y_az * y_az;
@@ -789,8 +786,7 @@ bool hammer_inverse(double x, double y, double radius, double lon_center,
  * @param y          Output y coordinate
  * @return true if successful, false otherwise
  */
-bool laea_forward(double lon, double lat, double radius,
-                  double lon_center, double lat_center,
+bool laea_forward(double lon, double lat, double radius, double lon_center, double lat_center,
                   double *x, double *y) {
     if (x == NULL || y == NULL || radius <= 0) {
         return false;
@@ -813,8 +809,8 @@ bool laea_forward(double lon, double lat, double radius,
         /* Antipodal point — project to boundary */
         /* Place at maximum distance in the appropriate direction */
         double rho_max = 2.0 * radius;
-        double bearing = atan2(cos_lat * sin_dlon,
-                               cos_lat0 * sin_lat - sin_lat0 * cos_lat * cos_dlon);
+        double bearing =
+            atan2(cos_lat * sin_dlon, cos_lat0 * sin_lat - sin_lat0 * cos_lat * cos_dlon);
         *x = rho_max * sin(bearing);
         *y = rho_max * cos(bearing);
         return true;
@@ -840,8 +836,7 @@ bool laea_forward(double lon, double lat, double radius,
  * @param lat        Output latitude in radians
  * @return true if successful, false if point is outside valid region
  */
-bool laea_inverse(double x, double y, double radius,
-                  double lon_center, double lat_center,
+bool laea_inverse(double x, double y, double radius, double lon_center, double lat_center,
                   double *lon, double *lat) {
     if (lon == NULL || lat == NULL || radius <= 0) {
         return false;
@@ -926,9 +921,8 @@ bool laea_inverse(double x, double y, double radius,
  * @param y          Output y coordinate
  * @return true if successful, false if point is on back hemisphere
  */
-bool gnomonic_forward(double lon, double lat, double radius,
-                      double lon_center, double lat_center,
-                      double *x, double *y) {
+bool gnomonic_forward(double lon, double lat, double radius, double lon_center,
+                      double lat_center, double *x, double *y) {
     if (x == NULL || y == NULL || radius <= 0) {
         return false;
     }
@@ -970,8 +964,7 @@ bool gnomonic_forward(double lon, double lat, double radius,
  * @param lat        Output latitude in radians
  * @return true if successful, false otherwise
  */
-bool gnomonic_inverse(double x, double y, double radius,
-                      double lon_center, double lat_center,
+bool gnomonic_inverse(double x, double y, double radius, double lon_center, double lat_center,
                       double *lon, double *lat) {
     if (lon == NULL || lat == NULL || radius <= 0) {
         return false;
@@ -1046,9 +1039,7 @@ bool gnomonic_inverse(double x, double y, double radius,
  * @param lat2       Second standard parallel in radians
  * @return true if valid, false if degenerate (e.g. n ≈ 0)
  */
-bool albers_init(albers_params_t *params,
-                 double lon_center,
-                 double lat1, double lat2) {
+bool albers_init(albers_params_t *params, double lon_center, double lat1, double lat2) {
     if (params == NULL) {
         return false;
     }
@@ -1089,8 +1080,7 @@ bool albers_init(albers_params_t *params,
  * @param y          Output y coordinate
  * @return true if successful, false otherwise
  */
-bool albers_forward(const albers_params_t *params,
-                    double lon, double lat, double radius,
+bool albers_forward(const albers_params_t *params, double lon, double lat, double radius,
                     double *x, double *y) {
     if (params == NULL || x == NULL || y == NULL || radius <= 0) {
         return false;
@@ -1123,8 +1113,7 @@ bool albers_forward(const albers_params_t *params,
  * @param lat        Output latitude in radians
  * @return true if successful, false if point is outside valid region
  */
-bool albers_inverse(const albers_params_t *params,
-                    double x, double y, double radius,
+bool albers_inverse(const albers_params_t *params, double x, double y, double radius,
                     double *lon, double *lat) {
     if (params == NULL || lon == NULL || lat == NULL || radius <= 0) {
         return false;
@@ -1188,8 +1177,7 @@ bool albers_inverse(const albers_params_t *params,
  * @param lon_0 Central meridian in radians (in the oblique system)
  * @return true if successful
  */
-bool oblique_mollweide_init(oblique_mollweide_params_t *params,
-                            double lon_p, double lat_p,
+bool oblique_mollweide_init(oblique_mollweide_params_t *params, double lon_p, double lat_p,
                             double lon_0) {
     if (params == NULL) {
         return false;
@@ -1207,17 +1195,16 @@ bool oblique_mollweide_init(oblique_mollweide_params_t *params,
  * PROJ o_forward rotation: geographic -> oblique
  * Input lon must already have lon_0 subtracted.
  */
-static void geographic_to_oblique(const oblique_mollweide_params_t *params,
-                                  double lon, double lat,
-                                  double *olon, double *olat) {
+static void geographic_to_oblique(const oblique_mollweide_params_t *params, double lon,
+                                  double lat, double *olon, double *olat) {
     double coslam = cos(lon);
     double sinphi = sin(lat);
     double cosphi = cos(lat);
 
     /* Snyder (5-8b) */
-    *olon = atan2(cosphi * sin(lon),
-                  params->sphip * cosphi * coslam + params->cphip * sinphi)
-            + params->lamp;
+    *olon =
+        atan2(cosphi * sin(lon), params->sphip * cosphi * coslam + params->cphip * sinphi) +
+        params->lamp;
 
     /* Normalize */
     *olon = fmod(*olon, 2.0 * SP_PI);
@@ -1234,9 +1221,8 @@ static void geographic_to_oblique(const oblique_mollweide_params_t *params,
  * PROJ o_inverse rotation: oblique -> geographic
  * Returns lon WITHOUT lon_0 added back.
  */
-static void oblique_to_geographic(const oblique_mollweide_params_t *params,
-                                  double olon, double olat,
-                                  double *lon, double *lat) {
+static void oblique_to_geographic(const oblique_mollweide_params_t *params, double olon,
+                                  double olat, double *lon, double *lat) {
     /* Subtract lamp first */
     olon -= params->lamp;
 
@@ -1250,8 +1236,7 @@ static void oblique_to_geographic(const oblique_mollweide_params_t *params,
     *lat = asin(sin_lat);
 
     /* Snyder (5-10b) */
-    *lon = atan2(cosphi * sin(olon),
-                 params->sphip * cosphi * coslam - params->cphip * sinphi);
+    *lon = atan2(cosphi * sin(olon), params->sphip * cosphi * coslam - params->cphip * sinphi);
 }
 
 /**
@@ -1265,9 +1250,8 @@ static void oblique_to_geographic(const oblique_mollweide_params_t *params,
  * @param y          Output y coordinate
  * @return true if successful, false otherwise
  */
-bool oblique_mollweide_forward(const oblique_mollweide_params_t *params,
-                               double lon, double lat, double radius,
-                               double *x, double *y) {
+bool oblique_mollweide_forward(const oblique_mollweide_params_t *params, double lon,
+                               double lat, double radius, double *x, double *y) {
     if (params == NULL || x == NULL || y == NULL || radius <= 0) {
         return false;
     }
@@ -1294,9 +1278,8 @@ bool oblique_mollweide_forward(const oblique_mollweide_params_t *params,
  * @param lat        Output latitude in radians
  * @return true if successful, false if point is outside valid region
  */
-bool oblique_mollweide_inverse(const oblique_mollweide_params_t *params,
-                               double x, double y, double radius,
-                               double *lon, double *lat) {
+bool oblique_mollweide_inverse(const oblique_mollweide_params_t *params, double x, double y,
+                               double radius, double *lon, double *lat) {
     if (params == NULL || lon == NULL || lat == NULL || radius <= 0) {
         return false;
     }

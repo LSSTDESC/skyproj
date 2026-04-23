@@ -14,7 +14,6 @@
 #define SP_D2R SP_PI / 180.0
 #define SP_R2D 180.0 / SP_PI
 
-
 enum NoProjMap {
     PLATE_CARREE,
     MOLLWEIDE,
@@ -38,6 +37,5 @@ typedef struct {
     char err[ERR_SIZE];
     bool failed;
 } TransformThreadData;
-
 
 #endif

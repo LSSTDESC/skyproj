@@ -41,8 +41,8 @@ PyDoc_STRVAR(transform_doc,
 
 // Core processing logic for transform - used by both single and multi-threaded paths
 static bool transform_iteration(NpyIter *iter, int degrees, int inverse,
-                                StrDict *projection_dict, double *a2b2s, npy_intp start_idx, npy_intp end_idx,
-                                char *err) {
+                                StrDict *projection_dict, double *a2b2s, npy_intp start_idx,
+                                npy_intp end_idx, char *err) {
     NpyIter_IterNextFunc *iternext;
     char **dataptrarray;
     char *errmsg;
@@ -84,203 +84,206 @@ static bool transform_iteration(NpyIter *iter, int degrees, int inverse,
             radius = 1.0;
         }
 
-        switch ((int) projection_type) {
-        case PLATE_CARREE:
-            if (str_dict_get(projection_dict, "lon_0", &lon_0) == -1) {
-                lon_0 = 0.0;
-            }
+        switch ((int)projection_type) {
+            case PLATE_CARREE:
+                if (str_dict_get(projection_dict, "lon_0", &lon_0) == -1) {
+                    lon_0 = 0.0;
+                }
 
-            if (inverse == 0) {
-                // forward
-                platecarree_forward(*(double *)dataptrarray[0] * conv, *(double *)dataptrarray[1] * conv,
-                                    radius, lon_0 * SP_D2R,
-                                    &a2b2s[2 * index], &a2b2s[2 * index + 1]);
-            } else {
-                // inverse
-                platecarree_inverse(*(double *)dataptrarray[0], *(double *)dataptrarray[1],
-                                    radius, lon_0 * SP_D2R,
-                                    &a2b2s[2 * index], &a2b2s[2 * index + 1]);
-                a2b2s[2 * index] /= conv;
-                a2b2s[2 * index + 1] /= conv;
-            }
-            break;
-        case MOLLWEIDE:
-            if (str_dict_get(projection_dict, "lon_0", &lon_0) == -1) {
-                lon_0 = 0.0;
-            }
+                if (inverse == 0) {
+                    // forward
+                    platecarree_forward(
+                        *(double *)dataptrarray[0] * conv, *(double *)dataptrarray[1] * conv,
+                        radius, lon_0 * SP_D2R, &a2b2s[2 * index], &a2b2s[2 * index + 1]);
+                } else {
+                    // inverse
+                    platecarree_inverse(*(double *)dataptrarray[0], *(double *)dataptrarray[1],
+                                        radius, lon_0 * SP_D2R, &a2b2s[2 * index],
+                                        &a2b2s[2 * index + 1]);
+                    a2b2s[2 * index] /= conv;
+                    a2b2s[2 * index + 1] /= conv;
+                }
+                break;
+            case MOLLWEIDE:
+                if (str_dict_get(projection_dict, "lon_0", &lon_0) == -1) {
+                    lon_0 = 0.0;
+                }
 
-            if (inverse == 0) {
-                // forward
-                mollweide_forward(*(double *)dataptrarray[0] * conv, *(double *)dataptrarray[1] * conv,
-                                  radius, lon_0 * SP_D2R,
-                                  &a2b2s[2 * index], &a2b2s[2 * index + 1]);
-            } else {
-                // inverse
-                mollweide_inverse(*(double *)dataptrarray[0], *(double *)dataptrarray[1],
-                                  radius, lon_0 * SP_D2R,
-                                  &a2b2s[2 * index], &a2b2s[2 * index + 1]);
-                a2b2s[2 * index] /= conv;
-                a2b2s[2 * index + 1] /= conv;
-            }
-            break;
-        case EQUAL_EARTH:
-            if (str_dict_get(projection_dict, "lon_0", &lon_0) == -1) {
-                lon_0 = 0.0;
-            }
+                if (inverse == 0) {
+                    // forward
+                    mollweide_forward(
+                        *(double *)dataptrarray[0] * conv, *(double *)dataptrarray[1] * conv,
+                        radius, lon_0 * SP_D2R, &a2b2s[2 * index], &a2b2s[2 * index + 1]);
+                } else {
+                    // inverse
+                    mollweide_inverse(*(double *)dataptrarray[0], *(double *)dataptrarray[1],
+                                      radius, lon_0 * SP_D2R, &a2b2s[2 * index],
+                                      &a2b2s[2 * index + 1]);
+                    a2b2s[2 * index] /= conv;
+                    a2b2s[2 * index + 1] /= conv;
+                }
+                break;
+            case EQUAL_EARTH:
+                if (str_dict_get(projection_dict, "lon_0", &lon_0) == -1) {
+                    lon_0 = 0.0;
+                }
 
-            if (inverse == 0) {
-                // forward
-                equal_earth_forward(*(double *)dataptrarray[0] * conv, *(double *)dataptrarray[1] * conv,
-                                    radius, lon_0 * SP_D2R,
-                                    &a2b2s[2 * index], &a2b2s[2 * index + 1]);
-            } else {
-                // inverse
-                equal_earth_inverse(*(double *)dataptrarray[0], *(double *)dataptrarray[1],
-                                    radius, lon_0 * SP_D2R,
-                                    &a2b2s[2 * index], &a2b2s[2 * index + 1]);
-                a2b2s[2 * index] /= conv;
-                a2b2s[2 * index + 1] /= conv;
-            }
-            break;
-        case MBTFPQ:
-            if (str_dict_get(projection_dict, "lon_0", &lon_0) == -1) {
-                lon_0 = 0.0;
-            }
+                if (inverse == 0) {
+                    // forward
+                    equal_earth_forward(
+                        *(double *)dataptrarray[0] * conv, *(double *)dataptrarray[1] * conv,
+                        radius, lon_0 * SP_D2R, &a2b2s[2 * index], &a2b2s[2 * index + 1]);
+                } else {
+                    // inverse
+                    equal_earth_inverse(*(double *)dataptrarray[0], *(double *)dataptrarray[1],
+                                        radius, lon_0 * SP_D2R, &a2b2s[2 * index],
+                                        &a2b2s[2 * index + 1]);
+                    a2b2s[2 * index] /= conv;
+                    a2b2s[2 * index + 1] /= conv;
+                }
+                break;
+            case MBTFPQ:
+                if (str_dict_get(projection_dict, "lon_0", &lon_0) == -1) {
+                    lon_0 = 0.0;
+                }
 
-            if (inverse == 0) {
-                // forward
-                mbtfpq_forward(*(double *)dataptrarray[0] * conv, *(double *)dataptrarray[1] * conv,
-                               radius, lon_0 * SP_D2R,
-                               &a2b2s[2 * index], &a2b2s[2 * index + 1]);
-            } else {
-                // inverse
-                mbtfpq_inverse(*(double *)dataptrarray[0], *(double *)dataptrarray[1],
-                               radius, lon_0 * SP_D2R,
-                               &a2b2s[2 * index], &a2b2s[2 * index + 1]);
-                a2b2s[2 * index] /= conv;
-                a2b2s[2 * index + 1] /= conv;
-            }
-            break;
-        case HAMMER:
-            if (str_dict_get(projection_dict, "lon_0", &lon_0) == -1) {
-                lon_0 = 0.0;
-            }
+                if (inverse == 0) {
+                    // forward
+                    mbtfpq_forward(*(double *)dataptrarray[0] * conv,
+                                   *(double *)dataptrarray[1] * conv, radius, lon_0 * SP_D2R,
+                                   &a2b2s[2 * index], &a2b2s[2 * index + 1]);
+                } else {
+                    // inverse
+                    mbtfpq_inverse(*(double *)dataptrarray[0], *(double *)dataptrarray[1],
+                                   radius, lon_0 * SP_D2R, &a2b2s[2 * index],
+                                   &a2b2s[2 * index + 1]);
+                    a2b2s[2 * index] /= conv;
+                    a2b2s[2 * index + 1] /= conv;
+                }
+                break;
+            case HAMMER:
+                if (str_dict_get(projection_dict, "lon_0", &lon_0) == -1) {
+                    lon_0 = 0.0;
+                }
 
-            if (inverse == 0) {
-                // forward
-                hammer_forward(*(double *)dataptrarray[0] * conv, *(double *)dataptrarray[1] * conv,
-                               radius, lon_0 * SP_D2R,
-                               &a2b2s[2 * index], &a2b2s[2 * index + 1]);
-            } else {
-                // inverse
-                hammer_inverse(*(double *)dataptrarray[0], *(double *)dataptrarray[1],
-                               radius, lon_0 * SP_D2R,
-                               &a2b2s[2 * index], &a2b2s[2 * index + 1]);
-                a2b2s[2 * index] /= conv;
-                a2b2s[2 * index + 1] /= conv;
-            }
-            break;
-        case LAEA:
-            if (str_dict_get(projection_dict, "lon_0", &lon_0) == -1) {
-                lon_0 = 0.0;
-            }
-            if (str_dict_get(projection_dict, "lat_0", &lat_0) == -1) {
-                lat_0 = 0.0;
-            }
+                if (inverse == 0) {
+                    // forward
+                    hammer_forward(*(double *)dataptrarray[0] * conv,
+                                   *(double *)dataptrarray[1] * conv, radius, lon_0 * SP_D2R,
+                                   &a2b2s[2 * index], &a2b2s[2 * index + 1]);
+                } else {
+                    // inverse
+                    hammer_inverse(*(double *)dataptrarray[0], *(double *)dataptrarray[1],
+                                   radius, lon_0 * SP_D2R, &a2b2s[2 * index],
+                                   &a2b2s[2 * index + 1]);
+                    a2b2s[2 * index] /= conv;
+                    a2b2s[2 * index + 1] /= conv;
+                }
+                break;
+            case LAEA:
+                if (str_dict_get(projection_dict, "lon_0", &lon_0) == -1) {
+                    lon_0 = 0.0;
+                }
+                if (str_dict_get(projection_dict, "lat_0", &lat_0) == -1) {
+                    lat_0 = 0.0;
+                }
 
-            if (inverse == 0) {
-                // forward
-                laea_forward(*(double *)dataptrarray[0] * conv, *(double *)dataptrarray[1] * conv,
-                             radius, lon_0 * SP_D2R, lat_0 * SP_D2R,
-                             &a2b2s[2 * index], &a2b2s[2 * index + 1]);
-            } else {
-                // inverse
-                laea_inverse(*(double *)dataptrarray[0], *(double *)dataptrarray[1],
-                             radius, lon_0 * SP_D2R, lat_0 * SP_D2R,
-                             &a2b2s[2 * index], &a2b2s[2 * index + 1]);
-                a2b2s[2 * index] /= conv;
-                a2b2s[2 * index + 1] /= conv;
-            }
-            break;
-        case GNOMONIC:
-            if (str_dict_get(projection_dict, "lon_0", &lon_0) == -1) {
-                lon_0 = 0.0;
-            }
-            if (str_dict_get(projection_dict, "lat_0", &lat_0) == -1) {
-                lat_0 = 0.0;
-            }
+                if (inverse == 0) {
+                    // forward
+                    laea_forward(*(double *)dataptrarray[0] * conv,
+                                 *(double *)dataptrarray[1] * conv, radius, lon_0 * SP_D2R,
+                                 lat_0 * SP_D2R, &a2b2s[2 * index], &a2b2s[2 * index + 1]);
+                } else {
+                    // inverse
+                    laea_inverse(*(double *)dataptrarray[0], *(double *)dataptrarray[1],
+                                 radius, lon_0 * SP_D2R, lat_0 * SP_D2R, &a2b2s[2 * index],
+                                 &a2b2s[2 * index + 1]);
+                    a2b2s[2 * index] /= conv;
+                    a2b2s[2 * index + 1] /= conv;
+                }
+                break;
+            case GNOMONIC:
+                if (str_dict_get(projection_dict, "lon_0", &lon_0) == -1) {
+                    lon_0 = 0.0;
+                }
+                if (str_dict_get(projection_dict, "lat_0", &lat_0) == -1) {
+                    lat_0 = 0.0;
+                }
 
-            if (inverse == 0) {
-                // forward
-                gnomonic_forward(*(double *)dataptrarray[0] * conv, *(double *)dataptrarray[1] * conv,
-                                 radius, lon_0 * SP_D2R, lat_0 * SP_D2R,
-                                 &a2b2s[2 * index], &a2b2s[2 * index + 1]);
-            } else {
-                // inverse
-                gnomonic_inverse(*(double *)dataptrarray[0], *(double *)dataptrarray[1],
-                                 radius, lon_0 * SP_D2R, lat_0 * SP_D2R,
-                                 &a2b2s[2 * index], &a2b2s[2 * index + 1]);
-                a2b2s[2 * index] /= conv;
-                a2b2s[2 * index + 1] /= conv;
-            }
-            break;
-        case ALBERS:
-            if (str_dict_get(projection_dict, "lon_0", &lon_0) == -1) {
-                lon_0 = 0.0;
-            }
-            if (str_dict_get(projection_dict, "lat_1", &lat_1) == -1) {
-                lat_1 = 0.0;
-            }
-            if (str_dict_get(projection_dict, "lat_2", &lat_2) == -1) {
-                lat_2 = 0.0;
-            }
+                if (inverse == 0) {
+                    // forward
+                    gnomonic_forward(*(double *)dataptrarray[0] * conv,
+                                     *(double *)dataptrarray[1] * conv, radius, lon_0 * SP_D2R,
+                                     lat_0 * SP_D2R, &a2b2s[2 * index], &a2b2s[2 * index + 1]);
+                } else {
+                    // inverse
+                    gnomonic_inverse(*(double *)dataptrarray[0], *(double *)dataptrarray[1],
+                                     radius, lon_0 * SP_D2R, lat_0 * SP_D2R, &a2b2s[2 * index],
+                                     &a2b2s[2 * index + 1]);
+                    a2b2s[2 * index] /= conv;
+                    a2b2s[2 * index + 1] /= conv;
+                }
+                break;
+            case ALBERS:
+                if (str_dict_get(projection_dict, "lon_0", &lon_0) == -1) {
+                    lon_0 = 0.0;
+                }
+                if (str_dict_get(projection_dict, "lat_1", &lat_1) == -1) {
+                    lat_1 = 0.0;
+                }
+                if (str_dict_get(projection_dict, "lat_2", &lat_2) == -1) {
+                    lat_2 = 0.0;
+                }
 
-            albers_params_t aparams;
-            albers_init(&aparams, lon_0 * SP_D2R, lat_1 * SP_D2R, lat_2 * SP_D2R);
+                albers_params_t aparams;
+                albers_init(&aparams, lon_0 * SP_D2R, lat_1 * SP_D2R, lat_2 * SP_D2R);
 
-            if (inverse == 0) {
-                // forward
-                albers_forward(&aparams, *(double *)dataptrarray[0] * conv, *(double *)dataptrarray[1] * conv,
-                               radius, &a2b2s[2 * index], &a2b2s[2 * index + 1]);
-            } else {
-                // inverse
-                albers_inverse(&aparams, *(double *)dataptrarray[0], *(double *)dataptrarray[1],
-                               radius, &a2b2s[2 * index], &a2b2s[2 * index + 1]);
-                a2b2s[2 * index] /= conv;
-                a2b2s[2 * index + 1] /= conv;
-            }
-            break;
-        case OBLIQUE_MOLLWEIDE:
-            if (str_dict_get(projection_dict, "lon_0", &lon_0) == -1) {
-                lon_0 = 0.0;
-            }
-            if (str_dict_get(projection_dict, "lon_p", &lon_p) == -1) {
-                lon_p = 0.0;
-            }
-            if (str_dict_get(projection_dict, "lat_p", &lat_p) == -1) {
-                lat_p = 0.0;
-            }
+                if (inverse == 0) {
+                    // forward
+                    albers_forward(&aparams, *(double *)dataptrarray[0] * conv,
+                                   *(double *)dataptrarray[1] * conv, radius,
+                                   &a2b2s[2 * index], &a2b2s[2 * index + 1]);
+                } else {
+                    // inverse
+                    albers_inverse(&aparams, *(double *)dataptrarray[0],
+                                   *(double *)dataptrarray[1], radius, &a2b2s[2 * index],
+                                   &a2b2s[2 * index + 1]);
+                    a2b2s[2 * index] /= conv;
+                    a2b2s[2 * index + 1] /= conv;
+                }
+                break;
+            case OBLIQUE_MOLLWEIDE:
+                if (str_dict_get(projection_dict, "lon_0", &lon_0) == -1) {
+                    lon_0 = 0.0;
+                }
+                if (str_dict_get(projection_dict, "lon_p", &lon_p) == -1) {
+                    lon_p = 0.0;
+                }
+                if (str_dict_get(projection_dict, "lat_p", &lat_p) == -1) {
+                    lat_p = 0.0;
+                }
 
-            oblique_mollweide_params_t omparams;
-            oblique_mollweide_init(&omparams, lon_p * SP_D2R, lat_p * SP_D2R, lon_0 * SP_D2R);
+                oblique_mollweide_params_t omparams;
+                oblique_mollweide_init(&omparams, lon_p * SP_D2R, lat_p * SP_D2R,
+                                       lon_0 * SP_D2R);
 
-            if (inverse == 0) {
-                // forward
-                oblique_mollweide_forward(&omparams,
-                                          *(double *)dataptrarray[0] * conv, *(double *)dataptrarray[1] * conv,
-                                          radius, &a2b2s[2 * index], &a2b2s[2 * index + 1]);
-            } else {
-                // inverse
-                oblique_mollweide_inverse(&omparams,
-                                          *(double *)dataptrarray[0], *(double *)dataptrarray[1],
-                                          radius, &a2b2s[2 * index], &a2b2s[2 * index + 1]);
-                a2b2s[2 * index] /= conv;
-                a2b2s[2 * index + 1] /= conv;
-            }
-            break;
-        default:
-            snprintf(err, ERR_SIZE, "Unknown projection %d.", (int) projection_type);
-            goto fail;
+                if (inverse == 0) {
+                    // forward
+                    oblique_mollweide_forward(&omparams, *(double *)dataptrarray[0] * conv,
+                                              *(double *)dataptrarray[1] * conv, radius,
+                                              &a2b2s[2 * index], &a2b2s[2 * index + 1]);
+                } else {
+                    // inverse
+                    oblique_mollweide_inverse(&omparams, *(double *)dataptrarray[0],
+                                              *(double *)dataptrarray[1], radius,
+                                              &a2b2s[2 * index], &a2b2s[2 * index + 1]);
+                    a2b2s[2 * index] /= conv;
+                    a2b2s[2 * index + 1] /= conv;
+                }
+                break;
+            default:
+                snprintf(err, ERR_SIZE, "Unknown projection %d.", (int)projection_type);
+                goto fail;
         }
 
         // We allow invalid coordinates; we just transform them to NaNs
@@ -292,7 +295,7 @@ static bool transform_iteration(NpyIter *iter, int degrees, int inverse,
 
     return true;
 
- fail:
+fail:
 
     return false;
 }
@@ -300,8 +303,8 @@ static bool transform_iteration(NpyIter *iter, int degrees, int inverse,
 // Worker function for each thread
 static void *transform_worker(void *arg) {
     TransformThreadData *td = (TransformThreadData *)arg;
-    td->failed = !transform_iteration(td->iter, td->degrees, td->inverse,
-                                      td->projection_dict, td->a2b2s, td->start_idx, td->end_idx, td->err);
+    td->failed = !transform_iteration(td->iter, td->degrees, td->inverse, td->projection_dict,
+                                      td->a2b2s, td->start_idx, td->end_idx, td->err);
     return NULL;
 }
 
@@ -320,14 +323,15 @@ static PyObject *transform(PyObject *dummy, PyObject *args, PyObject *kwargs) {
     int inverse = 0;
     int n_threads = 1;
 
-    static char *kwlist[] = {"projection_dict", "a", "b", "degrees", "inverse", "n_threads", NULL};
+    static char *kwlist[] = {"projection_dict", "a",         "b", "degrees",
+                             "inverse",         "n_threads", NULL};
 
     double *a2b2s = NULL;
     char err[ERR_SIZE];
     bool loop_failed = false;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OOO|ppi", kwlist, &projection_dict_obj, &a_obj,
-                                     &b_obj, &degrees, &inverse, &n_threads))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OOO|ppi", kwlist, &projection_dict_obj,
+                                     &a_obj, &b_obj, &degrees, &inverse, &n_threads))
         goto fail;
 
     a_arr = PyArray_FROM_OTF(a_obj, NPY_DOUBLE, NPY_ARRAY_IN_ARRAY | NPY_ARRAY_ENSUREARRAY);
@@ -358,8 +362,7 @@ static PyObject *transform(PyObject *dummy, PyObject *args, PyObject *kwargs) {
                             op_dtypes);
 
     if (iter == NULL) {
-        PyErr_SetString(PyExc_ValueError,
-                        "a, b arrays could not be broadcast together.");
+        PyErr_SetString(PyExc_ValueError, "a, b arrays could not be broadcast together.");
         goto fail;
     }
 
@@ -475,8 +478,8 @@ static PyObject *transform(PyObject *dummy, PyObject *args, PyObject *kwargs) {
         // Single-threaded path
         NPY_BEGIN_ALLOW_THREADS
 
-        loop_failed = !transform_iteration(iter, degrees, inverse, projection_dict, a2b2s,
-                                           0, iter_size, err);
+        loop_failed = !transform_iteration(iter, degrees, inverse, projection_dict, a2b2s, 0,
+                                           iter_size, err);
 
         NPY_END_ALLOW_THREADS
 
@@ -529,7 +532,8 @@ fail:
 }
 
 PyDoc_STRVAR(geodesic_interp_doc,
-             "geodesic_interp(lon0, lat0, lon1, lat1, npts, radius=1.0, flattening=0.0, include_start=False, include_end=True)\n"
+             "geodesic_interp(lon0, lat0, lon1, lat1, npts, radius=1.0, flattening=0.0, "
+             "include_start=False, include_end=True)\n"
              "--\n\n"
              "Compute geodesic points between two terminii.\n"
              "\n"
@@ -570,11 +574,12 @@ static PyObject *geodesic_interp(PyObject *dummy, PyObject *args, PyObject *kwar
 
     double *lonlat_data = NULL;
 
-    static char *kwlist[] = {"lon0", "lat0", "lon1", "lat1", "npts", "radius", "flattening", "include_start", "include_end", NULL};
+    static char *kwlist[] = {"lon0",   "lat0",       "lon1",          "lat1",        "npts",
+                             "radius", "flattening", "include_start", "include_end", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ddddi|ddpp", kwlist, &lon0, &lat0,
-                                     &lon1, &lat1, &npts, &radius, &flattening,
-                                     &include_start, &include_end))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ddddi|ddpp", kwlist, &lon0, &lat0, &lon1,
+                                     &lat1, &npts, &radius, &flattening, &include_start,
+                                     &include_end))
         goto fail;
 
     // Check that npts is valid.
@@ -587,11 +592,12 @@ static PyObject *geodesic_interp(PyObject *dummy, PyObject *args, PyObject *kwar
 
     lonlat_data = (double *)PyArray_DATA((PyArrayObject *)lonlat_arr);
 
-    geod_interp_sp(lon0, lat0, lon1, lat1, radius, npts, include_start, include_end, 1, lonlat_data);
+    geod_interp_sp(lon0, lat0, lon1, lat1, radius, npts, include_start, include_end, 1,
+                   lonlat_data);
 
     return PyArray_Return((PyArrayObject *)lonlat_arr);
 
- fail:
+fail:
     Py_XDECREF(lonlat_arr);
 
     return NULL;
@@ -642,13 +648,16 @@ static PyObject *geodesic_direct(PyObject *dummy, PyObject *args, PyObject *kwar
                                      &az_obj, &dist_obj, &radius, &flattening))
         goto fail;
 
-    lon_arr = PyArray_FROM_OTF(lon_obj, NPY_DOUBLE, NPY_ARRAY_IN_ARRAY | NPY_ARRAY_ENSUREARRAY);
+    lon_arr =
+        PyArray_FROM_OTF(lon_obj, NPY_DOUBLE, NPY_ARRAY_IN_ARRAY | NPY_ARRAY_ENSUREARRAY);
     if (lon_arr == NULL) goto fail;
-    lat_arr = PyArray_FROM_OTF(lat_obj, NPY_DOUBLE, NPY_ARRAY_IN_ARRAY | NPY_ARRAY_ENSUREARRAY);
+    lat_arr =
+        PyArray_FROM_OTF(lat_obj, NPY_DOUBLE, NPY_ARRAY_IN_ARRAY | NPY_ARRAY_ENSUREARRAY);
     if (lat_arr == NULL) goto fail;
     az_arr = PyArray_FROM_OTF(az_obj, NPY_DOUBLE, NPY_ARRAY_IN_ARRAY | NPY_ARRAY_ENSUREARRAY);
     if (az_arr == NULL) goto fail;
-    dist_arr = PyArray_FROM_OTF(dist_obj, NPY_DOUBLE, NPY_ARRAY_IN_ARRAY | NPY_ARRAY_ENSUREARRAY);
+    dist_arr =
+        PyArray_FROM_OTF(dist_obj, NPY_DOUBLE, NPY_ARRAY_IN_ARRAY | NPY_ARRAY_ENSUREARRAY);
     if (dist_arr == NULL) goto fail;
 
     // The input arrays are lon_arr (double), lat_arr (double), az_arr (double),
@@ -712,7 +721,7 @@ static PyObject *geodesic_direct(PyObject *dummy, PyObject *args, PyObject *kwar
 
     } while (iternext(iter));
 
- cleanup:
+cleanup:
     lon_out_arr = (PyObject *)NpyIter_GetOperandArray(iter)[4];
     Py_INCREF(lon_out_arr);
     lat_out_arr = (PyObject *)NpyIter_GetOperandArray(iter)[5];
@@ -733,7 +742,7 @@ static PyObject *geodesic_direct(PyObject *dummy, PyObject *args, PyObject *kwar
 
     return retval;
 
- fail:
+fail:
     Py_XDECREF(lon_arr);
     Py_XDECREF(lat_arr);
     Py_XDECREF(az_arr);
@@ -742,10 +751,9 @@ static PyObject *geodesic_direct(PyObject *dummy, PyObject *args, PyObject *kwar
     return NULL;
 }
 
-
 static PyMethodDef cskyproj_methods[] = {
-    {"transform", (PyCFunction)(void (*)(void))transform,
-     METH_VARARGS | METH_KEYWORDS, transform_doc},
+    {"transform", (PyCFunction)(void (*)(void))transform, METH_VARARGS | METH_KEYWORDS,
+     transform_doc},
     {"geodesic_interp", (PyCFunction)(void (*)(void))geodesic_interp,
      METH_VARARGS | METH_KEYWORDS, geodesic_interp_doc},
     {"geodesic_direct", (PyCFunction)(void (*)(void))geodesic_direct,
@@ -753,7 +761,7 @@ static PyMethodDef cskyproj_methods[] = {
     {NULL, NULL, 0, NULL}};
 
 static struct PyModuleDef cskyproj_module = {PyModuleDef_HEAD_INIT, "_cskyproj", NULL, -1,
-                                            cskyproj_methods};
+                                             cskyproj_methods};
 
 PyMODINIT_FUNC PyInit__cskyproj(void) {
     import_array();
