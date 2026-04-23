@@ -1,9 +1,6 @@
 from setuptools import setup, Extension
 import numpy
-import os
 import sys
-import shutil
-from pathlib import Path
 
 
 include_dirs = [numpy.get_include()]
