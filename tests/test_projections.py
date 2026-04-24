@@ -1,6 +1,13 @@
 import pytest
+import math
+import numpy as np
 
 import skyproj
+
+try:
+    import pyproj
+except ImportError:
+    pyproj = None
 
 
 @pytest.mark.parametrize("crsname", ['hammer',
@@ -89,3 +96,221 @@ def test_deprecated_proj4_params(crsname):
         for key in ["lon_0", "lat_0", "lat_1", "lat_2"]:
             if key in crs._projection_dict:
                 assert params[key] == crs._projection_dict[key]
+
+
+@pytest.mark.parametrize("crsname", ['hammer',
+                                     'mbtfpq',
+                                     'eqearth',
+                                     'laea',
+                                     'moll',])
+@pytest.mark.parametrize("lon_0", [0.0, 100.0, 180.0])
+@pytest.mark.skipif(pyproj is None, reason="pyproj not installed.")
+def test_compare_to_pyproj(crsname, lon_0):
+    from pyproj import CRS
+    from pyproj import Transformer
+
+    np.random.seed(1234)
+
+    lon_vals = np.random.uniform(low=0.0, high=360.0, size=100_000)
+    lat_vals = np.random.uniform(low=-90.0, high=90.0, size=100_000)
+
+    # Set up skyproj CRS
+    skyproj_crs = skyproj.get_crs(crsname, lon_0=lon_0)
+
+    # Set up proj CRS
+    radius = skyproj_crs.radius
+    plate_carree = CRS(proj="eqc", lon_0=0.0, ellps="sphere", R=radius, to_meter=math.radians(1)*radius)
+
+    proj_crs = CRS(proj=crsname, lon_0=lon_0, ellps="sphere", R=radius)
+
+    proj_transformer_fwd = Transformer.from_crs(plate_carree, proj_crs, always_xy=True)
+    proj_transformer_inv = Transformer.from_crs(proj_crs, plate_carree, always_xy=True)
+
+    # Check forward transform.
+    skyproj_xy = skyproj_crs.transform_points(lon_vals, lat_vals)
+
+    pyproj_x, pyproj_y = proj_transformer_fwd.transform(
+        skyproj.utils.wrap_values(lon_vals),
+        lat_vals,
+        None,
+        errcheck=False,
+    )
+
+    np.testing.assert_array_almost_equal(skyproj_xy[:, 0], pyproj_x)
+    np.testing.assert_array_almost_equal(skyproj_xy[:, 1], pyproj_y)
+
+    # Check inverse transform.
+    skyproj_lonlat = skyproj_crs.transform_points(skyproj_xy[:, 0], skyproj_xy[:, 1], inverse=True)
+
+    pyproj_lon, pyproj_lat = proj_transformer_inv.transform(
+        pyproj_x,
+        pyproj_y,
+        None,
+        errcheck=False,
+    )
+
+    np.testing.assert_array_almost_equal(skyproj_lonlat[:, 0], pyproj_lon)
+    np.testing.assert_array_almost_equal(skyproj_lonlat[:, 1], pyproj_lat)
+
+
+@pytest.mark.parametrize("lon_0", [0.0, 100.0, 180.0])
+@pytest.mark.parametrize("lonlat_p", [(90.0, 0.0), (45.0, 45.0), (120.0, -50.0)])
+@pytest.mark.skipif(pyproj is None, reason="pyproj not installed.")
+def test_compare_obmoll_to_pyproj(lon_0, lonlat_p):
+    from pyproj import CRS
+    from pyproj import Transformer
+
+    np.random.seed(1234)
+
+    lon_vals = np.random.uniform(low=0.0, high=360.0, size=100_000)
+    lat_vals = np.random.uniform(low=-90.0, high=90.0, size=100_000)
+
+    # Set up skyproj CRS
+    skyproj_crs = skyproj.get_crs("obmoll", lon_0=lon_0, lon_p=lonlat_p[0], lat_p=lonlat_p[1])
+
+    # Set up proj CRS
+    radius = skyproj_crs.radius
+    plate_carree = CRS(proj="eqc", lon_0=0.0, ellps="sphere", R=radius, to_meter=math.radians(1)*radius)
+
+    proj_crs = CRS(
+        proj="ob_tran",
+        o_proj="moll",
+        lon_0=lon_0,
+        o_lon_p=lonlat_p[0],
+        o_lat_p=lonlat_p[1],
+        ellps="sphere",
+        R=radius,
+    )
+
+    proj_transformer_fwd = Transformer.from_crs(plate_carree, proj_crs, always_xy=True)
+    proj_transformer_inv = Transformer.from_crs(proj_crs, plate_carree, always_xy=True)
+
+    # Check forward transform.
+    skyproj_xy = skyproj_crs.transform_points(lon_vals, lat_vals)
+
+    pyproj_x, pyproj_y = proj_transformer_fwd.transform(
+        skyproj.utils.wrap_values(lon_vals),
+        lat_vals,
+        None,
+        errcheck=False,
+    )
+
+    np.testing.assert_array_almost_equal(skyproj_xy[:, 0], pyproj_x)
+    np.testing.assert_array_almost_equal(skyproj_xy[:, 1], pyproj_y)
+
+    # Check inverse transform.
+    skyproj_lonlat = skyproj_crs.transform_points(skyproj_xy[:, 0], skyproj_xy[:, 1], inverse=True)
+
+    pyproj_lon, pyproj_lat = proj_transformer_inv.transform(
+        pyproj_x,
+        pyproj_y,
+        None,
+        errcheck=False,
+    )
+
+    np.testing.assert_array_almost_equal(skyproj_lonlat[:, 0], pyproj_lon)
+    np.testing.assert_array_almost_equal(skyproj_lonlat[:, 1], pyproj_lat)
+
+
+@pytest.mark.parametrize("crsname", ['laea',
+                                     'gnom',])
+@pytest.mark.parametrize("lon_0", [0.0, 100.0, 180.0])
+@pytest.mark.parametrize("lat_0", [0.0, 25.0, -45.0])
+@pytest.mark.skipif(pyproj is None, reason="pyproj not installed.")
+def test_compare_lonlat_to_pyproj(crsname, lon_0, lat_0):
+    from pyproj import CRS
+    from pyproj import Transformer
+
+    np.random.seed(1234)
+
+    lon_vals = np.random.uniform(low=lon_0 - 20.0, high=lon_0 + 20.0, size=100_000)
+    lat_vals = np.random.uniform(low=lat_0 - 20.0, high=lat_0 + 20.0, size=100_000)
+
+    # Set up skyproj CRS
+    skyproj_crs = skyproj.get_crs(crsname, lon_0=lon_0, lat_0=lat_0)
+
+    # Set up proj CRS
+    radius = skyproj_crs.radius
+    plate_carree = CRS(proj="eqc", lon_0=0.0, ellps="sphere", R=radius, to_meter=math.radians(1)*radius)
+
+    proj_crs = CRS(proj=crsname, lon_0=lon_0, lat_0=lat_0, ellps="sphere", R=radius)
+
+    proj_transformer_fwd = Transformer.from_crs(plate_carree, proj_crs, always_xy=True)
+    proj_transformer_inv = Transformer.from_crs(proj_crs, plate_carree, always_xy=True)
+
+    # Check forward transform.
+    skyproj_xy = skyproj_crs.transform_points(lon_vals, lat_vals)
+
+    pyproj_x, pyproj_y = proj_transformer_fwd.transform(
+        skyproj.utils.wrap_values(lon_vals),
+        lat_vals,
+        None,
+        errcheck=False,
+    )
+
+    np.testing.assert_array_almost_equal(skyproj_xy[:, 0], pyproj_x)
+    np.testing.assert_array_almost_equal(skyproj_xy[:, 1], pyproj_y)
+
+    # Check inverse transform.
+    skyproj_lonlat = skyproj_crs.transform_points(skyproj_xy[:, 0], skyproj_xy[:, 1], inverse=True)
+
+    pyproj_lon, pyproj_lat = proj_transformer_inv.transform(
+        pyproj_x,
+        pyproj_y,
+        None,
+        errcheck=False,
+    )
+
+    np.testing.assert_array_almost_equal(skyproj_lonlat[:, 0], pyproj_lon)
+    np.testing.assert_array_almost_equal(skyproj_lonlat[:, 1], pyproj_lat)
+
+
+@pytest.mark.parametrize("lon_0", [0.0, 100.0, 180.0])
+@pytest.mark.parametrize("lat_12", [(15.0, 45.0), (-60.0, -45.0)])
+@pytest.mark.skipif(pyproj is None, reason="pyproj not installed.")
+def test_compare_albers_to_pyproj(lon_0, lat_12):
+    from pyproj import CRS
+    from pyproj import Transformer
+
+    np.random.seed(1234)
+
+    lon_vals = np.random.uniform(low=0.0, high=360.0, size=100_000)
+    lat_vals = np.random.uniform(low=-90.0, high=90.0, size=100_000)
+
+    # Set up skyproj CRS
+    skyproj_crs = skyproj.get_crs("aea", lon_0=lon_0, lat_1=lat_12[0], lat_2=lat_12[1])
+
+    # Set up proj CRS
+    radius = skyproj_crs.radius
+    plate_carree = CRS(proj="eqc", lon_0=0.0, ellps="sphere", R=radius, to_meter=math.radians(1)*radius)
+
+    proj_crs = CRS(proj="aea", lon_0=lon_0, lat_1=lat_12[0], lat_2=lat_12[1], ellps="sphere", R=radius)
+
+    proj_transformer_fwd = Transformer.from_crs(plate_carree, proj_crs, always_xy=True)
+    proj_transformer_inv = Transformer.from_crs(proj_crs, plate_carree, always_xy=True)
+
+    # Check forward transform.
+    skyproj_xy = skyproj_crs.transform_points(lon_vals, lat_vals)
+
+    pyproj_x, pyproj_y = proj_transformer_fwd.transform(
+        skyproj.utils.wrap_values(lon_vals),
+        lat_vals,
+        None,
+        errcheck=False,
+    )
+
+    np.testing.assert_array_almost_equal(skyproj_xy[:, 0], pyproj_x)
+    np.testing.assert_array_almost_equal(skyproj_xy[:, 1], pyproj_y)
+
+    # Check inverse transform.
+    skyproj_lonlat = skyproj_crs.transform_points(skyproj_xy[:, 0], skyproj_xy[:, 1], inverse=True)
+
+    pyproj_lon, pyproj_lat = proj_transformer_inv.transform(
+        pyproj_x,
+        pyproj_y,
+        None,
+        errcheck=False,
+    )
+
+    np.testing.assert_array_almost_equal(skyproj_lonlat[:, 0], pyproj_lon)
+    np.testing.assert_array_almost_equal(skyproj_lonlat[:, 1], pyproj_lat)
