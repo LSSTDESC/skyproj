@@ -215,7 +215,6 @@ class McBrydeThomasFlatPolarQuarticCRS(SkyCRS):
         Additional kwargs for projection.
     """
     def __init__(self, name='mbtfpq', lon_0=0.0, radius=RADIUS, **kwargs):
-        print("first name", name)
         super().__init__(name=name, radius=radius, lon_0=lon_0, **kwargs)
 
 
