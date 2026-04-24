@@ -311,10 +311,11 @@ bool mollweide_inverse(double x, double y, double radius, double lon_center, dou
 // Equal Earth projection parameters
 // From: Šavrič, B., Patterson, T., & Jenny, B. (2019)
 // International Journal of Geographical Information Science, 33(3), 454-465
-#define A1 1.340264
-#define A2 -0.081106
-#define A3 0.000893
-#define A4 0.003796
+#define EE_A1 1.340264
+#define EE_A2 -0.081106
+#define EE_A3 0.000893
+#define EE_A4 0.003796
+#define EE_M (sqrt(3.0) / 2.0)
 
 /**
  * Forward Equal Earth projection
@@ -334,44 +335,28 @@ bool equal_earth_forward(double lon, double lat, double radius, double lon_cente
         return false;
     }
 
-    // Calculate delta longitude
     double lambda = delta_longitude(lon, lon_center);
 
-    // Parametric latitude
-    double phi = lat;
-    double sin_phi = sin(phi);
-
-    // Calculate parametric angle theta
-    // sin(theta) = (sqrt(3)/2) * sin(phi)
-    double sin_theta = sqrt(3.0) / 2.0 * sin_phi;
-
-    // Clamp to valid range
-    if (sin_theta > 1.0) sin_theta = 1.0;
-    if (sin_theta < -1.0) sin_theta = -1.0;
-
+    double sin_theta = EE_M * sin(lat);
+    sin_theta = fmax(-1.0, fmin(1.0, sin_theta));
     double theta = asin(sin_theta);
 
-    // Calculate powers of theta
     double theta2 = theta * theta;
     double theta6 = theta2 * theta2 * theta2;
     double theta8 = theta6 * theta2;
 
-    // Calculate polynomial terms
     double cos_theta = cos(theta);
 
-    // Denominator for x coordinate
-    double denom = 3.0 * (9.0 * A4 * theta6 + 7.0 * A3 * theta6 + 3.0 * A2 * theta2 + A1);
+    /* dy/dtheta = A1 + 3*A2*theta^2 + 7*A3*theta^6 + 9*A4*theta^8 */
+    double dy_dtheta =
+        EE_A1 + 3.0 * EE_A2 * theta2 + 7.0 * EE_A3 * theta6 + 9.0 * EE_A4 * theta8;
 
-    // Calculate coordinates
-    // Note: The standard R in the paper is approximately sqrt(3)/2 ≈ 0.8660254
-    // We scale by our custom radius
+    /* x = (2*sqrt(3) * R * lambda * cos(theta)) / (3 * dy_dtheta) */
+    *x = (4.0 * EE_M * radius * lambda * cos_theta) / (3.0 * dy_dtheta);
 
-    // x = (2 * sqrt(3) * R * lambda * cos(theta)) / (3 * denom)
-    *x = (2.0 * sqrt(3.0) * radius * lambda * cos_theta) / denom;
-
-    // y = R * A1 * theta + R * A2 * theta^3 + R * A3 * theta^7 + R * A4 * theta^9
-    // Factored: y = R * theta * (A1 + A2*theta^2 + A3*theta^6 + A4*theta^8)
-    *y = radius * theta * (A1 + A2 * theta2 + A3 * theta6 + A4 * theta8);
+    /* y = R * (A1*theta + A2*theta^3 + A3*theta^7 + A4*theta^9) */
+    *y = radius * (EE_A1 * theta + EE_A2 * theta * theta2 + EE_A3 * theta * theta6 +
+                   EE_A4 * theta * theta8);
 
     return true;
 }
@@ -394,91 +379,54 @@ bool equal_earth_inverse(double x, double y, double radius, double lon_center, d
         return false;
     }
 
-    // Normalize y coordinate
-    double y_scaled = y / radius;
-
-    // Maximum theta value
-    double theta_max = asin(sqrt(3.0) / 2.0);  // ≈ 1.0472 radians ≈ 60°
-
-    // Check if y is in valid range
-    double y_max = theta_max * (A1 + A2 * theta_max * theta_max + A3 * pow(theta_max, 6) +
-                                A4 * pow(theta_max, 8));
-
-    if (fabs(y_scaled) > y_max + EPSILON) {
+    if (!isfinite(x) || !isfinite(y)) {
         return false;
     }
 
-    // Solve for theta using Newton-Raphson iteration
-    // Equation: f(theta) = theta * (A1 + A2*theta^2 + A3*theta^6 + A4*theta^8) - y/R = 0
+    double y_scaled = y / radius;
 
-    // Initial guess: for small y, theta ≈ y/A1
-    double theta = y_scaled / A1;
+    /* Initial guess */
+    double theta = y_scaled / EE_A1;
 
-    // Clamp initial guess
-    if (theta > theta_max) theta = theta_max;
-    if (theta < -theta_max) theta = -theta_max;
-
-    // Newton-Raphson iteration
     for (int i = 0; i < MAX_ITERATIONS; i++) {
         double theta2 = theta * theta;
-        double theta4 = theta2 * theta2;
-        double theta6 = theta4 * theta2;
+        double theta6 = theta2 * theta2 * theta2;
         double theta8 = theta6 * theta2;
 
-        // f(theta) = theta * (A1 + A2*theta^2 + A3*theta^6 + A4*theta^8) - y/R
-        double polynomial = A1 + A2 * theta2 + A3 * theta6 + A4 * theta8;
-        double f = theta * polynomial - y_scaled;
+        double f = EE_A1 * theta + EE_A2 * theta * theta2 + EE_A3 * theta * theta6 +
+                   EE_A4 * theta * theta8 - y_scaled;
 
-        // f'(theta) = polynomial + theta * d(polynomial)/d(theta)
-        // d(polynomial)/d(theta) = 2*A2*theta + 6*A3*theta^5 + 8*A4*theta^7
-        double d_polynomial =
-            2.0 * A2 * theta + 6.0 * A3 * theta * theta4 + 8.0 * A4 * theta * theta6;
-        double df = polynomial + theta * d_polynomial;
+        double df = EE_A1 + 3.0 * EE_A2 * theta2 + 7.0 * EE_A3 * theta6 + 9.0 * EE_A4 * theta8;
 
-        if (fabs(df) < EPSILON) {
-            return false;
-        }
+        if (fabs(df) < EPSILON) break;
 
         double delta = f / df;
         theta -= delta;
 
-        if (fabs(delta) < EPSILON) {
-            break;
-        }
-
-        // Clamp theta to valid range during iteration
-        if (theta > theta_max) theta = theta_max;
-        if (theta < -theta_max) theta = -theta_max;
+        if (fabs(delta) < EPSILON) break;
     }
 
-    // Calculate latitude from theta
-    // sin(phi) = 2 * sin(theta) / sqrt(3)
-    double sin_phi = 2.0 * sin(theta) / sqrt(3.0);
-
-    // Clamp to valid range
-    if (sin_phi > 1.0) sin_phi = 1.0;
-    if (sin_phi < -1.0) sin_phi = -1.0;
-
+    /* Latitude: sin(phi) = 2*sin(theta)/sqrt(3) = sin(theta)/M */
+    double sin_phi = sin(theta) / EE_M;
+    sin_phi = fmax(-1.0, fmin(1.0, sin_phi));
     *lat = asin(sin_phi);
 
-    // Calculate longitude
+    /* Longitude */
     double cos_theta = cos(theta);
-
-    // Handle poles
     if (fabs(cos_theta) < EPSILON) {
         *lon = lon_center;
         return true;
     }
 
-    // Calculate delta longitude
     double theta2 = theta * theta;
     double theta6 = theta2 * theta2 * theta2;
+    double theta8 = theta6 * theta2;
 
-    double denom = 3.0 * (9.0 * A4 * theta6 + 7.0 * A3 * theta6 + 3.0 * A2 * theta2 + A1);
+    double dy_dtheta =
+        EE_A1 + 3.0 * EE_A2 * theta2 + 7.0 * EE_A3 * theta6 + 9.0 * EE_A4 * theta8;
 
-    double lambda = (x * denom) / (2.0 * sqrt(3.0) * radius * cos_theta);
+    double lambda = 3.0 * x * dy_dtheta / (4.0 * EE_M * radius * cos_theta);
 
-    // Add central meridian
     *lon = normalize_angle(lon_center + lambda);
 
     return true;
