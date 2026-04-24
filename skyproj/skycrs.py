@@ -35,7 +35,6 @@ class SkyCRS:
     """
     def __init__(self, name=None, radius=RADIUS, **kwargs):
         self._name = name
-        print("second name: ", name)
 
         self._plot_geodesics = True
 
@@ -62,8 +61,6 @@ class SkyCRS:
             self._projection_dict["projection"] = ALBERS
         elif name == "obmoll":
             self._projection_dict["projection"] = OBLIQUE_MOLLWEIDE
-
-        print("value: ", self._projection_dict["projection"], MBTFPQ)
 
     def with_new_center(self, lon_0, lat_0=None):
         """Create a new SkyCRS with a new lon_0/lat_0.
