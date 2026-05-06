@@ -35,22 +35,14 @@ jobs:
     strategy:
       matrix:
         include:
-          # Linux x86_64 (builds inside manylinux container)
           - os: ubuntu-latest
             cibw_archs: "x86_64"
-          # Linux aarch64 (emulated via QEMU)
-          - os: ubuntu-latest
+          - os: ubuntu-latest-arm
             cibw_archs: "aarch64"
-          # macOS Intel
-          - os: macos-13
-            cibw_archs: "x86_64"
-          # macOS Apple Silicon
           - os: macos-latest
             cibw_archs: "arm64"
-          # Windows x86_64
           - os: windows-latest
             cibw_archs: "AMD64"
-          # Windows ARM64 (cross-compiled)
           - os: windows-latest
             cibw_archs: "ARM64"
     steps:
@@ -58,20 +50,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Required for Linux aarch64 builds
-      - name: Set up QEMU
-        if: runner.os == 'Linux'
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm64
-
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.23
         env:
           CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-* cp314-*"
           CIBW_SKIP: "*-musllinux_*"
           CIBW_ARCHS: ${{ matrix.cibw_archs }}
-          CIBW_TEST_SKIP: "*-win_arm64"  # Can't test ARM64 on x86_64 runner
+          CIBW_TEST_SKIP: "*-win_arm64"
 
       - uses: actions/upload-artifact@v6
         with:
