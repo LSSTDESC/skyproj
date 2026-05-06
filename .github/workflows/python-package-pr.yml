@@ -44,7 +44,7 @@ jobs:
         shell: bash -l {0}
         run: |
           conda install -y --file requirements.txt --file requirements-dev.txt python-build
-          conda install -y pip proj
+          conda install -y pip
 
       - name: Install code
         shell: bash -l {0}

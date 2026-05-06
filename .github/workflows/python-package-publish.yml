@@ -14,7 +14,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          # Need to clone everything to determine version from git.
           fetch-depth: 0
 
       - uses: actions/setup-python@v6
@@ -23,8 +22,6 @@ jobs:
 
       - name: Build sdist
         run: |
-          sudo apt-get update
-          sudo apt-get install -y proj-bin libproj-dev
           pip install build
           python -m build --sdist
 
@@ -39,95 +36,27 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
-
     steps:
       - uses: actions/checkout@v6
         with:
-          # Need to clone everything to determine version from git.
           fetch-depth: 0
 
-      - uses: conda-incubator/setup-miniconda@v3
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
-          miniforge-version: latest
-          channels: conda-forge,defaults
-          channel-priority: strict
-          show-channel-urls: true
 
-      - name: Install dependencies
-        shell: bash -l {0}
+      - name: Install build dependencies
         run: |
-          conda install -y setuptools wheel pip setuptools_scm tomli
-          conda install -y --file requirements.txt
-          conda install -y python-build cmake sqlite pip c-compiler cxx-compiler
-
-      - name: Build minimal PROJ
-        shell: bash -l {0}
-        run: |
-          PROJ_VERSION=9.8.0
-          curl -L https://download.osgeo.org/proj/proj-${PROJ_VERSION}.tar.gz -o proj.tar.gz
-          tar xzf proj.tar.gz
-          cd proj-${PROJ_VERSION}
-
-          mkdir build
-          cd build
-
-          # Minimal build - disable most features
-          cmake .. \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX \
-            -DBUILD_SHARED_LIBS=ON \
-            -DBUILD_PROJ=ON \
-            -DENABLE_TIFF=OFF \
-            -DENABLE_CURL=OFF \
-            -DBUILD_TESTING=OFF \
-            -DBUILD_PROJSYNC=OFF \
-            -DBUILD_CCT=OFF \
-            -DBUILD_CS2CS=OFF \
-            -DBUILD_GEOD=OFF \
-            -DBUILD_GIE=OFF \
-            -DBUILD_PROJINFO=OFF
-
-          cmake --build . --config Release
-          cmake --install .
-
-          cd ../..
-
-          # Clean up after install.
-          rm -r proj-${PROJ_VERSION}
+          pip install build setuptools setuptools_scm wheel
 
       - name: Build wheel
-        shell: bash -l {0}
         run: |
-          python setup.py bdist_wheel
-
-      - name: Install repair tools
-        shell: bash -l {0}
-        run: |
-          if [ "$RUNNER_OS" == "Linux" ]; then
-            pip install auditwheel patchelf
-          elif [ "$RUNNER_OS" == "macOS" ]; then
-            pip install delocate
-          elif [ "$RUNNER_OS" == "Windows" ]; then
-            pip install delvewheel
-          fi
-
-      - name: Repair wheel
-        shell: bash -l {0}
-        run: |
-          mkdir -p wheelhouse
-          if [ "$RUNNER_OS" == "Linux" ]; then
-            auditwheel repair dist/*.whl -w wheelhouse/
-          elif [ "$RUNNER_OS" == "macOS" ]; then
-            delocate-wheel -w wheelhouse/ dist/*.whl
-          elif [ "$RUNNER_OS" == "Windows" ]; then
-            delvewheel repair dist/*.whl -w wheelhouse/
-          fi
+          python -m build --wheel
 
       - uses: actions/upload-artifact@v6
         with:
           name: wheels-${{ matrix.os }}-py${{ matrix.python-version }}
-          path: ./wheelhouse/*.whl
+          path: dist/*.whl
 
   pypi_upload:
     needs: [pypi_build_sdist, pypi_build_wheels]
@@ -140,11 +69,13 @@ jobs:
           path: dist
           pattern: 'wheels-*'
           merge-multiple: true
+
       - uses: actions/download-artifact@v7
         with:
           path: dist
           pattern: 'sdist'
           merge-multiple: true
+
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
           user: __token__

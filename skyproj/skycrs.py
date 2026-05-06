@@ -1,7 +1,18 @@
-import math
 import numpy as np
+import warnings
 
-from ._cskyproj import transform
+from ._cskyproj import (
+    transform,
+    PLATE_CARREE,
+    MOLLWEIDE,
+    EQUAL_EARTH,
+    MBTFPQ,
+    HAMMER,
+    LAEA,
+    GNOMONIC,
+    ALBERS,
+    OBLIQUE_MOLLWEIDE,
+)
 
 __all__ = ["SkyCRS", "PlateCarreeCRS", "McBrydeThomasFlatPolarQuarticCRS", "MollweideCRS",
            "HammerCRS", "EqualEarthCRS", "LambertAzimuthalEqualAreaCRS", "GnomonicCRS",
@@ -20,18 +31,36 @@ class SkyCRS:
     name : `str`, optional
         Name of projection CRS type.
     **kwargs : `dict`, optional
-        Additional kwargs for PROJ4 parameters.
+        Additional kwargs for projection.
     """
     def __init__(self, name=None, radius=RADIUS, **kwargs):
         self._name = name
-        self.proj4_params = {"R": radius}
-        self.proj4_params.update(**kwargs)
-
-        self.proj_string = ""
-        for key, value in self.proj4_params.items():
-            self.proj_string += f"{key}={str(value)} "
 
         self._plot_geodesics = True
+
+        self._projection_dict = {
+            "radius": radius,
+        }
+        self._projection_dict.update(**kwargs)
+
+        if name == "cyl":
+            self._projection_dict["projection"] = PLATE_CARREE
+        elif name == "moll":
+            self._projection_dict["projection"] = MOLLWEIDE
+        elif name == "eqearth":
+            self._projection_dict["projection"] = EQUAL_EARTH
+        elif name == "mbtfpq":
+            self._projection_dict["projection"] = MBTFPQ
+        elif name == "hammer":
+            self._projection_dict["projection"] = HAMMER
+        elif name == "laea":
+            self._projection_dict["projection"] = LAEA
+        elif name == "gnom":
+            self._projection_dict["projection"] = GNOMONIC
+        elif name == "aea":
+            self._projection_dict["projection"] = ALBERS
+        elif name == "obmoll":
+            self._projection_dict["projection"] = OBLIQUE_MOLLWEIDE
 
     def with_new_center(self, lon_0, lat_0=None):
         """Create a new SkyCRS with a new lon_0/lat_0.
@@ -48,12 +77,12 @@ class SkyCRS:
         crs : `skyproj.SkyCRS`
             New projection CRS.
         """
-        proj4_params = self.proj4_params.copy()
-        proj4_params['lon_0'] = lon_0
+        projection_dict = self._projection_dict.copy()
+        projection_dict["lon_0"] = lon_0
         if lat_0 is not None:
-            proj4_params['lat_0'] = lat_0
+            projection_dict["lat_0"] = lat_0
 
-        return self.__class__(**proj4_params)
+        return self.__class__(name=self._name, **projection_dict)
 
     def transform_points(self, x, y, inverse=False):
         """Transform points from lon/lat to this CRS or the inverse.
@@ -80,7 +109,10 @@ class SkyCRS:
         x = x.ravel()
         y = y.ravel()
 
-        result = transform(self.proj_string, x, y, inverse=inverse)
+        if inverse:
+            result = transform(self._projection_dict, x, y, inverse=inverse)
+        else:
+            result = transform(self._projection_dict, x, y, inverse=inverse)
 
         if len(result_shape) > 2:
             return result.reshape(result_shape)
@@ -89,28 +121,19 @@ class SkyCRS:
 
     @property
     def lon_0(self):
-        return self.proj4_params['lon_0']
+        return self._projection_dict["lon_0"]
 
     @property
     def lat_0(self):
-        if 'lat_0' in self.proj4_params:
-            return self.proj4_params['lat_0']
-        else:
-            return None
+        return self._projection_dict.get("lat_0", None)
 
     @property
     def lat_1(self):
-        if 'lat_1' in self.proj4_params:
-            return self.proj4_params['lat_1']
-        else:
-            return None
+        return self._projection_dict.get("lat_1", None)
 
     @property
     def lat_2(self):
-        if 'lat_2' in self.proj4_params:
-            return self.proj4_params['lat_2']
-        else:
-            return None
+        return self._projection_dict.get("lat_2", None)
 
     @property
     def name(self):
@@ -118,7 +141,27 @@ class SkyCRS:
 
     @property
     def radius(self):
-        return self.proj4_params['R']
+        return self._projection_dict["radius"]
+
+    @property
+    def proj4_params(self):
+        warnings.warn("Use of proj4_params has been deprecated.", FutureWarning)
+
+        proj4_params = {
+            "R": self.radius,
+            "proj": self.name,
+        }
+        for key in ["lon_0", "lat_0", "lat_1", "lat_2"]:
+            if key in self._projection_dict:
+                proj4_params[key] = self._projection_dict[key]
+
+        if self.name == "obmoll":
+            proj4_params["proj"] = "ob_tran"
+            proj4_params["o_proj"] = "moll"
+            proj4_params["o_lat_p"] = self._projection_dict["lat_p"]
+            proj4_params["o_lon_p"] = self._projection_dict["lon_p"]
+
+        return proj4_params
 
     def set_plot_geodesics(self, plot_geodesics):
         self._plot_geodesics = plot_geodesics
@@ -151,16 +194,10 @@ class PlateCarreeCRS(SkyCRS):
     radius : `float`, optional
         Radius of projected sphere.
     **kwargs : `dict`, optional
-        Additional kwargs for PROJ4 parameters.
+        Additional kwargs for projection.
     """
     def __init__(self, name='cyl', lon_0=0.0, radius=RADIUS, **kwargs):
-        proj4_params = {'proj': 'eqc',
-                        'lon_0': lon_0,
-                        'to_meter': math.radians(1)*radius,
-                        'vto_meter': 1}
-        proj4_params = {**proj4_params, **kwargs}
-
-        super().__init__(name=name, radius=radius, **proj4_params)
+        super().__init__(name=name, radius=radius, lon_0=lon_0, **kwargs)
 
 
 class McBrydeThomasFlatPolarQuarticCRS(SkyCRS):
@@ -175,14 +212,10 @@ class McBrydeThomasFlatPolarQuarticCRS(SkyCRS):
     radius : `float`, optional
         Radius of projected sphere.
     **kwargs : `dict`, optional
-        Additional kwargs for PROJ4 parameters.
+        Additional kwargs for projection.
     """
     def __init__(self, name='mbtfpq', lon_0=0.0, radius=RADIUS, **kwargs):
-        proj4_params = {'proj': 'mbtfpq',
-                        'lon_0': lon_0}
-        proj4_params = {**proj4_params, **kwargs}
-
-        super().__init__(name=name, radius=radius, **proj4_params)
+        super().__init__(name=name, radius=radius, lon_0=lon_0, **kwargs)
 
 
 class MollweideCRS(SkyCRS):
@@ -197,14 +230,10 @@ class MollweideCRS(SkyCRS):
     radius : `float`, optional
         Radius of projected sphere.
     **kwargs : `dict`, optional
-        Additional kwargs for PROJ4 parameters.
+        Additional kwargs for projection.
     """
     def __init__(self, name='moll', lon_0=0.0, radius=RADIUS, **kwargs):
-        proj4_params = {'proj': 'moll',
-                        'lon_0': lon_0}
-        proj4_params = {**proj4_params, **kwargs}
-
-        super().__init__(name=name, radius=radius, **proj4_params)
+        super().__init__(name=name, radius=radius, lon_0=lon_0, **kwargs)
 
 
 class ObliqueMollweideCRS(SkyCRS):
@@ -223,21 +252,14 @@ class ObliqueMollweideCRS(SkyCRS):
     radius : `float`, optional
         Radius of projected sphere.
     **kwargs : `dict`, optional
-        Additional kwargs for PROJ4 parameters.
+        Additional kwargs for projection.
     """
     def __init__(self, name='obmoll', lon_0=0.0, lat_p=90.0, lon_p=0.0, radius=RADIUS, **kwargs):
-        proj4_params = {'proj': 'ob_tran',
-                        'o_proj': 'moll',
-                        'o_lat_p': lat_p,
-                        'o_lon_p': lon_p,
-                        'lon_0': lon_0}
-        proj4_params = {**proj4_params, **kwargs}
-
-        super().__init__(name=name, radius=radius, **proj4_params)
+        super().__init__(name=name, radius=radius, lon_0=lon_0, lat_p=lat_p, lon_p=lon_p, **kwargs)
 
     @property
     def lon_0(self):
-        return self.proj4_params['lon_0'] + self.proj4_params['o_lon_p']
+        return self._projection_dict["lon_0"] + self._projection_dict["lon_p"]
 
 
 class HammerCRS(SkyCRS):
@@ -252,14 +274,10 @@ class HammerCRS(SkyCRS):
     radius : `float`, optional
         Radius of projected sphere.
     **kwargs : `dict`, optional
-        Additional kwargs for PROJ4 parameters.
+        Additional kwargs for projection.
     """
     def __init__(self, name='hammer', lon_0=0.0, radius=RADIUS, **kwargs):
-        proj4_params = {'proj': 'hammer',
-                        'lon_0': lon_0}
-        proj4_params = {**proj4_params, **kwargs}
-
-        super().__init__(name=name, radius=radius, **proj4_params)
+        super().__init__(name=name, radius=radius, lon_0=lon_0, **kwargs)
 
 
 class EqualEarthCRS(SkyCRS):
@@ -274,14 +292,10 @@ class EqualEarthCRS(SkyCRS):
     radius : `float`, optional
         Radius of projected sphere.
     **kwargs : `dict`, optional
-        Additional kwargs for PROJ4 parameters.
+        Additional kwargs for projection.
     """
     def __init__(self, name='eqearth', lon_0=0.0, radius=RADIUS, **kwargs):
-        proj4_params = {'proj': 'eqearth',
-                        'lon_0': lon_0}
-        proj4_params = {**proj4_params, **kwargs}
-
-        super().__init__(name=name, radius=radius, **proj4_params)
+        super().__init__(name=name, radius=radius, lon_0=lon_0, **kwargs)
 
 
 class LambertAzimuthalEqualAreaCRS(SkyCRS):
@@ -298,15 +312,10 @@ class LambertAzimuthalEqualAreaCRS(SkyCRS):
     radius : `float`, optional
         Radius of projected sphere.
     **kwargs : `dict`, optional
-        Additional kwargs for PROJ4 parameters.
+        Additional kwargs for projection.
     """
     def __init__(self, name='laea', lon_0=0.0, lat_0=0.0, radius=RADIUS, **kwargs):
-        proj4_params = {'proj': 'laea',
-                        'lon_0': lon_0,
-                        'lat_0': lat_0}
-        proj4_params = {**proj4_params, **kwargs}
-
-        super().__init__(name=name, radius=radius, **proj4_params)
+        super().__init__(name=name, radius=radius, lon_0=lon_0, lat_0=lat_0, **kwargs)
 
 
 class GnomonicCRS(SkyCRS):
@@ -323,15 +332,10 @@ class GnomonicCRS(SkyCRS):
     radius : `float`, optional
         Radius of projected sphere.
     **kwargs : `dict`, optional
-        Additional kwargs for PROJ4 parameters.
+        Additional kwargs for projection.
     """
     def __init__(self, name='gnom', lon_0=0.0, lat_0=0.0, radius=RADIUS, **kwargs):
-        proj4_params = {'proj': 'gnom',
-                        'lon_0': lon_0,
-                        'lat_0': lat_0}
-        proj4_params = {**proj4_params, **kwargs}
-
-        super().__init__(name=name, radius=radius, **proj4_params)
+        super().__init__(name=name, radius=radius, lon_0=lon_0, lat_0=lat_0, **kwargs)
 
 
 class AlbersEqualAreaCRS(SkyCRS):
@@ -350,16 +354,10 @@ class AlbersEqualAreaCRS(SkyCRS):
     radius : `float`, optional
         Radius of projected sphere.
     **kwargs : `dict`, optional
-        Additional kwargs for PROJ4 parameters.
+        Additional kwargs for projection.
     """
     def __init__(self, name='aea', lon_0=0.0, lat_1=15.0, lat_2=45.0, radius=RADIUS, **kwargs):
-        proj4_params = {'proj': 'aea',
-                        'lon_0': lon_0,
-                        'lat_1': lat_1,
-                        'lat_2': lat_2}
-        proj4_params = {**proj4_params, **kwargs}
-
-        super().__init__(name=name, radius=radius, **proj4_params)
+        super().__init__(name=name, radius=radius, lon_0=lon_0, lat_1=lat_1, lat_2=lat_2, **kwargs)
 
 
 _crss = {

@@ -7,3 +7,4 @@ setuptools>=46
 wheel
 setuptools_scm>=7
 tomli>=1.0.0
+pyproj

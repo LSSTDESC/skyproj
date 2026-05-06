@@ -2,6 +2,7 @@
 
 #define _SKYPROJ_H
 
+#include "str_dict.h"
 #include <numpy/arrayobject.h>
 
 #define ERR_SIZE 256
@@ -13,17 +14,28 @@
 #define SP_D2R SP_PI / 180.0
 #define SP_R2D 180.0 / SP_PI
 
+enum NoProjMap {
+    PLATE_CARREE,
+    MOLLWEIDE,
+    EQUAL_EARTH,
+    MBTFPQ,
+    HAMMER,
+    LAEA,
+    GNOMONIC,
+    ALBERS,
+    OBLIQUE_MOLLWEIDE,
+};
+
 typedef struct {
     NpyIter *iter;
     npy_intp start_idx;
     npy_intp end_idx;
+    StrDict *projection_dict;
     int degrees;
     int inverse;
-    const char *proj_str;
     double *a2b2s;
     char err[ERR_SIZE];
     bool failed;
 } TransformThreadData;
-
 
 #endif
