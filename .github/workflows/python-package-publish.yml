@@ -34,29 +34,49 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        include:
+          # Linux x86_64 (builds inside manylinux container)
+          - os: ubuntu-latest
+            cibw_archs: "x86_64"
+          # Linux aarch64 (emulated via QEMU)
+          - os: ubuntu-latest
+            cibw_archs: "aarch64"
+          # macOS Intel
+          - os: macos-13
+            cibw_archs: "x86_64"
+          # macOS Apple Silicon
+          - os: macos-latest
+            cibw_archs: "arm64"
+          # Windows x86_64
+          - os: windows-latest
+            cibw_archs: "AMD64"
+          # Windows ARM64 (cross-compiled)
+          - os: windows-latest
+            cibw_archs: "ARM64"
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@v6
+      # Required for Linux aarch64 builds
+      - name: Set up QEMU
+        if: runner.os == 'Linux'
+        uses: docker/setup-qemu-action@v3
         with:
-          python-version: ${{ matrix.python-version }}
+          platforms: arm64
 
-      - name: Install build dependencies
-        run: |
-          pip install build setuptools setuptools_scm wheel
-
-      - name: Build wheel
-        run: |
-          python -m build --wheel
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.23
+        env:
+          CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-* cp314-*"
+          CIBW_SKIP: "*-musllinux_*"
+          CIBW_ARCHS: ${{ matrix.cibw_archs }}
+          CIBW_TEST_SKIP: "*-win_arm64"  # Can't test ARM64 on x86_64 runner
 
       - uses: actions/upload-artifact@v6
         with:
-          name: wheels-${{ matrix.os }}-py${{ matrix.python-version }}
-          path: dist/*.whl
+          name: wheels-${{ matrix.os }}-${{ matrix.cibw_archs }}
+          path: wheelhouse/*.whl
 
   pypi_upload:
     needs: [pypi_build_sdist, pypi_build_wheels]
