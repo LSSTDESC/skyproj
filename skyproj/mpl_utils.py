@@ -55,12 +55,32 @@ import mpl_toolkits.axisartist.angle_helper as angle_helper
 
 import matplotlib.text as mtext
 from matplotlib.transforms import Affine2D
-from matplotlib import _api
 
 from .utils import wrap_values
 
 
 __all__ = ['WrappedFormatterDMS', 'ExtremeFinderWrapped', 'SkyTickLabels']
+
+
+def check_getitem(mapping, /, **kwargs):
+    """
+    *kwargs* must consist of a single *key, value* pair.  If *key* is in
+    *mapping*, return ``mapping[value]``; else, raise an appropriate
+    ValueError.
+
+    Examples
+    --------
+    >>> check_getitem({"foo": "bar"}, arg=arg)
+    """
+    if len(kwargs) != 1:
+        raise ValueError("check_getitem takes a single keyword argument")
+    (k, v), = kwargs.items()
+    try:
+        return mapping[v]
+    except KeyError:
+        raise ValueError(
+            f"{v!r} is not a valid value for {k}; supported values are "
+            f"{', '.join(map(repr, mapping))}") from None
 
 
 class WrappedFormatterDMS(angle_helper.FormatterDMS):
@@ -176,6 +196,12 @@ class ExtremeFinderWrapped(ExtremeFinderSimple):
 
         return lon_min, lon_max, lat_min, lat_max
 
+    def _add_pad(self, x_min, x_max, y_min, y_max):
+        """Perform the padding mentioned in `__call__`."""
+        dx = (x_max - x_min) / self.nx
+        dy = (y_max - y_min) / self.ny
+        return x_min - dx, x_max + dx, y_min - dy, y_max + dy
+
 
 class SkyTickLabels(mtext.Text):
     def __init__(self, *, axis_direction="bottom", visible=True, **kwargs):
@@ -233,7 +259,7 @@ class SkyTickLabels(mtext.Text):
         ----------
         d : {"left", "bottom", "right", "top"}
         """
-        va, ha = _api.check_getitem(self._default_alignments, d=d)
+        va, ha = check_getitem(self._default_alignments, d=d)
         self.set_va(va)
         self.set_ha(ha)
 
@@ -245,7 +271,7 @@ class SkyTickLabels(mtext.Text):
         ----------
         d : {"left", "bottom", "right", "top"}
         """
-        self.set_rotation(_api.check_getitem(self._default_angles, d=d))
+        self.set_rotation(check_getitem(self._default_angles, d=d))
 
     def set_axis_direction(self, d):
         """
