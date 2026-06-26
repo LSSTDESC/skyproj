@@ -50,17 +50,36 @@
 
 import numpy as np
 
-from mpl_toolkits.axisartist.grid_finder import ExtremeFinderSimple
 import mpl_toolkits.axisartist.angle_helper as angle_helper
 
 import matplotlib.text as mtext
 from matplotlib.transforms import Affine2D
-from matplotlib import _api
 
 from .utils import wrap_values
 
 
 __all__ = ['WrappedFormatterDMS', 'ExtremeFinderWrapped', 'SkyTickLabels']
+
+
+def check_getitem(mapping, /, **kwargs):
+    """
+    *kwargs* must consist of a single *key, value* pair.  If *key* is in
+    *mapping*, return ``mapping[value]``; else, raise an appropriate
+    ValueError.
+
+    Examples
+    --------
+    >>> check_getitem({"foo": "bar"}, arg=arg)
+    """
+    if len(kwargs) != 1:
+        raise ValueError("check_getitem takes a single keyword argument")
+    (k, v), = kwargs.items()
+    try:
+        return mapping[v]
+    except KeyError:
+        raise ValueError(
+            f"{v!r} is not a valid value for {k}; supported values are "
+            f"{', '.join(map(repr, mapping))}") from None
 
 
 class WrappedFormatterDMS(angle_helper.FormatterDMS):
@@ -111,6 +130,52 @@ class WrappedFormatterDMS(angle_helper.FormatterDMS):
 
     def __call__(self, direction, factor, values):
         return super().__call__(direction, factor, self._wrap_values(factor, values))
+
+
+class ExtremeFinderSimple:
+    """
+    A helper class to figure out the range of grid lines that need to be drawn.
+    """
+
+    def __init__(self, nx, ny):
+        """
+        Parameters
+        ----------
+        nx, ny : int
+            The number of samples in each direction.
+        """
+        self.nx = nx
+        self.ny = ny
+
+    def __call__(self, transform_xy, x1, y1, x2, y2):
+        """
+        Compute an approximation of the bounding box obtained by applying
+        *transform_xy* to the box delimited by ``(x1, y1, x2, y2)``.
+
+        The intended use is to have ``(x1, y1, x2, y2)`` in axes coordinates,
+        and have *transform_xy* be the transform from axes coordinates to data
+        coordinates; this method then returns the range of data coordinates
+        that span the actual axes.
+
+        The computation is done by sampling ``nx * ny`` equispaced points in
+        the ``(x1, y1, x2, y2)`` box and finding the resulting points with
+        extremal coordinates; then adding some padding to take into account the
+        finite sampling.
+
+        As each sampling step covers a relative range of *1/nx* or *1/ny*,
+        the padding is computed by expanding the span covered by the extremal
+        coordinates by these fractions.
+        """
+        x, y = np.meshgrid(
+            np.linspace(x1, x2, self.nx), np.linspace(y1, y2, self.ny))
+        xt, yt = transform_xy(np.ravel(x), np.ravel(y))
+        return self._add_pad(xt.min(), xt.max(), yt.min(), yt.max())
+
+    def _add_pad(self, x_min, x_max, y_min, y_max):
+        """Perform the padding mentioned in `__call__`."""
+        dx = (x_max - x_min) / self.nx
+        dy = (y_max - y_min) / self.ny
+        return x_min - dx, x_max + dx, y_min - dy, y_max + dy
 
 
 class ExtremeFinderWrapped(ExtremeFinderSimple):
@@ -233,7 +298,7 @@ class SkyTickLabels(mtext.Text):
         ----------
         d : {"left", "bottom", "right", "top"}
         """
-        va, ha = _api.check_getitem(self._default_alignments, d=d)
+        va, ha = check_getitem(self._default_alignments, d=d)
         self.set_va(va)
         self.set_ha(ha)
 
@@ -245,7 +310,7 @@ class SkyTickLabels(mtext.Text):
         ----------
         d : {"left", "bottom", "right", "top"}
         """
-        self.set_rotation(_api.check_getitem(self._default_angles, d=d))
+        self.set_rotation(check_getitem(self._default_angles, d=d))
 
     def set_axis_direction(self, d):
         """
