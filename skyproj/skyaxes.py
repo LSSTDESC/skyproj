@@ -526,6 +526,17 @@ class SkyAxes(matplotlib.axes.Axes):
 
         return result
 
+    @_add_lonlat
+    def add_collection(self, collection, **kwargs):
+        # docstring inherited.
+        transform = kwargs.pop("transform", None)
+
+        collection.set_transform(transform)
+
+        result = super().add_collection(collection, **kwargs)
+
+        return result
+
     @property
     def lon_0(self):
         return self.projection.lon_0
