@@ -77,12 +77,12 @@ class SkyTransform(matplotlib.transforms.Transform):
         is_polygon = False
         # Make sure we don't simplify the path segments, which gets coordinate
         # systems all messed up.
-        for vertex, code in path.iter_segments(simplify=False):
+        for vertex, code in path.iter_segments(simplify=False, curves=False):
             if last_vertex is None or code == Path.MOVETO:
                 lonlats = np.vstack((lonlats, [vertex[0], vertex[1]]))
                 codes.append(Path.MOVETO)
                 last_vertex = vertex
-            elif code in (Path.LINETO, Path.CLOSEPOLY, None):
+            elif code in (Path.LINETO, Path.CURVE4, Path.CLOSEPOLY, None):
                 # Connect the last vertex
                 if self._plot_geodesics:
                     # Geodesic segment.
@@ -295,7 +295,7 @@ class SkyTransform(matplotlib.transforms.Transform):
         codes = []
 
         last_vertex = None
-        for vertex, code in path.iter_segments(simplify=False):
+        for vertex, code in path.iter_segments(simplify=False, curves=False):
             if code == Path.MOVETO:
                 vertex_xform = self._proj.transform_points(vertex[0], vertex[1], inverse=self._inverse)
                 vertices_xform.extend([(vertex_xform[0][0], vertex_xform[0][1])])
