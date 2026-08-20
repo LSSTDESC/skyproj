@@ -18,7 +18,7 @@ def test_patches_mcbryde(tmp_path, lon_0):
     """Test drawing patches."""
     plt.rcParams.update(plt.rcParamsDefault)
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax, lon_0=lon_0)
@@ -48,7 +48,7 @@ def test_patch_collection_mcbryde(tmp_path, lon_0):
     """Test drawing patches via collections."""
     plt.rcParams.update(plt.rcParamsDefault)
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax, lon_0=lon_0)
