@@ -515,6 +515,17 @@ class SkyAxes(matplotlib.axes.Axes):
         else:
             return self.plot(lons, lats, **kwargs)
 
+    @_add_lonlat
+    def add_patch(self, p, **kwargs):
+        # docstring inherited.
+        transform = kwargs.pop("transform", None)
+
+        p.set_transform(transform)
+
+        result = super().add_patch(p)
+
+        return result
+
     @property
     def lon_0(self):
         return self.projection.lon_0
