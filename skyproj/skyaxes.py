@@ -4,6 +4,7 @@ import warnings
 
 import matplotlib as mpl
 import matplotlib.axes
+import matplotlib.transforms
 
 from .utils import wrap_values
 from .skygrid import SkyGridlines, SkyGridHelper
@@ -520,7 +521,21 @@ class SkyAxes(matplotlib.axes.Axes):
         # docstring inherited.
         transform = kwargs.pop("transform", None)
 
-        p.set_transform(transform)
+        pre_existing = False
+        try:
+            _ = p.get_transform()
+        except ValueError:
+            # Raised if we already have a skyproj transform.
+            pre_existing = True
+
+        if pre_existing:
+            warnings.warn(
+                "Calling add_patch with a pre-existing skyproj transform is "
+                "deprecated. Please use add_patch directly",
+                FutureWarning,
+            )
+        else:
+            p.set_transform(transform)
 
         result = super().add_patch(p)
 
@@ -531,7 +546,21 @@ class SkyAxes(matplotlib.axes.Axes):
         # docstring inherited.
         transform = kwargs.pop("transform", None)
 
-        collection.set_transform(transform)
+        pre_existing = False
+        try:
+            _ = collection.get_transform()
+        except ValueError:
+            # Raised if we already have a skyproj transform.
+            pre_existing = True
+
+        if pre_existing:
+            warnings.warn(
+                "Calling add_collection with a pre-existing skyproj transform is "
+                "deprecated. Please use add_collection directly",
+                FutureWarning,
+            )
+        else:
+            collection.set_transform(transform)
 
         result = super().add_collection(collection, **kwargs)
 
