@@ -76,7 +76,7 @@ def test_healsparse(tmp_path):
 
     hspmap = _get_hspmap()
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -90,7 +90,7 @@ def test_healsparse(tmp_path):
         raise ImageComparisonFailure(err)
 
     # Try a different colormap on the zoom.
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -103,7 +103,7 @@ def test_healsparse(tmp_path):
     if err:
         raise ImageComparisonFailure(err)
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax, lon_0=-175.0)
@@ -116,7 +116,7 @@ def test_healsparse(tmp_path):
     if err:
         raise ImageComparisonFailure(err)
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -129,7 +129,7 @@ def test_healsparse(tmp_path):
     if err:
         raise ImageComparisonFailure(err)
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.DESSkyproj(ax=ax)
@@ -151,7 +151,7 @@ def test_healsparse_log_scale(tmp_path):
 
     # Check that we get an error if we try a map with log scale and negative
     # range.
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -163,7 +163,7 @@ def test_healsparse_log_scale(tmp_path):
     # Offset the map so that we can use a log scale.
     hspmap += 10.0
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -184,7 +184,7 @@ def test_healsparse_input_norm(tmp_path):
     hspmap = _get_hspmap() + 10.0
 
     # First make sure we get matched vmin/vmax.
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -194,7 +194,7 @@ def test_healsparse_input_norm(tmp_path):
 
     norm = LogNorm(vmin=vmin, vmax=vmax)
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -209,7 +209,7 @@ def test_healsparse_input_norm(tmp_path):
         raise ImageComparisonFailure(err)
 
     # And test set_extent after setting the norm.
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -240,7 +240,7 @@ def test_healsparse_nanval(tmp_path):
 
     hspmap[hspmap.valid_pixels[0]] = np.nan
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -260,7 +260,7 @@ def test_healsparse_rasterize(tmp_path):
 
     hspmap = _get_hspmap()
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -295,7 +295,7 @@ def test_healsparse_rasterize(tmp_path):
     assert size_rasterized_on < size_rasterized_off
 
     # Test with a redraw event.
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -319,7 +319,7 @@ def test_healsparse_bool(tmp_path):
 
     hspmap = _get_hspmap_bool()
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -332,7 +332,7 @@ def test_healsparse_bool(tmp_path):
     if err:
         raise ImageComparisonFailure(err)
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -355,7 +355,7 @@ def test_healsparse_empty(tmp_path):
 
     hspmap = hsp.HealSparseMap.make_empty(32, 4096, np.float32)
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -367,7 +367,7 @@ def test_healsparse_empty(tmp_path):
     )
     plt.close(fig)
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -383,7 +383,7 @@ def test_healpix(tmp_path):
     hspmap = _get_hspmap()
     hpxmap = hspmap.generate_healpix_map()
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -397,7 +397,7 @@ def test_healpix(tmp_path):
     if err:
         raise ImageComparisonFailure(err)
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -411,7 +411,7 @@ def test_healpix(tmp_path):
     if err:
         raise ImageComparisonFailure(err)
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.DESSkyproj(ax=ax)
@@ -432,7 +432,7 @@ def test_healpix_log_scale(tmp_path):
     hspmap = _get_hspmap() + 10.0
     hpxmap = hspmap.generate_healpix_map()
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -454,7 +454,7 @@ def test_healpix_input_norm(tmp_path):
     hpxmap = hspmap.generate_healpix_map()
 
     # First make sure we get matched vmin/vmax.
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -464,7 +464,7 @@ def test_healpix_input_norm(tmp_path):
 
     norm = LogNorm(vmin=vmin, vmax=vmax)
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -490,7 +490,7 @@ def test_healpix_rasterized(tmp_path):
     hspmap = _get_hspmap()
     hpxmap = hspmap.generate_healpix_map()
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -504,7 +504,7 @@ def test_healpix_rasterized(tmp_path):
 
     size_rasterized_on = os.path.getsize(tmp_path / fname)
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -520,7 +520,7 @@ def test_healpix_rasterized(tmp_path):
     assert size_rasterized_on < size_rasterized_off
 
     # Test with a redraw event.
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -543,7 +543,7 @@ def test_healpix_laea(tmp_path):
     plt.rcParams.update(plt.rcParamsDefault)
 
     hpxmap = np.arange(hpg.nside_to_npixel(128))
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.LaeaSkyproj(ax, extent=[-150, 70, -85, -50], lon_0=0.0, lat_0=-90.0)
@@ -569,7 +569,7 @@ def test_healsparse_widemask(tmp_path):
     pixels2 = poly2.get_pixels(nside=hspmap.nside_sparse)
     hspmap.set_bits_pix(pixels2, [4])
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -591,7 +591,7 @@ def test_healsparse_widemask(tmp_path):
     pixels2 = poly2.get_pixels(nside=hspmap.nside_sparse)
     hspmap.set_bits_pix(pixels2, [10])
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -613,7 +613,7 @@ def test_healsparse_rec_array(tmp_path):
     hspmap = _get_hspmap_rec_array()
 
     # Plot one component of map
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -627,7 +627,7 @@ def test_healsparse_rec_array(tmp_path):
         raise ImageComparisonFailure(err)
 
     # Plot valid pixels of map
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -649,7 +649,7 @@ def test_healsparse_rec_array_failover(tmp_path):
 
     hspmap = _get_hspmap_rec_array()
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -672,7 +672,7 @@ def test_hpxpix(tmp_path):
     pixels = hspmap.valid_pixels
     values = hspmap[pixels]
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -688,7 +688,7 @@ def test_hpxpix(tmp_path):
     if err:
         raise ImageComparisonFailure(err)
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -703,7 +703,7 @@ def test_hpxpix(tmp_path):
     if err:
         raise ImageComparisonFailure(err)
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.DESSkyproj(ax=ax)
@@ -725,7 +725,7 @@ def test_hpxpix_log_scale(tmp_path):
     pixels = hspmap.valid_pixels
     values = hspmap[pixels]
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -752,7 +752,7 @@ def test_hpxpix_input_norm(tmp_path):
     values = hspmap[pixels]
 
     # First make sure we get matched vmin/vmax.
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -765,7 +765,7 @@ def test_hpxpix_input_norm(tmp_path):
 
     norm = LogNorm(vmin=vmin, vmax=vmax)
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -794,7 +794,7 @@ def test_hpxpix_rasterized(tmp_path):
     pixels = hspmap.valid_pixels
     values = hspmap[pixels]
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -813,7 +813,7 @@ def test_hpxpix_rasterized(tmp_path):
 
     size_rasterized_on = os.path.getsize(tmp_path / fname)
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -843,7 +843,7 @@ def test_healsparse_gnomonic(tmp_path, lon_0):
 
     hspmap = _get_hspmap(ra_center=lon_0)
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.GnomonicSkyproj(ax=ax, lon_0=lon_0, lat_0=0.0)
@@ -864,7 +864,7 @@ def test_healsparse_single_pixel(tmp_path, lat_cent):
     hspmap = hsp.HealSparseMap.make_empty(32, nside, np.float32)
     hspmap[pixelnum] = 1.0
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax, lon_0=0)

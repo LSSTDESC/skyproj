@@ -20,7 +20,7 @@ def test_skyproj_plotting(tmp_path):
     # Note that tests of wrapping lines and polygons are in
     # test_lines_polygons.
     # Tests of pcolormesh are in the healsparse/healpix map plots.
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax, extent=[0, 50, 0, 50])
@@ -47,3 +47,17 @@ def test_skyproj_plotting(tmp_path):
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 15.0)
     if err:
         raise ImageComparisonFailure(err)
+
+
+def test_skyproj_redraw_grid(tmp_path):
+    """Test redrawing the grid."""
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    sp = skyproj.McBrydeSkyproj(ax=ax)
+
+    fig.canvas.draw()
+    sp.ax.set_xlim(ax.get_xlim()[0] * 0.5, ax.get_xlim()[1] * 0.5)
+    fig.canvas.draw()
+
+    n = sum(1 for c in sp.ax._children if isinstance(c, skyproj.skygrid.SkyGridlines))
+    assert n == 1

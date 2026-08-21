@@ -20,7 +20,7 @@ def test_tissot(tmp_path, skyproj):
     plt.rcParams.update(plt.rcParamsDefault)
 
     # Full image
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj(ax=ax)
