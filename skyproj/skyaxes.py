@@ -7,7 +7,7 @@ from matplotlib import rcParams
 import matplotlib.axes
 import matplotlib.transforms
 
-from .utils import wrap_values
+from .utils import wrap_values, _get_preexisting_plot_geodesics
 from .skygrid import SkyGridlines, SkyGridHelper
 from .mpl_utils import SkyTickLabels
 from ._cskyproj import geodesic_direct
@@ -520,46 +520,28 @@ class SkyAxes(matplotlib.axes.Axes):
     @_add_lonlat
     def add_patch(self, p, **kwargs):
         # docstring inherited.
-        from .transforms import SkyTransform
-
         transform = kwargs.pop("transform", None)
 
-        # Check if there already is a SkyTransform attached.
-        # If so, this has been pre-set and we need to grab
-        # the plot_geodesics property and attach it to the current
-        # transform.
-        input_transform = p.get_transform()
-        if isinstance(input_transform, SkyTransform):
-            plot_geodesics = input_transform._plot_geodesics
+        plot_geodesics = _get_preexisting_plot_geodesics(p)
+        if plot_geodesics is not None:
             transform.set_plot_geodesics(plot_geodesics)
 
         p.set_transform(transform)
 
-        result = super().add_patch(p)
-
-        return result
+        return super().add_patch(p)
 
     @_add_lonlat
     def add_collection(self, collection, **kwargs):
         # docstring inherited.
-        from .transforms import SkyTransform
-
         transform = kwargs.pop("transform", None)
 
-        # Check if there already is a SkyTransform attached.
-        # If so, this has been pre-set and we need to grab
-        # the plot_geodesics property and attach it to the current
-        # transform.
-        input_transform = collection.get_transform()
-        if isinstance(input_transform, SkyTransform):
-            plot_geodesics = input_transform._plot_geodesics
+        plot_geodesics = _get_preexisting_plot_geodesics(collection)
+        if plot_geodesics is not None:
             transform.set_plot_geodesics(plot_geodesics)
 
         collection.set_transform(transform)
 
-        result = super().add_collection(collection, **kwargs)
-
-        return result
+        return super().add_collection(collection, **kwargs)
 
     @property
     def lon_0(self):
