@@ -170,7 +170,7 @@ class SkyCRS:
         from .transforms import SkyTransform
 
         if axes is None:
-            raise ValueError("help need axes")
+            return SkyTransform(self, plot_geodesics=self._plot_geodesics)
 
         return (SkyTransform(self, plot_geodesics=self._plot_geodesics) + axes.transData)
 
