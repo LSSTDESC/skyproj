@@ -156,6 +156,45 @@ When using :code:`draw_milky_way()`, it will plot in Galactic coordinates.
    :alt: McBrydeSkyproj in Galactic coordinates with Milky Way.
 
 
+Drawing the Ecliptic
+---------------------
+
+Similarly to the Milky Way, there is also a convenient way of representing the ecliptic.
+The default is to plot a thick line along the ecliptic, and two dashed lines at +/- 10 degrees.
+
+.. code-block :: python
+
+    import matplotlib.pyplot as plt
+    import skyproj
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    sp = skyproj.McBrydeSkyproj(ax=ax)
+    sp.draw_ecliptic(label='Ecliptic')
+    sp.ax.legend(loc="upper right")
+    plt.show()
+
+.. image:: images/ecliptic.png
+   :width: 600
+   :alt: McBrydeSkyproj with ecliptic.
+
+As with the Milky Way, default plotting units of Galactic coordinates are respected.
+
+.. code-block :: python
+
+    import matplotlib.pyplot as plt
+    import skyproj
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    sp = skyproj.McBrydeSkyproj(ax=ax, galactic=True, longitude_ticks='symmetric')
+    sp.draw_ecliptic(label='Ecliptic')
+    sp.ax.legend(loc="upper right")
+    plt.show()
+
+.. image:: images/ecliptic_galactic.png
+   :width: 600
+   :alt: McBrydeSkyproj in Galactic coordinates with ecliptic.
+
+
 Survey Maps
 -----------
 
