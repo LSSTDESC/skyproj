@@ -1,3 +1,4 @@
+import copy
 import functools
 import numpy as np
 import warnings
@@ -519,23 +520,20 @@ class SkyAxes(matplotlib.axes.Axes):
     @_add_lonlat
     def add_patch(self, p, **kwargs):
         # docstring inherited.
+        from .transforms import SkyTransform
+
         transform = kwargs.pop("transform", None)
 
-        pre_existing = False
-        try:
-            _ = p.get_transform()
-        except ValueError:
-            # Raised if we already have a skyproj transform.
-            pre_existing = True
+        # Check if there already is a SkyTransform attached.
+        # If so, this has been pre-set and we need to grab
+        # the plot_geodesics property and attach it to the current
+        # transform.
+        input_transform = p.get_transform()
+        if isinstance(p, SkyTransform):
+            plot_geodesics = input_transform._plot_geodesics
+            transform.set_plot_geodesics(plot_geodesics)
 
-        if pre_existing:
-            warnings.warn(
-                "Calling add_patch with a pre-existing skyproj transform is "
-                "deprecated. Please use add_patch directly",
-                FutureWarning,
-            )
-        else:
-            p.set_transform(transform)
+        p.set_transform(transform)
 
         result = super().add_patch(p)
 
@@ -544,23 +542,20 @@ class SkyAxes(matplotlib.axes.Axes):
     @_add_lonlat
     def add_collection(self, collection, **kwargs):
         # docstring inherited.
+        from .transforms import SkyTransform
+
         transform = kwargs.pop("transform", None)
 
-        pre_existing = False
-        try:
-            _ = collection.get_transform()
-        except ValueError:
-            # Raised if we already have a skyproj transform.
-            pre_existing = True
+        # Check if there already is a SkyTransform attached.
+        # If so, this has been pre-set and we need to grab
+        # the plot_geodesics property and attach it to the current
+        # transform.
+        input_transform = collection.get_transform()
+        if isinstance(input_transform, SkyTransform):
+            plot_geodesics = input_transform._plot_geodesics
+            transform.set_plot_geodesics(plot_geodesics)
 
-        if pre_existing:
-            warnings.warn(
-                "Calling add_collection with a pre-existing skyproj transform is "
-                "deprecated. Please use add_collection directly",
-                FutureWarning,
-            )
-        else:
-            collection.set_transform(transform)
+        collection.set_transform(transform)
 
         result = super().add_collection(collection, **kwargs)
 
