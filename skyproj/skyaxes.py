@@ -213,7 +213,7 @@ class SkyAxes(matplotlib.axes.Axes):
         self.xaxis.labelpad = xaxis_pad/renderer.points_to_pixels(1.0) + self._xlabelpad
         self.yaxis.labelpad = yaxis_pad/renderer.points_to_pixels(1.0) + self._ylabelpad
 
-        if self._grid_visible:
+        if self._grid_visible and self.gridlines not in self._children:
             self.add_artist(self.gridlines)
 
         super().draw(renderer)
