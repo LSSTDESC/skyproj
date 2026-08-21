@@ -1218,6 +1218,57 @@ class _Skyproj():
 
         return cbar
 
+    def draw_ecliptic(self, width=10, linewidth=1.5, color='black', linestyle='-', **kwargs):
+        """Draw the ecliptic.
+
+        Parameters
+        ----------
+        width : `float`
+            Number of degrees north and south to draw dotted lines.
+        linewidth : `float`
+            Width of line along the ecliptic.
+        color : `str`
+            Color of ecliptic.
+        linestyle : `str`
+            Style of line.
+        **kwargs : `dict`
+            Additional kwargs to pass to plot.
+        """
+        from astropy import units as u
+        from astropy.coordinates import SkyCoord
+
+        elon = np.linspace(0, 360, 500)
+        elat = np.zeros_like(elon)
+
+        if not self._galactic:
+            ec = SkyCoord(lon=elon*u.degree, lat=elat*u.degree, frame='geocentrictrueecliptic')
+            radec = ec.fk5
+            lon = radec.ra.degree
+            lat = radec.dec.degree
+        else:
+            ec = SkyCoord(lon=elon*u.degree, lat=elat*u.degree, frame='geocentrictrueecliptic')
+            lb = ec.galactic
+            lon = lb.l.degree
+            lat = lb.b.degree
+
+        self._ax.plot(lon, lat, linewidth=linewidth, color=color, linestyle=linestyle, **kwargs)
+        # pop any labels
+        kwargs.pop('label', None)
+        if width > 0:
+            for delta in [+width, -width]:
+                if not self._galactic:
+                    ec = SkyCoord(lon=elon*u.degree, lat=(elat + delta)*u.degree, frame='geocentrictrueecliptic')
+                    radec = ec.fk5
+                    lon = radec.ra.degree
+                    lat = radec.dec.degree
+                else:
+                    ec = SkyCoord(lon=elon*u.degree, lat=(elat + delta)*u.degree, frame='geocentrictrueecliptic')
+                    lb = ec.galactic
+                    lon = lb.l.degree
+                    lat = lb.b.degree
+                self._ax.plot(lon, lat, linewidth=1.0, color=color,
+                              linestyle='--', **kwargs)
+
     def draw_milky_way(self, width=10, linewidth=1.5, color='black', linestyle='-', **kwargs):
         """Draw the Milky Way galaxy.
 
