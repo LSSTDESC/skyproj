@@ -24,7 +24,7 @@ def _add_lonlat(func):
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
         if kwargs.pop("lonlat", True):
-            kwargs["transform"] = self.projection
+            kwargs["transform"] = copy.copy(self.projection)
             geodesics = kwargs.pop("geodesic", True)
             kwargs["transform"].set_plot_geodesics(geodesics)
         return func(self, *args, **kwargs)
@@ -529,7 +529,7 @@ class SkyAxes(matplotlib.axes.Axes):
         # the plot_geodesics property and attach it to the current
         # transform.
         input_transform = p.get_transform()
-        if isinstance(p, SkyTransform):
+        if isinstance(input_transform, SkyTransform):
             plot_geodesics = input_transform._plot_geodesics
             transform.set_plot_geodesics(plot_geodesics)
 
