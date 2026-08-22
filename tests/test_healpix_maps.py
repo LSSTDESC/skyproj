@@ -877,3 +877,40 @@ def test_healsparse_single_pixel(tmp_path, lat_cent):
     err = compare_images(os.path.join(ROOT, "data", fname), tmp_path / fname, 40.0)
     if err:
         raise ImageComparisonFailure(err)
+
+
+@pytest.mark.parametrize("lon_cent", [180.0, 359.98])
+def test_healsparse_tiny_pixels(tmp_path, lon_cent):
+    """Test drawing a small healsparse map with small pixels."""
+
+    plt.rcParams.update(plt.rcParamsDefault)
+
+    nside = 2**17
+    lat_cent = 10.0
+
+    hspmap = hsp.HealSparseMap.make_empty(32, nside, bool, bit_packed=True)
+
+    box = hpg.query_box(
+        nside,
+        lon_cent - 0.1,
+        lon_cent + 0.1,
+        lat_cent - 0.1,
+        lat_cent + 0.1,
+        return_pixel_ranges=True,
+    )
+    circle = hpg.query_circle(nside, lon_cent, lat_cent, 0.03, return_pixel_ranges=True)
+    hspmap[box] = True
+    hspmap[circle] = False
+
+    fig = plt.figure(figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_subplot(111)
+    sp = skyproj.McBrydeSkyproj(ax=ax, lon_0=lon_cent)
+    _ = sp.draw_hspmap(hspmap)
+
+    fname = f"healsparse_small_dense_{lon_cent}.png"
+    fig.savefig(tmp_path / fname)
+    plt.close(fig)
+    err = compare_images(os.path.join(ROOT, "data", fname), tmp_path / fname, 15.0)
+    if err:
+        raise ImageComparisonFailure(err)
