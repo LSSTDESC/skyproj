@@ -13,6 +13,7 @@ from .skyaxes import GRIDLINES_ZORDER_DEFAULT
 from .skycrs import get_crs, GnomonicCRS, proj, proj_inverse
 from .hpx_utils import (
     healpix_pixels_range,
+    hsp_valid_pixels_range,
     hspmap_to_xy,
     hpxmap_to_xy,
     healpix_to_xy,
@@ -938,11 +939,9 @@ class _Skyproj():
             if zoom:
                 # Using the coverage map is much faster even if approximate.
                 try:
-                    _lon_range, _lat_range = healpix_pixels_range(
-                        hspmap.nside_coverage,
-                        np.where(hspmap.coverage_mask)[0],
+                    _lon_range, _lat_range = hsp_valid_pixels_range(
+                        hspmap,
                         self._wrap,
-                        nest=True,
                     )
                 except NoValidPixelsError:
                     warnings.warn("No valid pixels found; auto-zoom not possible.")
