@@ -5,8 +5,10 @@ Random utilities
 import os
 import os.path
 import numpy as np
+from abc import ABC
+import hpgeom as hpg
 
-__all__ = ["get_datadir", "get_datafile", "wrap_values"]
+__all__ = ["get_datadir", "get_datafile", "wrap_values", "HealSparsePlottingShimBase"]
 
 
 AUTOSCALE_PERCENTILE_LOW = 2.5
@@ -189,3 +191,63 @@ def _get_preexisting_plot_geodesics(artist):
                 return right._plot_geodesics
 
     return None
+
+
+class HealSparsePlottingShimBase(ABC):
+    """Base class to shim plotting a lookup table with skyproj.
+
+    The subclass should override __init__ and get_values_pos().
+    """
+    _sentinel = hpg.UNSEEN
+    _nside_coverage = 32
+    is_rec_array = False
+    is_wide_mask_map = False
+
+    def __init__(self):
+        self._coverage_mask = None
+
+    @property
+    def nside_coverage(self):
+        return self._nside_coverage
+
+    @nside_coverage.setter
+    def nside_coverage(self, value):
+        self._nside_coverage = value
+
+    @property
+    def nside_sparse(self):
+        # Arbitrarily return a smaller pixel size.
+        return self._nside_coverage * 4
+
+    @property
+    def coverage_mask(self):
+        if self._coverage_mask is None:
+            self._coverage_mask = np.zeros(hpg.nside_to_npixel(self._nside_coverage), dtype=np.bool_)
+            lon, lat = hpg.pixel_to_angle(
+                self._nside_coverage,
+                np.arange(hpg.nside_to_npixel(self._nside_coverage)),
+            )
+            valid = self.get_values_pos(lon, lat, valid_mask=True)
+            self._coverage_mask[:] = valid
+
+        return self._coverage_mask
+
+    def get_values_pos(self, lon, lat, valid_mask=False):
+        """
+        Get the map value for the position.
+
+        Parameters
+        ----------
+        lon : `float`, array-like
+            Longitude coordinates of points on a sphere (degrees).
+        lat : `float`, array-like
+            Latitude coordinates of points on a sphere (degrees).
+        valid_mask : `bool`, optional
+            Return mask of True/False instead of values.
+
+        Returns
+        -------
+        values : `np.ndarray`
+            Array of values or valid boolean from the map.
+        """
+        raise NotImplementedError()
