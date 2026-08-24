@@ -950,6 +950,6 @@ def test_healsparse_shim(tmp_path):
     fname = 'healsparse_shim.png'
     fig.savefig(tmp_path / fname)
     plt.close(fig)
-    err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
+    err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 15.0)
     if err:
         raise ImageComparisonFailure(err)
