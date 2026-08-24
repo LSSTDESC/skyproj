@@ -921,20 +921,25 @@ def test_healsparse_shim(tmp_path):
 
     # This is a contrived example for testing.
     class HealSparsePlottingShim(skyproj.HealSparsePlottingShimBase):
-        def __init__(self, input_map):
-            self._input_map = input_map
+        def __init__(self, lon_cut, lat_cut):
+            self._lon_cut = lon_cut
+            self._lat_cut = lat_cut
 
             super().__init__()
 
         def get_values_pos(self, lon, lat, valid_mask=False):
-            # This could be any efficient lookup function.
-            return self._input_map.get_values_pos(lon, lat, valid_mask=valid_mask)
+            values = np.zeros_like(lon)
+            _lon = lon % 360.0
+            values[(_lon < self._lon_cut) & (lat < self._lat_cut)] = -2.0
+            values[(_lon < self._lon_cut) & (lat >= self._lat_cut)] = -1.0
+            values[(_lon >= self._lon_cut) & (lat < self._lat_cut)] = 1.0
+            values[(_lon >= self._lon_cut) & (lat >= self._lat_cut)] = 2.0
+
+            return values
 
     plt.rcParams.update(plt.rcParamsDefault)
 
-    hspmap = _get_hspmap()
-
-    to_plot_map = HealSparsePlottingShim(hspmap)
+    to_plot_map = HealSparsePlottingShim(180.0, 0.0)
 
     fig = plt.figure(1, figsize=(8, 5))
     fig.clf()
@@ -942,7 +947,7 @@ def test_healsparse_shim(tmp_path):
     sp = skyproj.McBrydeSkyproj(ax=ax)
     im, lon_raster, lat_raster, values_raster = sp.draw_hspmap(to_plot_map)
     sp.draw_inset_colorbar()
-    fname = 'healsparse_one.png'
+    fname = 'healsparse_shim.png'
     fig.savefig(tmp_path / fname)
     plt.close(fig)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 40.0)
