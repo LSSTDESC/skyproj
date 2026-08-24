@@ -49,7 +49,7 @@ def test_skyproj_plotting(tmp_path):
         raise ImageComparisonFailure(err)
 
 
-def test_skyproj_redraw_grid(tmp_path):
+def test_skyproj_redraw_grid():
     """Test redrawing the grid."""
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -61,3 +61,18 @@ def test_skyproj_redraw_grid(tmp_path):
 
     n = sum(1 for c in sp.ax._children if isinstance(c, skyproj.skygrid.SkyGridlines))
     assert n == 1
+
+
+def test_pan_single_axis_updates_bounds():
+    """Test that panning updates bounds correctly."""
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    sp = skyproj.McBrydeSkyproj(ax=ax)
+    fig.canvas.draw()
+
+    boundary_before = sp._boundary_lines
+    xlim = sp.ax.get_xlim()
+    w = xlim[1] - xlim[0]
+    sp.ax.set_xlim(xlim[0] + 0.1 * w, xlim[1] + 0.1 * w)  # x-only, like a horizontal pan
+
+    assert sp._boundary_lines is not boundary_before

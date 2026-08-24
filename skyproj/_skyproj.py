@@ -416,7 +416,7 @@ class _Skyproj():
            not np.isclose(extent_xy[3], self._extent_xy[3]):
             self._changed_y_axis = True
 
-        if not self._changed_x_axis or not self._changed_y_axis:
+        if not self._changed_x_axis and not self._changed_y_axis:
             # Nothing to do yet.
             return
 
