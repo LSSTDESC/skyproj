@@ -82,7 +82,7 @@ class SkyTransform(matplotlib.transforms.Transform):
                 lonlats = np.vstack((lonlats, [vertex[0], vertex[1]]))
                 codes.append(Path.MOVETO)
                 last_vertex = vertex
-            elif code in (Path.LINETO, Path.CURVE4, Path.CLOSEPOLY, None):
+            elif code in (Path.LINETO, Path.CLOSEPOLY, None):
                 # Connect the last vertex
                 if self._plot_geodesics:
                     # Geodesic segment.
