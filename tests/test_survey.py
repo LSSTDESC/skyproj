@@ -26,7 +26,7 @@ def test_survey_outlines(tmp_path, survey_tuple):
     survey = survey_tuple[0]
     name = survey_tuple[1]
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = survey(ax=ax)

@@ -25,7 +25,7 @@ def test_healpix_binning(tmp_path):
     dec = np.random.uniform(low=-55.0, high=-45.0, size=10000)
     C = np.random.uniform(low=0.0, high=10.0, size=10000)
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -44,7 +44,7 @@ def test_healpix_binning(tmp_path):
         raise ImageComparisonFailure(err)
 
     # Redo with averaging over values
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)

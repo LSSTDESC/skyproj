@@ -1,11 +1,13 @@
+import copy
 import functools
 import numpy as np
 import warnings
 
-import matplotlib as mpl
+from matplotlib import rcParams
 import matplotlib.axes
+import matplotlib.transforms
 
-from .utils import wrap_values
+from .utils import wrap_values, _get_preexisting_plot_geodesics
 from .skygrid import SkyGridlines, SkyGridHelper
 from .mpl_utils import SkyTickLabels
 from ._cskyproj import geodesic_direct
@@ -22,7 +24,7 @@ def _add_lonlat(func):
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
         if kwargs.pop("lonlat", True):
-            kwargs["transform"] = self.projection
+            kwargs["transform"] = copy.copy(self.projection)
             geodesics = kwargs.pop("geodesic", True)
             kwargs["transform"].set_plot_geodesics(geodesics)
         return func(self, *args, **kwargs)
@@ -48,47 +50,47 @@ class SkyAxes(matplotlib.axes.Axes):
 
         # The ``inherit`` name is special and means to use the same
         # color as x/ytick.color.
-        if mpl.rcParams["xtick.labelcolor"] == "inherit":
-            self._xlabelcolor = mpl.rcParams["xtick.color"]
+        if rcParams["xtick.labelcolor"] == "inherit":
+            self._xlabelcolor = rcParams["xtick.color"]
         else:
-            self._xlabelcolor = mpl.rcParams["xtick.labelcolor"]
+            self._xlabelcolor = rcParams["xtick.labelcolor"]
 
-        if mpl.rcParams["ytick.labelcolor"] == "inherit":
-            self._ylabelcolor = mpl.rcParams["ytick.color"]
+        if rcParams["ytick.labelcolor"] == "inherit":
+            self._ylabelcolor = rcParams["ytick.color"]
         else:
-            self._ylabelcolor = mpl.rcParams["ytick.labelcolor"]
+            self._ylabelcolor = rcParams["ytick.labelcolor"]
 
         self._ticklabels = {
             "left": SkyTickLabels(
                 axis_direction="left",
                 figure=self.figure,
                 transform=self.transData,
-                fontsize=mpl.rcParams["ytick.labelsize"],
-                pad=mpl.rcParams["ytick.major.pad"],
+                fontsize=rcParams["ytick.labelsize"],
+                pad=rcParams["ytick.major.pad"],
                 color=self._ylabelcolor,
             ),
             "right": SkyTickLabels(
                 axis_direction="right",
                 figure=self.figure,
                 transform=self.transData,
-                fontsize=mpl.rcParams["ytick.labelsize"],
-                pad=mpl.rcParams["ytick.major.pad"],
+                fontsize=rcParams["ytick.labelsize"],
+                pad=rcParams["ytick.major.pad"],
                 color=self._ylabelcolor,
             ),
             "top": SkyTickLabels(
                 axis_direction="top",
                 figure=self.figure,
                 transform=self.transData,
-                fontsize=mpl.rcParams["xtick.labelsize"],
-                pad=mpl.rcParams["xtick.major.pad"],
+                fontsize=rcParams["xtick.labelsize"],
+                pad=rcParams["xtick.major.pad"],
                 color=self._xlabelcolor,
             ),
             "bottom": SkyTickLabels(
                 axis_direction="bottom",
                 figure=self.figure,
                 transform=self.transData,
-                fontsize=mpl.rcParams["xtick.labelsize"],
-                pad=mpl.rcParams["xtick.major.pad"],
+                fontsize=rcParams["xtick.labelsize"],
+                pad=rcParams["xtick.major.pad"],
                 color=self._xlabelcolor,
             ),
         }
@@ -100,8 +102,8 @@ class SkyAxes(matplotlib.axes.Axes):
             "bottom": True,
         }
 
-        self._xlabelpad = mpl.rcParams["axes.labelpad"]
-        self._ylabelpad = mpl.rcParams["axes.labelpad"]
+        self._xlabelpad = rcParams["axes.labelpad"]
+        self._ylabelpad = rcParams["axes.labelpad"]
 
         # This needs to happen to make sure that it's all set correctly.
         self.clear()
@@ -211,7 +213,7 @@ class SkyAxes(matplotlib.axes.Axes):
         self.xaxis.labelpad = xaxis_pad/renderer.points_to_pixels(1.0) + self._xlabelpad
         self.yaxis.labelpad = yaxis_pad/renderer.points_to_pixels(1.0) + self._ylabelpad
 
-        if self._grid_visible:
+        if self._grid_visible and self.gridlines not in self._children:
             self.add_artist(self.gridlines)
 
         super().draw(renderer)
@@ -515,6 +517,32 @@ class SkyAxes(matplotlib.axes.Axes):
         else:
             return self.plot(lons, lats, **kwargs)
 
+    @_add_lonlat
+    def add_patch(self, p, **kwargs):
+        # docstring inherited.
+        transform = kwargs.pop("transform", None)
+
+        plot_geodesics = _get_preexisting_plot_geodesics(p)
+        if plot_geodesics is not None:
+            transform.set_plot_geodesics(plot_geodesics)
+
+        p.set_transform(transform)
+
+        return super().add_patch(p)
+
+    @_add_lonlat
+    def add_collection(self, collection, **kwargs):
+        # docstring inherited.
+        transform = kwargs.pop("transform", None)
+
+        plot_geodesics = _get_preexisting_plot_geodesics(collection)
+        if plot_geodesics is not None:
+            transform.set_plot_geodesics(plot_geodesics)
+
+        collection.set_transform(transform)
+
+        return super().add_collection(collection, **kwargs)
+
     @property
     def lon_0(self):
         return self.projection.lon_0
@@ -535,7 +563,7 @@ class SkyAxes(matplotlib.axes.Axes):
         **kwargs : `dict`
             Additional keyword arguments accepted by ax.set_xlabel().
         """
-        self._xlabelpad = kwargs.pop("labelpad", mpl.rcParams["axes.labelpad"])
+        self._xlabelpad = kwargs.pop("labelpad", rcParams["axes.labelpad"])
         return super().set_xlabel(xlabel, labelpad=0, fontsize=fontsize, **kwargs)
 
     def set_ylabel(self, ylabel, fontsize="xx-large", **kwargs):
@@ -550,7 +578,7 @@ class SkyAxes(matplotlib.axes.Axes):
         **kwargs : `dict`
             Additional keyword arguments accepted by ax.set_ylabel().
         """
-        self._ylabelpad = kwargs.pop("labelpad", mpl.rcParams["axes.labelpad"])
+        self._ylabelpad = kwargs.pop("labelpad", rcParams["axes.labelpad"])
         return super().set_ylabel(ylabel, labelpad=0, fontsize=fontsize, **kwargs)
 
     def tick_params(self, axis="both", **kwargs):
@@ -591,7 +619,7 @@ class SkyAxes(matplotlib.axes.Axes):
                 if labelsize is not None:
                     self._ticklabels[side].set(fontsize=labelsize)
                 elif reset:
-                    self._ticklabels[side].set(fontsize=mpl.rcParams["ytick.labelsize"])
+                    self._ticklabels[side].set(fontsize=rcParams["ytick.labelsize"])
                 if labelcolor is not None:
                     self._ticklabels[side].set(color=labelcolor)
                 elif reset:
@@ -606,7 +634,7 @@ class SkyAxes(matplotlib.axes.Axes):
                 if pad is not None:
                     self._ticklabels[side].set_pad(pad)
                 elif reset:
-                    self._ticklabels[side].set_pad(mpl.rcParams[f"{axis}tick.major.pad"])
+                    self._ticklabels[side].set_pad(rcParams[f"{axis}tick.major.pad"])
 
             if labelbottom is not None:
                 self._ticklabels_visibility["bottom"] = labelbottom
