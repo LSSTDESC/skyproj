@@ -215,6 +215,11 @@ class HealSparsePlottingShimBase(ABC):
         self._nside_coverage = value
 
     @property
+    def nside_sparse(self):
+        # Arbitrarily return a smaller pixel size.
+        return self._nside_coverage * 4
+
+    @property
     def coverage_mask(self):
         if self._coverage_mask is None:
             self._coverage_mask = np.zeros(hpg.nside_to_npixel(self._nside_coverage), dtype=np.bool_)
