@@ -100,6 +100,7 @@ The plotting and interactivity options are the same as for :code:`draw_hspmap()`
 
 HEALPix Pixel Plots
 -------------------
+
 Given a list of HEALPix pixel numbers and values, the :code:`draw_hpxpx()` method is available.
 The map output is very similar to the code above.
 However, this code does pixel value lookups behind the scenes to conserve memory.
@@ -125,6 +126,7 @@ The plotting and interactivity options are the same as for :code:`draw_hspmap()`
 
 HEALPix Binned Plots
 --------------------
+
 Given a list of positions and values, one can use :code:`draw_hpxbin()` to bin the values and make a map.
 This is analagous to :code:`matplotlib.pyplot.hexbin`, with the additional assurance that each pixel has the same area.
 
@@ -151,3 +153,50 @@ If one is running in an interactive matplotlib window, typing :code:`R` in the w
 .. image:: images/hpxbin_reproject.png
    :width: 600
    :alt: Binned healpix map, reprojected.
+
+
+Arbitrary Look-Up Tables
+------------------------
+
+In some cases you have a look-up table which has an efficient way of translating from lon/lat to value that is not a healsparse or healpix map.
+An example is a Rubin Observatory `skymap` object which divides the sky into rectangular tracts.
+In this case, there is a shim-class available, the :code:`HealSparsePlottingShim`, which allows any arbitrary look-up table to look like a `HealSparseMap` for purposes of plotting.
+
+A contrived example is as follows, which is a look-up table which divides the sky into quadrants.
+
+.. code-block :: python
+
+    import skyproj
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    class HealSparsePlottingShim(skyproj.HealSparsePlottingShimBase):
+        def __init__(self, lon_cut, lat_cut):
+            self._lon_cut = lon_cut
+            self._lat_cut = lat_cut
+
+            super().__init__()
+
+        def get_values_pos(self, lon, lat, valid_mask=False):
+            values = np.zeros_like(lon)
+            _lon = lon % 360.0
+            values[(_lon < self._lon_cut) & (lat < self._lat_cut)] = -2.0
+            values[(_lon < self._lon_cut) & (lat >= self._lat_cut)] = -1.0
+            values[(_lon >= self._lon_cut) & (lat < self._lat_cut)] = 1.0
+            values[(_lon >= self._lon_cut) & (lat >= self._lat_cut)] = 2.0
+
+            return values
+
+     to_plot_map = HealSparsePlottingShim(180.0, 0.0)
+
+     fig = plt.figure(1, figsize=(8, 5))
+     fig.clf()
+     ax = fig.add_subplot(111)
+     sp = skyproj.McBrydeSkyproj(ax=ax)
+     sp.draw_hspmap(to_plot_map)
+     sp.draw_inset_colorbar()
+     plt.show()
+
+.. image:: images/healsparse_shim.png
+   :width: 600
+   :alt: Toy look-up table turned into a healsparse map for plotting.
