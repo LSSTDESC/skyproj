@@ -21,7 +21,7 @@ def test_lines_polygons_mcbryde(tmp_path, lon_0):
     # This code draws a bunch of geodesics and polygons that are
     # both empty and filled, and cross over the boundary, to ensure
     # that features are working as intended.
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax, lon_0=lon_0)
@@ -88,7 +88,7 @@ def test_lines_polygons_obmoll(tmp_path, lonlatplonp):
     # This code draws a bunch of geodesics and polygons that are
     # both empty and filled, and cross over the boundary, to ensure
     # that features are working as intended.
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.ObliqueMollweideSkyproj(ax=ax, lon_0=lon_0, lat_p=lat_p, lon_p=lon_p)
@@ -134,7 +134,7 @@ def test_lines_polygons_mcbryde_opaque_legend(tmp_path):
     """Test drawing lines and polygons with an opaque legend."""
     plt.rcParams.update(plt.rcParamsDefault)
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax, lon_0=0.0)

@@ -27,7 +27,7 @@ def test_skyproj_basic(tmp_path, skyproj, lon_0):
     plt.rcParams.update(plt.rcParamsDefault)
 
     # Full image
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj(ax=ax, lon_0=lon_0)
@@ -50,7 +50,7 @@ def test_skyproj_zoom(tmp_path, skyproj):
     plt.rcParams.update(plt.rcParamsDefault)
 
     # Simple zoom
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj(ax=ax, extent=[0, 50, 0, 50])
@@ -71,7 +71,7 @@ def test_skyproj_gnom(tmp_path, lonlat):
 
     lon_0, lat_0 = lonlat
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.GnomonicSkyproj(ax=ax, lon_0=lon_0, lat_0=lat_0)
@@ -98,7 +98,7 @@ def test_skyproj_obmoll(tmp_path, lonlatplonp):
 
     lon_0, lat_p, lon_p = lonlatplonp
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.ObliqueMollweideSkyproj(ax=ax, lon_0=lon_0, lat_p=lat_p, lon_p=lon_p)
@@ -119,7 +119,7 @@ def test_skyproj_albers(tmp_path, lat1lat2):
 
     lat_1, lat_2 = lat1lat2
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.AlbersSkyproj(ax=ax, lat_1=lat_1, lat_2=lat_2)
@@ -136,7 +136,7 @@ def test_skyproj_laea(tmp_path, lat_0):
     """Test Lambert Azimuthal Equal Area."""
     plt.rcParams.update(plt.rcParamsDefault)
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.LaeaSkyproj(ax=ax, n_grid_lon=8, n_grid_lat=5, lat_0=lat_0, lon_0=0)
@@ -158,7 +158,7 @@ def test_skyproj_laea(tmp_path, lat_0):
 def test_skyproj_fullsky_extent(skyproj, lon_0):
     """Test getting the full sky extent."""
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj(ax=ax, lon_0=lon_0)
@@ -193,7 +193,7 @@ def test_skyproj_nogap_180(tmp_path, skyproj):
     pixels = poly.get_pixels(nside=testmap.nside_sparse)
     testmap[pixels] = 1
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj(ax=ax, lon_0=180.0)
@@ -213,7 +213,7 @@ def test_skyproj_override_sizes(tmp_path):
     rcparams = {"axes.linewidth": 5}
 
     # Full image
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     with plt.rc_context(rcparams):
@@ -230,7 +230,7 @@ def test_skyproj_override_sizes(tmp_path):
     plt.close(fig)
 
     # And confirm that the changes do not carry over to another plot.
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     _ = skyproj.McBrydeSkyproj(ax=ax)

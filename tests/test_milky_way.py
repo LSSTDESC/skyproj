@@ -16,7 +16,7 @@ def test_draw_milky_way(tmp_path):
     """Test drawing the Milky Way."""
     plt.rcParams.update(plt.rcParamsDefault)
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
@@ -34,7 +34,7 @@ def test_draw_milky_way_galactic(tmp_path):
     """Test drawing the Milky Way (Galactic Coordinates)."""
     plt.rcParams.update(plt.rcParamsDefault)
 
-    fig = plt.figure(1, figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax, galactic=True, longitude_ticks='symmetric')

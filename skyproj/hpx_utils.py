@@ -44,10 +44,67 @@ def healpix_pixels_range(nside, pixels, wrap, nest=False):
     lat_range = (np.clip(np.min(lat) - eps, -90.0 + 1e-5, None),
                  np.clip(np.max(lat) + eps, None, 90.0 - 1e-5))
 
-    # FIXME: the wrap logic here is wrong.
-
     lon_wrap = (lon + wrap) % 360. - wrap
     lon_range = (np.min(lon_wrap) - eps_lon, np.max(lon_wrap) + eps_lon)
+
+    # Check if we have overrun and need to do the full range
+    full_range = False
+    if (lon_range[0] < (wrap - 360.0)) and (lon_range[1] > (wrap - 360.0)):
+        full_range = True
+    elif (lon_range[0] < (wrap + 360.0)) and (lon_range[1] > (wrap + 360.0)):
+        full_range = True
+    elif (lon_range[1] - lon_range[0]) >= 359.0:
+        full_range = True
+
+    if full_range:
+        lon_0 = wrap_values((wrap + 180.0) % 360.0)
+        lon_range = (lon_0 - 180., lon_0 + 180.0 - 1e-5)
+
+    return lon_range, lat_range
+
+
+def hsp_valid_pixels_range(hspmap, wrap, nsample=500):
+    """Approximate lon/lat range of a hspmap, using wrap angle.
+
+    Parameters
+    ----------
+    hspmap : `healsparse.HealSparseMap`
+        Healsparse map
+    wrap : `float`
+        Wrap angle.
+    nsample : `int`, optional
+        Number of samples in each direction.
+
+    Returns
+    -------
+    lon_range : `tuple` [`float`, `float`]
+        Longitude range of pixels (min, max)
+    lat_range : `tuple` [`float`, `float`]
+        Latitude range of pixels (min, max)
+    """
+    # Start with the coverage map.
+    lon_range_cov, lat_range_cov = healpix_pixels_range(
+        hspmap.nside_coverage,
+        np.where(hspmap.coverage_mask)[0],
+        wrap,
+        nest=True,
+    )
+    lon_raster, lat_raster, values_raster = hspmap_to_xy(
+        hspmap,
+        lon_range_cov,
+        lat_range_cov,
+        xsize=nsample,
+        valid_mask=not hspmap.is_wide_mask_map,
+    )
+    eps = hpg.max_pixel_radius(hspmap.nside_sparse)
+    eps_lon = eps / np.cos(np.deg2rad(np.median(lat_raster)))
+    lat_range = (np.clip(np.min(lat_raster[:-1, :-1][~values_raster.mask]) - eps, -90.0 + 1e-5, None),
+                 np.clip(np.max(lat_raster[:-1, :-1][~values_raster.mask]) + eps, None, 90.0 - 1e-5))
+    lon_wrap = (lon_raster + wrap) % 360. - wrap
+    lon_range = (
+        np.min(lon_wrap[:-1, :-1][~values_raster.mask]) - eps_lon,
+        np.max(lon_wrap[:-1, :-1][~values_raster.mask]) + eps_lon,
+    )
 
     # Check if we have overrun and need to do the full range
     full_range = False

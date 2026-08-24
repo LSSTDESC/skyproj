@@ -155,3 +155,37 @@ def get_autoscale_vmin_vmax(values, vmin_in, vmax_in):
     vmax = vmax_in if vmax_in is not None else _vmax
 
     return vmin, vmax
+
+
+def _get_preexisting_plot_geodesics(artist):
+    """Get plot_geodesics on a transform attached to an artist.
+
+    Parameters
+    ----------
+    artist : `matplotlib.artist.Artist`
+
+    Returns
+    -------
+    plot_geodesics : `bool` or None
+    """
+    import matplotlib.artist as martist
+    import matplotlib.transforms as mtransforms
+    from .transforms import SkyTransform
+
+    t = martist.Artist.get_transform(artist)
+
+    if hasattr(t, "_plot_geodesics"):
+        # Bare SkyCRS or bare SkyTransform, not yet composited.
+        return t._plot_geodesics
+
+    if isinstance(t, mtransforms.Transform):
+        # Already resolved into a composite (e.g. SkyTransform + transData
+        # from a prior binding) -- decompose and look for the SkyTransform
+        # leaf on either side of each split.
+        for left, right in t._iter_break_from_left_to_right():
+            if isinstance(left, SkyTransform):
+                return left._plot_geodesics
+            if isinstance(right, SkyTransform):
+                return right._plot_geodesics
+
+    return None
