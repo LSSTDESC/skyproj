@@ -1240,13 +1240,12 @@ class _Skyproj():
         elon = np.linspace(0, 360, 500)
         elat = np.zeros_like(elon)
 
+        ec = SkyCoord(lon=elon*u.degree, lat=elat*u.degree, frame='geocentrictrueecliptic')
         if not self._galactic:
-            ec = SkyCoord(lon=elon*u.degree, lat=elat*u.degree, frame='geocentrictrueecliptic')
             radec = ec.fk5
             lon = radec.ra.degree
             lat = radec.dec.degree
         else:
-            ec = SkyCoord(lon=elon*u.degree, lat=elat*u.degree, frame='geocentrictrueecliptic')
             lb = ec.galactic
             lon = lb.l.degree
             lat = lb.b.degree
@@ -1256,15 +1255,12 @@ class _Skyproj():
         kwargs.pop('label', None)
         if width > 0:
             for delta in [+width, -width]:
+                ec = SkyCoord(lon=elon*u.degree, lat=(elat + delta)*u.degree, frame='geocentrictrueecliptic')
                 if not self._galactic:
-                    ec = SkyCoord(lon=elon*u.degree, lat=(elat + delta)*u.degree,
-                                  frame='geocentrictrueecliptic')
                     radec = ec.fk5
                     lon = radec.ra.degree
                     lat = radec.dec.degree
                 else:
-                    ec = SkyCoord(lon=elon*u.degree, lat=(elat + delta)*u.degree,
-                                  frame='geocentrictrueecliptic')
                     lb = ec.galactic
                     lon = lb.l.degree
                     lat = lb.b.degree
