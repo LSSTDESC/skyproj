@@ -1314,7 +1314,7 @@ class _Skyproj():
                 self._ax.plot(lon, lat, linewidth=1.0, color=color,
                               linestyle='--', **kwargs)
 
-    def draw_pixel_boundaries(self, nside, pixels, nest=True, label_pixels=False, step=1,
+    def draw_pixel_boundaries(self, nside, pixels, nest=True, label_pixels=False, step=None,
                               color='black', facecolor=None, boundary_kwargs={}, text_kwargs={}):
         """Draw HEALPix pixel boundaries.
 
@@ -1329,7 +1329,11 @@ class _Skyproj():
         label_pixels : `bool`, optional
             Add text labeling pixels by their index?
         step: int, optional
-            Number of elements for each side of the pixel.
+            Number of elements for each side of the pixel. The pixel boundaries are drawn with great circles,
+            which does not exactly match the true boundaries of HEALPix pixels. This approximation is worse
+            at lower values of nside, so increasing step mitigates this by using a higher virtual pixelation.
+            If unspecified, the default behavior is to chose step according to the following heuristic:
+            step = 10 if nside < 32 else 2.
         color : `str`, optional
             Color of pixel boundary and text.
         facecolor : `str`, optional
@@ -1339,6 +1343,9 @@ class _Skyproj():
         text_kwargs : `dict`, optional
             Additional keywords passed to text.
         """
+        if step is None:
+            step = 10 if nside < 32 else 2
+
         for pixel in np.atleast_1d(pixels):
             _boundary_ra, _boundary_dec = hpg.boundaries(nside, pixel, step=step, nest=nest, lonlat=True)
             self.draw_polygon(_boundary_ra, _boundary_dec, edgecolor=color, facecolor=facecolor,
