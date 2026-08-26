@@ -1314,8 +1314,8 @@ class _Skyproj():
                 self._ax.plot(lon, lat, linewidth=1.0, color=color,
                               linestyle='--', **kwargs)
 
-    def draw_pixel_boundaries(self, nside, pixels, nest=True, text=False, color='black', facecolor=None,
-                              boundary_kwargs={}, text_kwargs={}):
+    def draw_pixel_boundaries(self, nside, pixels, nest=True, label_pixels=False,
+                              color='black', facecolor=None, boundary_kwargs={}, text_kwargs={}):
         """Draw HEALPix pixel boundaries.
 
         Parameters
@@ -1326,7 +1326,7 @@ class _Skyproj():
             Array of pixels to plot.
         nest : `bool`, optional
             Healpix pixels in nest ordering?
-        text : `bool`, optional
+        label_pixels : `bool`, optional
             Add text labeling pixels by their index?
         color : `str`, optional
             Color of pixel boundary and text.
@@ -1337,12 +1337,13 @@ class _Skyproj():
         text_kwargs : `dict`, optional
             Additional keywords passed to text.
         """
+        pixels = np.atleast_1d(pixels)
         for pixel in pixels:
             _boundary_ra, _boundary_dec = hpg.boundaries(nside, pixel, step=1, nest=nest, lonlat=True)
             self.draw_polygon(_boundary_ra, _boundary_dec, edgecolor=color, facecolor=facecolor,
                               **boundary_kwargs)
 
-            if text:
+            if label_pixels:
                 _ra, _dec = hpg.pixel_to_angle(nside, pixel, nest=nest, lonlat=True)
                 self._ax.text(_ra, _dec, pixel, ha='center', va='center', clip_on=True, color=color,
                               **text_kwargs)
