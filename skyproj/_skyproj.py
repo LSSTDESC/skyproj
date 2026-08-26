@@ -1314,6 +1314,17 @@ class _Skyproj():
                 self._ax.plot(lon, lat, linewidth=1.0, color=color,
                               linestyle='--', **kwargs)
 
+    def draw_pixels(self, nside, indices, linewidth=1.5, color="gray", facecolor="none", linestyle="-", text=False):
+        """Draw HEALPix pixel boundaries
+        """
+        for i in indices:
+            _boundary_ra, _boundary_dec = hpg.boundaries(nside, i, step=1)
+            self.draw_polygon(_boundary_ra, _boundary_dec, edgecolor=color, facecolor=facecolor)
+
+            ra, dec = hpg.pixel_to_angle(nside, i)
+            if text:
+                self._ax.text(ra, dec, i, lonlat=True, ha='center', va='center', clip_on=True, color=color)
+
     def tissot_indicatrices(self, radius=5.0, num_lon=9, num_lat=5, color='red', alpha=0.5):
         """Draw Tissot indicatrices.
 
