@@ -1314,7 +1314,7 @@ class _Skyproj():
                 self._ax.plot(lon, lat, linewidth=1.0, color=color,
                               linestyle='--', **kwargs)
 
-    def draw_pixel_boundaries(self, nside, pixels, nest=False, text=False, color='black', facecolor=None,
+    def draw_pixel_boundaries(self, nside, pixels, nest=True, text=False, color='black', facecolor=None,
                               boundary_kwargs={}, text_kwargs={}):
         """Draw HEALPix pixel boundaries.
 
