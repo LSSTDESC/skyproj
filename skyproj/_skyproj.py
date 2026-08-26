@@ -1314,18 +1314,38 @@ class _Skyproj():
                 self._ax.plot(lon, lat, linewidth=1.0, color=color,
                               linestyle='--', **kwargs)
 
-    def draw_pixel_boundaries(self, nside, pixels, nest=False, text=False, color="gray", facecolor="none",
-                              linestyle="-", linewidth=1.5, fontsize=11, **kwargs):
-        """Draw HEALPix pixel boundaries
+    def draw_pixel_boundaries(self, nside, pixels, nest=False, text=False, color='black', facecolor=None,
+                              boundary_kwargs={}, text_kwargs={}):
+        """Draw HEALPix pixel boundaries.
+
+        Parameters
+        ----------
+        nside : `int`
+            Healpix nside of pixels to plot.
+        pixels : `np.ndarray`
+            Array of pixels to plot.
+        nest : `bool`, optional
+            Healpix pixels in nest ordering?
+        text : `bool`, optional
+            Add text labeling pixels by their index?
+        color : `str`, optional
+            Color of pixel boundary and text.
+        facecolor : `str`, optional
+            Color of pixel face.
+        boundary_kwargs : `dict`, optional
+            Additional keywords passed to draw_polygon.
+        text_kwargs : `dict`, optional
+            Additional keywords passed to text.
         """
         for pixel in pixels:
             _boundary_ra, _boundary_dec = hpg.boundaries(nside, pixel, step=1, nest=nest, lonlat=True)
-            self.draw_polygon(_boundary_ra, _boundary_dec, edgecolor=color, facecolor=facecolor, **kwargs)
+            self.draw_polygon(_boundary_ra, _boundary_dec, edgecolor=color, facecolor=facecolor,
+                              **boundary_kwargs)
 
             if text:
                 _ra, _dec = hpg.pixel_to_angle(nside, pixel, nest=nest, lonlat=True)
                 self._ax.text(_ra, _dec, pixel, ha='center', va='center', clip_on=True, color=color,
-                              fontsize=fontsize, **kwargs)
+                              **text_kwargs)
 
     def tissot_indicatrices(self, radius=5.0, num_lon=9, num_lat=5, color='red', alpha=0.5):
         """Draw Tissot indicatrices.
