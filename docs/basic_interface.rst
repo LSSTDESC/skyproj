@@ -254,11 +254,11 @@ For more details on plotting :code:`HealSparse` and :code:`HEALPix` maps, see :r
    :alt: HealSparse map with inset colorbar.
 
 
-Drawing HEALPixel Boundaries
+Drawing HEALPix Boundaries
 ----------------------------
 
-In addition to plotting HealSparse and HEALPix maps, `SkyProj` also supports drawing (and labeling) HEALPixel boundaries.
-This can be a useful way to compare maps or catalogs to the underlying HEALPixel grid.
+In addition to plotting HealSparse and HEALPix maps, `SkyProj` also supports drawing (and labeling) HEALPix boundaries.
+This can be a useful way to compare maps or catalogs to the underlying HEALPix pixelation.
 
 
 .. code-block :: python
