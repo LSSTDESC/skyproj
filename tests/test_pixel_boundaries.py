@@ -27,8 +27,8 @@ def test_pixel_boundaries(tmp_path):
     fig.clf()
     ax = fig.add_subplot(111)
     sp = skyproj.McBrydeSkyproj(ax=ax)
-    sp.draw_pixel_boundaries(nside, neighbors)
-    sp.draw_pixel_boundaries(nside, pixel, label_pixels=True, facecolor="lightgray")
+    sp.draw_pixel_boundaries(nside, neighbors, step=1024)
+    sp.draw_pixel_boundaries(nside, pixel, step=1024, label_pixels=True, facecolor="lightgray")
     sp.set_extent([ra-5.0, ra+5.0, dec-5.0, dec+5.0])
     fname = 'pixel_boundaries.png'
     fig.savefig(tmp_path / fname)
