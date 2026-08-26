@@ -30,7 +30,7 @@ def test_pixel_boundaries(tmp_path):
     sp.draw_pixel_boundaries(nside, neighbors)
     sp.draw_pixel_boundaries(nside, pixel, label_pixels=True, facecolor="lightgray")
     sp.set_extent([ra-5.0, ra+5.0, dec-5.0, dec+5.0])
-    fname = f'pixel_boundaries.png'
+    fname = 'pixel_boundaries.png'
     fig.savefig(tmp_path / fname)
     plt.close(fig)
     err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 15.0)
