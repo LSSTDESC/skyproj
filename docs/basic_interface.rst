@@ -254,6 +254,29 @@ For more details on plotting :code:`HealSparse` and :code:`HEALPix` maps, see :r
    :alt: HealSparse map with inset colorbar.
 
 
+Drawing HEALPix Boundaries
+----------------------------
+
+In addition to plotting HealSparse and HEALPix maps, `SkyProj` also supports drawing (and labeling) HEALPix boundaries.
+This can be a useful way to compare maps or catalogs to the underlying HEALPix pixelation.
+
+
+.. code-block :: python
+
+    pixels = np.where(hspmap.coverage_mask)[0]
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    sp = skyproj.McBrydeSkyproj(ax=ax)
+    # Note that you have to specify the nside when using draw_pixel_boundaries
+    # and that it defaults to nest ordering for compatibility with HealSparse.
+    sp.draw_pixel_boundaries(hspmap.nside_coverage, pixels, label_pixels=True)
+    plt.show()
+
+.. image:: images/pixel_boundaries.png
+   :width: 600
+   :alt: HealSparse map with coverage pixel boundaries drawn and labeled.
+
+
 Interactivity
 -------------
 

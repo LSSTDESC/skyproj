@@ -1314,6 +1314,50 @@ class _Skyproj():
                 self._ax.plot(lon, lat, linewidth=1.0, color=color,
                               linestyle='--', **kwargs)
 
+    def draw_pixel_boundaries(self, nside, pixels, nest=True, label_pixels=False, step=None,
+                              color='black', facecolor=None, boundary_kwargs={}, text_kwargs={}, **kwargs):
+        """Draw HEALPix pixel boundaries.
+
+        Parameters
+        ----------
+        nside : `int`
+            Healpix nside of pixels to plot.
+        pixels : `np.ndarray`
+            Array of pixels to plot.
+        nest : `bool`, optional
+            Healpix pixels in nest ordering?
+        label_pixels : `bool`, optional
+            Add text labeling pixels by their index?
+        step: int, optional
+            Number of elements for each side of the pixel. The pixel boundaries are drawn with great circles,
+            which does not exactly match the true boundaries of HEALPix pixels. This approximation is worse
+            at lower values of nside, so increasing step mitigates this by using more interpolation points
+            along the pixel boundary. If unspecified, the default behavior is to chose step according to the
+            following heuristic: step = 10 if nside < 32 else 2.
+        color : `str`, optional
+            Color of pixel boundary and text.
+        facecolor : `str`, optional
+            Color of pixel face.
+        boundary_kwargs : `dict`, optional
+            Additional keywords passed to draw_polygon.
+        text_kwargs : `dict`, optional
+            Additional keywords passed to text.
+        **kwargs : `dict`
+            Additional kwargs to pass to draw_polygon and text.
+        """
+        if step is None:
+            step = 10 if nside < 32 else 2
+
+        for pixel in np.atleast_1d(pixels):
+            _boundary_ra, _boundary_dec = hpg.boundaries(nside, pixel, step=step, nest=nest, lonlat=True)
+            self.draw_polygon(_boundary_ra, _boundary_dec, edgecolor=color, facecolor=facecolor,
+                              **boundary_kwargs, **kwargs)
+
+            if label_pixels:
+                _ra, _dec = hpg.pixel_to_angle(nside, pixel, nest=nest, lonlat=True)
+                self._ax.text(_ra, _dec, pixel, ha='center', va='center', clip_on=True, color=color,
+                              **text_kwargs, **kwargs)
+
     def tissot_indicatrices(self, radius=5.0, num_lon=9, num_lat=5, color='red', alpha=0.5):
         """Draw Tissot indicatrices.
 
