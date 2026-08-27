@@ -1331,9 +1331,9 @@ class _Skyproj():
         step: int, optional
             Number of elements for each side of the pixel. The pixel boundaries are drawn with great circles,
             which does not exactly match the true boundaries of HEALPix pixels. This approximation is worse
-            at lower values of nside, so increasing step mitigates this by using a higher virtual pixelation.
-            If unspecified, the default behavior is to chose step according to the following heuristic:
-            step = 10 if nside < 32 else 2.
+            at lower values of nside, so increasing step mitigates this by using more interpolation points
+            along the pixel boundary. If unspecified, the default behavior is to chose step according to the
+            following heuristic: step = 10 if nside < 32 else 2.
         color : `str`, optional
             Color of pixel boundary and text.
         facecolor : `str`, optional
