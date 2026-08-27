@@ -1315,7 +1315,7 @@ class _Skyproj():
                               linestyle='--', **kwargs)
 
     def draw_pixel_boundaries(self, nside, pixels, nest=True, label_pixels=False, step=None,
-                              color='black', facecolor=None, boundary_kwargs={}, text_kwargs={}):
+                              color='black', facecolor=None, boundary_kwargs={}, text_kwargs={}, **kwargs):
         """Draw HEALPix pixel boundaries.
 
         Parameters
@@ -1342,6 +1342,8 @@ class _Skyproj():
             Additional keywords passed to draw_polygon.
         text_kwargs : `dict`, optional
             Additional keywords passed to text.
+        **kwargs : `dict`
+            Additional kwargs to pass to draw_polygon and text.
         """
         if step is None:
             step = 10 if nside < 32 else 2
@@ -1349,12 +1351,12 @@ class _Skyproj():
         for pixel in np.atleast_1d(pixels):
             _boundary_ra, _boundary_dec = hpg.boundaries(nside, pixel, step=step, nest=nest, lonlat=True)
             self.draw_polygon(_boundary_ra, _boundary_dec, edgecolor=color, facecolor=facecolor,
-                              **boundary_kwargs)
+                              **boundary_kwargs, **kwargs)
 
             if label_pixels:
                 _ra, _dec = hpg.pixel_to_angle(nside, pixel, nest=nest, lonlat=True)
                 self._ax.text(_ra, _dec, pixel, ha='center', va='center', clip_on=True, color=color,
-                              **text_kwargs)
+                              **text_kwargs, **kwargs)
 
     def tissot_indicatrices(self, radius=5.0, num_lon=9, num_lat=5, color='red', alpha=0.5):
         """Draw Tissot indicatrices.
