@@ -55,7 +55,7 @@ def test_lines_polygons_mcbryde(tmp_path, lon_0):
     sp.ax.ellipse(300, 15, 15, 2, 45, fill=True, color='red', label='Ten')
 
     # Draw two unfilled boxes, one of which will wrap around.
-    sp.draw_box([-20, 20, 20, -20], [50, 50, 70, 70], edgecolor='magenta')
+    sp.draw_box([340, 20, 20, 340], [50, 50, 70, 70], edgecolor='magenta')
     sp.draw_box([160, 200, 200, 160], [50, 50, 70, 70], edgecolor='black')
 
     # Draw two filled boxes, one of which will wrap around.
