@@ -53,6 +53,67 @@ class SkyTransform(matplotlib.transforms.Transform):
             # Re-invert it
             return SkyTransform(self.source_proj, inverse=False, plot_geodesics=self._plot_geodesics)
 
+    def _interp_segment(self, lonlat0, lonlat1, nsamp, include_start=False):
+        """Interpolate a segment between two lon/lat points.
+
+        If ``self._plot_geodesics`` is set then the points are sampled along
+        the great circle connecting the two endpoints.  Otherwise the points
+        are sampled linearly in longitude and latitude.
+
+        In the non-geodesic case the longitude interpolation always follows
+        the shortest path (the delta is unwrapped onto [-180, 180)), so that a
+        segment from e.g. 350 degrees to 10 degrees runs through 0 rather than
+        the long way around through 180.  The returned longitudes may
+        therefore fall outside of the nominal wrap range; callers are expected
+        to normalize with `wrap_values` afterwards.
+
+        Note that segments spanning more than 180 degrees of longitude are
+        ambiguous and cannot be represented here; such segments must be
+        subdivided by the caller before the path is constructed.
+
+        Parameters
+        ----------
+        lonlat0 : `tuple` or `np.ndarray`
+            Starting (longitude, latitude) of the segment.
+        lonlat1 : `tuple` or `np.ndarray`
+            Ending (longitude, latitude) of the segment.
+        nsamp : `int`
+            Number of sub-samples along the segment.
+        include_start : `bool`, optional
+            Include the starting point in the returned array?
+
+        Returns
+        -------
+        lonlats : `np.ndarray`
+            [nsamp, 2] array of longitude/latitude, or [nsamp + 1, 2] if
+            ``include_start`` is set.
+        """
+        if self._plot_geodesics:
+            return geodesic_interp(
+                lonlat0[0],
+                lonlat0[1],
+                lonlat1[0],
+                lonlat1[1],
+                nsamp + 1,
+                include_start=include_start,
+                include_end=True,
+            )
+
+        # Unwrap the longitude delta so that we take the shortest path.
+        delta_lon = ((lonlat1[0] - lonlat0[0] + 180.) % 360.) - 180.
+        delta_lat = lonlat1[1] - lonlat0[1]
+
+        t = np.linspace(0., 1., nsamp + 1)
+        if not include_start:
+            t = t[1:]
+
+        return np.vstack(
+            (
+                lonlat0[0] + t*delta_lon,
+                lonlat0[1] + t*delta_lat,
+            ),
+        ).T
+
     def transform_non_affine(self, xy):
         # docstring inherited
         # The forward transformation is x/y to the target projection.
@@ -83,24 +144,8 @@ class SkyTransform(matplotlib.transforms.Transform):
                 codes.append(Path.MOVETO)
                 last_vertex = vertex
             elif code in (Path.LINETO, Path.CLOSEPOLY, None):
-                # Connect the last vertex
-                if self._plot_geodesics:
-                    # Geodesic segment.
-                    lonlats_step = geodesic_interp(
-                        last_vertex[0],
-                        last_vertex[1],
-                        vertex[0],
-                        vertex[1],
-                        self._nsamp + 1,
-                    )
-                else:
-                    # Non-geodesic segment.
-                    lonlats_step = np.vstack(
-                        (
-                            np.linspace(last_vertex[0], vertex[0], self._nsamp + 1)[1:],
-                            np.linspace(last_vertex[1], vertex[1], self._nsamp + 1)[1:],
-                        ),
-                    ).T
+                # Connect the last vertex.
+                lonlats_step = self._interp_segment(last_vertex, vertex, self._nsamp)
 
                 lonlats = np.vstack((lonlats, lonlats_step))
                 if code == Path.CLOSEPOLY:
@@ -219,23 +264,11 @@ class SkyTransform(matplotlib.transforms.Transform):
             locs_insert = []
             codes_insert = []
             for c in cuts:
-                if self._plot_geodesics:
-                    # Geodesic connection.
-                    lonlats_step = geodesic_interp(
-                        lonlats[c - 1, 0],
-                        lonlats[c - 1, 1],
-                        poly_vertex_start[0],
-                        poly_vertex_start[1],
-                        self._nsamp + 1,
-                    )
-                else:
-                    # Non-geodesic connection.
-                    lonlats_step = np.vstack(
-                        (
-                            np.linspace(lonlats[c - 1, 0], poly_vertex_start[0], self._nsamp + 1)[1:],
-                            np.linspace(lonlats[c - 1, 1], poly_vertex_start[1], self._nsamp + 1)[1:],
-                        ),
-                    ).T
+                lonlats_step = self._interp_segment(
+                    lonlats[c - 1, :],
+                    poly_vertex_start,
+                    self._nsamp,
+                )
 
                 lonlats_insert = np.vstack((lonlats_insert, lonlats_step))
                 locs_insert.extend([c + 1]*len(lonlats_step))
@@ -248,29 +281,26 @@ class SkyTransform(matplotlib.transforms.Transform):
             codes = np.insert(codes, locs_insert, codes_insert)
 
         # And the final connection
-        if self._plot_geodesics:
-            # Geodesic connection
-            lonlats_append = geodesic_interp(
-                lonlats[-1, 0],
-                lonlats[-1, 1],
-                poly_vertex_start[0],
-                poly_vertex_start[1],
-                self._nsamp + 1,
-            )
-        else:
-            # Non-geodesic connection
-            lonlats_append = np.vstack(
-                (
-                    np.linspace(lonlats[-1, 0], poly_vertex_start[0], self._nsamp + 1)[1:],
-                    np.linspace(lonlats[-1, 1], poly_vertex_start[1], self._nsamp + 1)[1:],
-                ),
-            ).T
+        lonlats_append = self._interp_segment(
+            lonlats[-1, :],
+            poly_vertex_start,
+            self._nsamp,
+        )
 
         lonlats_append[:, 0] = wrap_values(lonlats_append[:, 0], wrap=self._wrap)
         codes_append = [Path.LINETO]*len(lonlats_append)
 
         lonlats = np.append(lonlats, lonlats_append, axis=0)
         codes = np.append(codes, codes_append)
+
+        # The roll above moves the original MOVETO into the middle of the
+        # path, which leaves a spurious break in one of the sub-polygons.
+        # Every sub-polygon boundary now coincides exactly with a cut, so
+        # regenerate the codes from the cut locations rather than trying to
+        # track them through the roll/insert/append operations.
+        codes = np.full(len(lonlats), Path.LINETO)
+        codes[0] = Path.MOVETO
+        codes[self._compute_cuts(lonlats[:, 0]) + 1] = Path.MOVETO
 
         return lonlats, codes
 
@@ -302,26 +332,13 @@ class SkyTransform(matplotlib.transforms.Transform):
                 codes.append(Path.MOVETO)
                 last_vertex = vertex
             elif code in (Path.LINETO, None):
-                # Connect the last vertex
-                if self._plot_geodesics:
-                    # Geodesic connection.
-                    lonlats_step = geodesic_interp(
-                        last_vertex[0],
-                        last_vertex[1],
-                        vertex[0],
-                        vertex[1],
-                        self._nsamp + 1,
-                        include_start=True,
-                        include_end=True,
-                    )
-                else:
-                    # Non-geodesic connection.
-                    lonlats_step = np.vstack(
-                        (
-                            np.linspace(last_vertex[0], vertex[0], self._nsamp + 1),
-                            np.linspace(last_vertex[1], vertex[1], self._nsamp + 1),
-                        ),
-                    ).T
+                # Connect the last vertex.
+                lonlats_step = self._interp_segment(
+                    last_vertex,
+                    vertex,
+                    self._nsamp,
+                    include_start=True,
+                )
 
                 lonlats_step_xform = self._proj.transform_points(
                     lonlats_step[:, 0],
