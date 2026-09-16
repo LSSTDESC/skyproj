@@ -43,7 +43,7 @@ jobs:
       - name: Configure conda
         shell: bash -l {0}
         run: |
-          conda install -y --file requirements.txt --file requirements-dev.txt python-build "python-build>=1.6.1"
+          conda install -y --file requirements.txt --file requirements-dev.txt python-build
           conda install -y pip
 
       - name: Install code
