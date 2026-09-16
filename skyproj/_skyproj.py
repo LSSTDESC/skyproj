@@ -91,17 +91,6 @@ class _Skyproj():
             import matplotlib.pyplot as plt
             ax = plt.gca()
 
-        fig = ax.figure
-        # This code does not work with the constrained_layout option
-        try:
-            # Newer matplotlib
-            fig.set_layout_engine('none')
-        except AttributeError:
-            # Older matplotlib
-            fig.set_constrained_layout(False)
-        subspec = ax.get_subplotspec()
-        fig.delaxes(ax)
-
         # Map lon_0 to be between -180.0 and 180.0
         lon_0 = wrap_values(lon_0)
 
@@ -116,13 +105,31 @@ class _Skyproj():
             warnings.warn("rcparams is deprecated as a keyword, and is now ignored. "
                           "Please use skyproj.ax.tick_params() to set tick label parameters.")
 
+        # Get the figure associated with the axis.
+        fig = ax.figure
+
+        # Replace the axes, careful to track all the current settings.
+        subspec = ax.get_subplotspec()
+        locator = ax.get_axes_locator()
+        zorder = ax.get_zorder()
+
+        # Delete the old axes before replacing.
+        fig.delaxes(ax)
+
         with matplotlib.rc_context(
             {
                 "xtick.minor.visible": False,
-                "ytick.minor.visible": False
+                "ytick.minor.visible": False,
             },
         ):
-            self._ax = fig.add_subplot(subspec, projection=crs)
+            if subspec is not None:
+                self._ax = fig.add_subplot(subspec, projection=crs)
+            else:
+                self._ax = fig.add_axes(ax.get_position(original=True), projection=crs)
+
+        if locator is not None:
+            self._ax.set_axes_locator(locator)
+        self._ax.set_zorder(zorder)
 
         self._crs_orig = crs
         self._reprojected = False

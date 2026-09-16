@@ -31,10 +31,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: conda-incubator/setup-miniconda@v3
+      - uses: conda-incubator/setup-miniconda@v4
         with:
           python-version: ${{ matrix.python-version }}
-          channels: conda-forge,defaults
+          channels: conda-forge
           channel-priority: strict
           show-channel-urls: true
           miniforge-version: latest
@@ -55,18 +55,9 @@ jobs:
         shell: bash -l {0}
         run: |
           pip uninstall skyproj --yes
-          [[ $(python setup.py --version) != "0.0.0" ]] || exit 1
 
           rm -rf dist/*
-          python setup.py sdist
-          pip install --no-deps --no-build-isolation dist/*.tar.gz
-          pushd ..
-          python -c "import skyproj; assert skyproj.__version__ != '0.0.0'"
-          popd
-          pip uninstall skyproj --yes
-
-          rm -rf dist/*
-          python -m build --sdist . --outdir dist
+          python -m build --sdist --no-isolation . --outdir dist
           pip install --no-deps --no-build-isolation dist/*.tar.gz
           pushd ..
           python -c "import skyproj; assert skyproj.__version__ != '0.0.0'"
