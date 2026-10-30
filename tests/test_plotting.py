@@ -76,3 +76,34 @@ def test_pan_single_axis_updates_bounds():
     sp.ax.set_xlim(xlim[0] + 0.1 * w, xlim[1] + 0.1 * w)  # x-only, like a horizontal pan
 
     assert sp._boundary_lines is not boundary_before
+
+
+def test_add_axes(tmp_path):
+    """Test that we can use add_axes()."""
+    plt.rcParams.update(plt.rcParamsDefault)
+
+    # Tests are consolidated for fewer comparisons.
+    # Note that tests of wrapping lines and polygons are in
+    # test_lines_polygons.
+    # Tests of pcolormesh are in the healsparse/healpix map plots.
+    fig = plt.figure(figsize=(8, 5))
+    fig.clf()
+    ax = fig.add_axes([0.2, 0.25, 0.5, 0.47])
+    sp = skyproj.McBrydeSkyproj(ax=ax, extent=[0, 50, 0, 50])
+
+    # Test ``plot`` with points.
+    sp.ax.plot([10, 20, 30, 40], [10, 20, 30, 40], 'k+')
+    sp.ax.plot([40, 30, 20, 10], [10, 20, 30, 40], 'r.')
+
+    # Test ``plot`` with lines.
+    # Note that the geodesic line segments do not meet the interior
+    # points plotted above.
+    sp.ax.plot([10, 40], [10, 40], 'k-')
+    sp.ax.plot([40, 10], [10, 40], 'r:')
+
+    fname = 'plot_add_axes.png'
+    fig.savefig(tmp_path / fname)
+    plt.close(fig)
+    err = compare_images(os.path.join(ROOT, 'data', fname), tmp_path / fname, 15.0)
+    if err:
+        raise ImageComparisonFailure(err)

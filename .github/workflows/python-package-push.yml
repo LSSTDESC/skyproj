@@ -15,10 +15,10 @@ jobs:
     steps:
     - uses: actions/checkout@v6
 
-    - uses: conda-incubator/setup-miniconda@v3
+    - uses: conda-incubator/setup-miniconda@v4
       with:
         python-version: ${{ matrix.python-version }}
-        channels: conda-forge,defaults
+        channels: conda-forge
         channel-priority: strict
         show-channel-urls: true
         miniforge-version: latest
